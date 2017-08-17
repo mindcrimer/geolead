@@ -106,8 +106,8 @@ class HomeView(BaseTemplateView):
             })
 
             form.is_valid()
-            kwargs['form'] = form
 
+        kwargs['form'] = form
         kwargs['report_data'] = report_data
 
         return kwargs

@@ -42,7 +42,7 @@ LANGUAGE_CODES_PUBLIC = ('ru',)
 DEFAULT_LANGUAGE = LANGUAGES[0][0]
 
 SITE_ID = 1
-SITE_NAME = 'geolead.facedigitalru'
+SITE_NAME = 'geolead.facedigital.ru'
 SITE_PROTOCOL = 'http://'
 
 USE_I18N = True

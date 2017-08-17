@@ -1,0 +1,20 @@
+{%- extends 'layouts/main.html' -%}
+
+{%- block PAGE_TITLE %}{{ var('ERROR_403_TITLE', request) }}{% endblock -%}
+
+{%- block PAGE_CONTENT -%}
+<div class="b-404">
+	<div class="b-404__parallax">
+		<ul id="mouse-parallax">
+			<li class="layer" data-depth="1.00"></li>
+			<li class="layer" data-depth="0.5"></li>
+		</ul>
+	</div>
+	<div class="container">
+		<div class="b-404__inner">
+			<h1>403</h1>
+			{{- var('ERROR_403_BODY', request) -}}
+		</div>
+	</div>
+</div>
+{%- endblock -%}

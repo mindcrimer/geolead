@@ -1,0 +1,26 @@
+{%- for agent in user_agents -%}
+User-agent: {{ agent.title }}
+{%- set disallows = agent.disallows.published().order_by('ordering') -%}
+{%- for disallow in disallows %}
+Disallow: {{ disallow.url_pattern }}
+{%- endfor -%}
+{%- set allows = agent.allows.published().order_by('ordering') -%}
+{%- for allow in allows %}
+Allow: {{ allow.url_pattern }}
+{%- endfor -%}
+{%- set sitemaps = agent.sitemaps.published().order_by('ordering') -%}
+{%- for sitemap in sitemaps %}
+Sitemap: {{ sitemap.url }}
+{%- endfor -%}
+{%- set clean_params = agent.clean_params.published().order_by('ordering') -%}
+{%- for param in clean_params %}
+Clean-param: {{ param.params}} {{ param.url_pattern }}
+{%- endfor -%}
+{%- if agent.crawl_delay %}
+Crawl-delay: {{ agent.crawl_delay }}
+{%- endif -%}
+{%- if agent.host %}
+Host: {{ agent.host }}
+{%- endif %}
+
+{% endfor -%}

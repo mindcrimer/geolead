@@ -1,0 +1,127 @@
+{%- extends 'layouts/main.html' -%}
+
+{%- block PAGE_TITLE %}{{ current_article.title|e }}{% endblock -%}
+
+{%- block BODY_CLASSES %}body-article{% endblock -%}
+
+{%- block EXTRA_META %}
+	<meta property="og:title" content="{{ current_article.title|e }}">
+	<meta property="og:type" content="article">
+	<meta property="og:url" content="{{ site_url() + request.get_full_path() }}">
+	<meta property="og:locale" content="{{ request.LANGUAGE_CODE }}_{% if request.LANGUAGE_CODE == 'en' %}US{% else %}{{ request.LANGUAGE_CODE|upper }}{% endif %}">
+	<meta property="article:published_time" content="{{ current_article.publish_date|date('Y-m-d\TH:i') }}">
+	{%- if current_article.image -%}
+		<meta property="og:image" content="{{ site_url() }}{{ current_article.image|thumbnail("480x800") }}">
+	{%- endif -%}
+	<meta property="og:description" content="{{ current_article.excerpt|e }}">
+{%- endblock -%}
+
+{%- block EXTRA_BODY -%}
+<script id="dsq-count-scr" src="//{{ discus_account() }}.disqus.com/count.js" async></script>
+{%- endblock -%}
+
+{%- block PAGE_CONTENT -%}
+<div class="enter">
+	<div class="container">
+		<div class="page-back">
+			<a href="{{ list_url }}" class="page-back__link">{{ list_name }}</a>
+		</div>
+		<div class="main-title">
+			<h1>{{ current_article.title }}</h1>
+			{%- if current_article.excerpt -%}
+			<div class="content-block">
+				{{- current_article.excerpt|preprocess_content -}}
+			</div>
+			{%- endif -%}
+			<div class="main-title__date">{{ current_article.publish_date|date('d E Y') }}</div>
+		</div>
+	</div>
+
+	{%- for section in sections -%}
+	{%- if section.gallery_id -%}
+	{%- set slides = section.gallery.photos.published().order_by('ordering') -%}
+	{%- if slides -%}
+	<div class="b-slider">
+		<div class="container">
+			<div class="slider">
+				{%- for slide in slides -%}
+				<div class="sld">
+					<div class="slide">
+						<div class="slide__image">
+							<img src="{{ slide.image|thumbnail('1000x667') }}" class="img-responsive" alt="{{ slide.alt or '' }}"/>
+							<div class="slide__nums">
+								<span>1</span>
+								<span>1</span>
+							</div>
+						</div>
+						{%- if slide.body -%}
+						<div class="slide__text">
+							<div class="content-block">
+								{{- slide.body|preprocess_content -}}
+							</div>
+						</div>
+						{%- endif -%}
+					</div>
+				</div>
+				{%- endfor -%}
+			</div>
+		</div>
+	</div>
+	{%- endif -%}
+
+	{%- else -%}
+		{%- include 'articles/_article_video.html' -%}
+	{%- endif -%}
+	{%- endfor -%}
+</div>
+
+<div class="b-video">
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-8 col-lg-offset-2">
+				{%- include 'widgets/share.html' -%}
+			</div>
+		</div>
+	</div>
+</div>
+
+{%- include 'widgets/comments.html' -%}
+
+{%- if siblings -%}
+<div class="page-nav">
+	{%- if siblings[0] %}
+	<a href="{{ siblings[0].get_absolute_url(lang) }}" class="page-nav__prev">
+		<div class="page-nav__text">
+			<div class="page-nav__name">{{ siblings[0].title }}</div>
+			<div class="page-nav__date">{{ siblings[0].publish_date|date('d.m.Y') }}</div>
+			<div class="page-nav__arrow"></div>
+		</div>
+		{%- if siblings[0].image -%}
+		<div class="page-nav__image">
+			<span style="background-image: url({{ siblings[0]|cropped_thumbnail('thumb_siblings') }})"></span>
+		</div>
+		{%- endif -%}
+	</a>
+	{%- else -%}
+	<span class="page-nav__prev"></span>
+	{%- endif -%}
+
+	{%- if siblings[1] -%}
+	<a href="{{ siblings[1].get_absolute_url(lang) }}" class="page-nav__next">
+		<div class="page-nav__text">
+			<div class="page-nav__name">{{ siblings[1].title }}</div>
+			<div class="page-nav__date">{{ siblings[1].publish_date|date('d.m.Y') }}</div>
+			<div class="page-nav__arrow"></div>
+		</div>
+		{%- if siblings[1].image -%}
+		<div class="page-nav__image">
+			<span style="background-image: url({{ siblings[1]|cropped_thumbnail('thumb_siblings') }})"></span>
+		</div>
+		{%- endif -%}
+	</a>
+	{%- else -%}
+	<span class="page-nav__next"></span>
+	{%- endif -%}
+</div>
+{%- endif -%}
+{%- endblock -%}

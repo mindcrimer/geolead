@@ -147,8 +147,8 @@ class OverSpandingView(BaseTemplateView):
                             report_row['discharge']['dt'] = data[2]['t'] \
                                 if data[2] and isinstance(data[2], dict) else ''
 
-                            if len(data[3].replace('-', '')) > 0:
-                                overspanding_total += float(data[3].split(' ')[0])
+                            # if len(data[3].replace('-', '')) > 0:
+                            #     overspanding_total += float(data[3].split(' ')[0])
 
                             if data[4]:
                                 overspanding_count += int(data[4])

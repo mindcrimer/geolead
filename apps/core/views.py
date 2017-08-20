@@ -163,6 +163,7 @@ class OverSpandingView(BaseTemplateView):
 
                             if standard and fact / standard > (1.0 + OVERSPANDING_COEFF):
                                 report_row['overspanding'] = '%s л' % (fact - standard)
+                                overspanding_total += (fact - standard)
 
         else:
             form = forms.FuelDischargeForm({

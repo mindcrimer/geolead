@@ -1,23 +1,51 @@
 # -*- coding: utf-8 -*-
 import json
 import time
-import urllib
-from datetime import timedelta
+from collections import OrderedDict
+from datetime import timedelta, datetime, date
+
+from django.conf import settings
+from django.utils.timezone import utc
 
 import requests
 
 from core import forms
-from django.conf import settings
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
+
+
+OVERSPANDING_COEFF = 0.05
 
 
 class HomeView(BaseTemplateView):
     template_name = 'core/home.html'
 
+
+class OverSpandingView(BaseTemplateView):
+    template_name = 'core/over_spanding.html'
+
+    @staticmethod
+    def get_new_grouping():
+        return {
+            'plan_worktime': ('', ''),
+            'driver_name': '',
+            'discharge': {
+                'place': '',
+                'dt': ''
+            },
+            'consumption': {
+                'standard_mileage': '',
+                'standard_worktime': '',
+                'fact': ''
+            },
+            'overspanding': ''
+        }
+
     def get_context_data(self, **kwargs):
-        kwargs = super(HomeView, self).get_context_data(**kwargs)
-        report_data = []
+        kwargs = super(OverSpandingView, self).get_context_data(**kwargs)
+        report_data = OrderedDict()
+        overspanding_total = .0
+        overspanding_count = 0
 
         if kwargs['view'].request.POST:
             form = forms.FuelDischargeForm(kwargs['view'].request.POST)
@@ -30,8 +58,11 @@ class HomeView(BaseTemplateView):
                 res = r.json()
                 sess_id = res['eid']
 
-                dt_from = int(time.mktime(form.cleaned_data['dt_from'].timetuple()))
-                dt_to = int(time.mktime(form.cleaned_data['dt_to'].timetuple()))
+                dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
+                dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
+
+                dt_from = int(time.mktime(dt_from.timetuple()))
+                dt_to = int(time.mktime(dt_to.timetuple()))
 
                 requests.post(
                     settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
@@ -92,12 +123,46 @@ class HomeView(BaseTemplateView):
                             }),
                             'sid': sess_id
                         }
-                    )
+                    ).json()
 
-                    report_data.append({
-                        'meta': table,
-                        'rows': rows.json()
-                    })
+                    for row in rows:
+                        data = row['c']
+                        key = data[0]
+
+                        if key not in report_data:
+                            report_data[key] = self.get_new_grouping()
+                            report_data[key]['plan_worktime'] = (
+                                res['reportResult']['stats'][0][1],
+                                res['reportResult']['stats'][1][1]
+                            )
+                        report_row = report_data[key]
+
+                        if table['name'] == 'unit_group_trips':
+                            report_row['driver_name'] = data[4]
+
+                        elif table['name'] == 'unit_group_thefts':
+                            report_row['discharge']['place'] = data[1]['t'] \
+                                if data[1] and isinstance(data[1], dict) else ''
+
+                            report_row['discharge']['dt'] = data[2]['t'] \
+                                if data[2] and isinstance(data[2], dict) else ''
+
+                            if len(data[3].replace('-', '')) > 0:
+                                overspanding_total += float(data[3].split(' ')[0])
+
+                            if data[4]:
+                                overspanding_count += int(data[4])
+
+                        elif table['name'] == 'unit_group_generic':
+                            standard = report_row['consumption']['standard_mileage'] = \
+                                report_row['consumption']['standard_worktime'] = \
+                                float(data[4].split(' ')[0]) if data[4] else 0
+
+                            fact = report_row['consumption']['fact'] = \
+                                float(data[3].split(' ')[0]) if data[3] else 0
+
+                            if standard and fact / standard > (1.0 + OVERSPANDING_COEFF):
+                                report_row['overspanding'] = '%s л' % (fact - standard)
 
         else:
             form = forms.FuelDischargeForm({
@@ -107,8 +172,13 @@ class HomeView(BaseTemplateView):
 
             form.is_valid()
 
-        kwargs['form'] = form
-        kwargs['report_data'] = report_data
+        kwargs.update(
+            form=form,
+            report_data=report_data,
+            today=date.today(),
+            overspanding_count=overspanding_count,
+            overspanding_total=overspanding_total
+        )
 
         return kwargs
 

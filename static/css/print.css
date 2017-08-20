@@ -1,0 +1,9 @@
+@page {
+    size: landscape;
+}
+body {
+}
+
+form, .uk-btn {
+    display: none;
+}

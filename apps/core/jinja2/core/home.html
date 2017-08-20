@@ -1,66 +1,9 @@
 {%- extends 'layouts/main.html' -%}
 
 {%- block PAGE_CONTENT -%}
-
-	{%- if report_data -%}
-		<div class="report">
-			<h1>Результаты отчета "Перерасход топлива"</h1>
-			{%- for table in report_data -%}
-				<div class="report__section">
-					{%- set meta = table['meta'] -%}
-					{%- set rows = table['rows'] -%}
-					<h2>{{ meta['label']|e }}</h2>
-
-					<table class="section__table table">
-						<thead>
-							<tr>
-								{%- for col in meta['header'] -%}
-								<th>{{ col|e }}</th>
-								{%- endfor -%}
-							</tr>
-						</thead>
-						<tbody>
-							{%- for row in rows -%}
-							<tr>
-								{%- set data = row['c'] -%}
-								{%- for col in data -%}
-								<td>
-								{%- if isinstance(col, str) -%}
-									{{- col -}}
-								{%- else -%}
-									{{- col.get('t', '') -}}
-								{%- endif -%}
-								</td>
-								{%- endfor -%}
-							</tr>
-							{%- endfor -%}
-						</tbody>
-					</table>
-				</div>
-			{%- endfor -%}
-		</div>
-		{%- endif -%}
-
-		<form class="form" method="post" action="">
-			<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-			<fieldset class="uk-fieldset">
-
-				<legend class="uk-legend">Отчет "Перерасход топлива"</legend>
-
-				<div class="uk-margin">
-					<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from" value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_from') else '' }}">
-					<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
-				</div>
-
-				<div class="uk-margin">
-					<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to" value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else ''}}">
-					<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-				</div>
-
-				<div class="uk-margin">
-					<button class="uk-button uk-button-primary">Создать</button>
-				</div>
-
-			</fieldset>
-		</form>
+	<div class="uk-margin-top">
+		<ul>
+			<li><a href="{{ url('core:over_spanding') }}">Отчет "Перерасход топлива"</a></li>
+		</ul>
+	</div>
 {%- endblock -%}

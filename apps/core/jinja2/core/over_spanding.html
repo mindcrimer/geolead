@@ -1,0 +1,109 @@
+{%- extends 'layouts/main.html' -%}
+
+{%- block EXTRA_HEAD -%}
+	<link rel="stylesheet" media="print" href="{{ STATIC_URL }}css/print.css">
+{%- endblock -%}
+
+{%- block PAGE_CONTENT -%}
+
+{%- if report_data -%}
+	<div class="report">
+		<h1>Перерасход топлива</h1>
+		<div class="report__heading">
+			<div class="report__heading-row uk-margin">
+				Дата: {{ today|date('d.m.Y') -}}
+			</div>
+			<div class="report__heading-row uk-margin">
+				Итого перерасход, л: {{ overspanding_total -}}
+			</div>
+			<div class="report__heading-row uk-margin">
+				Зафиксировано случаев слива: {{ overspanding_count -}}
+			</div>
+		</div>
+		<div class="uk-margin" style="text-align:right">
+			Список случаев перерасхода топлива на дату:
+		</div>
+		<div class="table-wrap">
+			<table class="report-table">
+				<thead>
+				<tr>
+					<td rowspan="2">Гос№ ТС</td>
+					<td rowspan="2">
+						Плановый график работы<br/>
+						водителя (время с - время по)
+					</td>
+					<td rowspan="2">ФИО водителя</td>
+					<td colspan="2">Событие слив</td>
+					<td colspan="3">Израсходовано топлива за запрашиваемый период, л</td>
+					<td rowspan="2">*Перерасход, л.</td>
+				</tr>
+				<tr>
+					<td>Место/геозона</td>
+					<td>Время</td>
+					<td>По норме<br/>от пробега**</td>
+					<td>По норме<br/>от времени работы***</td>
+					<td>По факту<br/>с ДУТ</td>
+				</tr>
+				</thead>
+				<tbody>
+				{%- for key, row in report_data.items() -%}
+				<tr>
+					<td>{{ key }}</td>
+					<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
+					<td>{{ row['driver_name'] }}</td>
+					<td>{{ row['discharge']['place'] }}</td>
+					<td>{{ row['discharge']['dt'] }}</td>
+					<td>{{ row['consumption']['standard_mileage'] }}</td>
+					<td>{{ row['consumption']['standard_worktime'] }}</td>
+					<td>{{ row['consumption']['fact'] }}</td>
+					<td>{{ row['overspanding'] }}</td>
+				</tr>
+				{%- endfor -%}
+				</tbody>
+			</table>
+		</div>
+
+		<div class="hint uk-margin-top">
+			* В случае превышения фактического расхода топлива на нормативы более чем на 5%<br/>
+			** исходя из нормативов л/100км, с добавочным коэффициентом на работу оборудования<br/>
+			*** исходя из нормативов л/час при заведенном двигателе на холостых оборотах,
+			с добавочным коэффициентом на работу оборудования
+		</div>
+
+		<div class="uk-margin">
+			<a href="{{ url('core:over_spanding') }}" class="uk-btn">Назад</a>
+		</div>
+	</div>
+
+{%- else -%}
+	<form class="form" method="post" action="">
+		<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+		<fieldset class="uk-fieldset">
+
+			<legend class="uk-legend">Отчет "Перерасход топлива"</legend>
+
+			<div class="uk-margin">
+				<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
+							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_from') else '' }}">
+				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+			</div>
+
+			<div class="uk-margin">
+				<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
+							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else '' }}">
+				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+			</div>
+
+			<div class="uk-margin">
+				<button class="uk-button uk-button-primary">Создать</button>
+			</div>
+
+		</fieldset>
+	</form>
+
+	<div class="uk-margin">
+		<a href="{{ url('core:home') }}" class="uk-btn">Назад</a>
+	</div>
+{%- endif -%}
+
+{%- endblock -%}

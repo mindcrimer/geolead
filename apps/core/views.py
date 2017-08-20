@@ -45,6 +45,7 @@ class OverSpandingView(BaseTemplateView):
         kwargs = super(OverSpandingView, self).get_context_data(**kwargs)
         report_data = OrderedDict()
         overspanding_total = .0
+        discharge_total = .0
         overspanding_count = 0
 
         if kwargs['view'].request.POST:
@@ -147,8 +148,8 @@ class OverSpandingView(BaseTemplateView):
                             report_row['discharge']['dt'] = data[2]['t'] \
                                 if data[2] and isinstance(data[2], dict) else ''
 
-                            # if len(data[3].replace('-', '')) > 0:
-                            #     overspanding_total += float(data[3].split(' ')[0])
+                            if len(data[3].replace('-', '')) > 0:
+                                discharge_total += float(data[3].split(' ')[0])
 
                             if data[4]:
                                 overspanding_count += int(data[4])
@@ -177,6 +178,7 @@ class OverSpandingView(BaseTemplateView):
             form=form,
             report_data=report_data,
             today=date.today(),
+            discharge_total=discharge_total,
             overspanding_count=overspanding_count,
             overspanding_total=overspanding_total
         )

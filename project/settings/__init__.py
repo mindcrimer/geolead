@@ -286,9 +286,6 @@ except ImportError:
 
 SITE_URL = SITE_PROTOCOL + SITE_NAME
 CSRF_TRUSTED_ORIGINS = [SITE_NAME]
-ALLOWED_HOSTS = [SITE_NAME, 'www.' + SITE_NAME]
-if ':' in SITE_NAME:
-    ALLOWED_HOSTS.append(SITE_NAME.split(':')[0])
 
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 TEMPLATES[1]['OPTIONS']['cache_size'] = 1000000 if DEBUG else -1

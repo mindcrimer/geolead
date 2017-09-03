@@ -198,7 +198,7 @@ class DrivingStyleView(BaseReportView):
                                 + (self.parse_time_delta(data[5]).days * 3600 * 24)
 
                             for subject in details:
-                                violation = subject['c'][3]
+                                violation = subject['c'][3].lower() if subject['c'][3] else ''
                                 if 'свет' in violation or 'фар' in violation:
                                     viol_key = 'lights'
                                 elif 'скорост' in violation or 'превышен' in violation:

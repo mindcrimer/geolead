@@ -233,6 +233,12 @@ def floatformat(value, digits):
 
 
 @jinjafilter
+def floatcomma(value, digits):
+    return float_format(value, digits).replace(',', '.')
+
+
+
+@jinjafilter
 def intcomma(value, use_l10n=True):
     return int_comma(value, use_l10n=use_l10n)
 

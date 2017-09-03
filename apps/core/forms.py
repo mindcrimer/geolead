@@ -8,3 +8,9 @@ class FuelDischargeForm(forms.Form):
     """Форма отчета "Слив топлива" """
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
+
+
+class DrivingStyleForm(forms.Form):
+    """Форма отчета "Стиль вождения" """
+    dt_from = forms.DateTimeField(label=_('С'))
+    dt_to = forms.DateTimeField(label=_('По'))

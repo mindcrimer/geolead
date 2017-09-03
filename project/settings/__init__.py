@@ -32,7 +32,7 @@ DATABASES = {
     }
 }
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = 'UTC'
 LANGUAGE_CODE = 'ru-RU'
 LANGUAGES = (
     ('ru', gettext_noop('Русский')),
@@ -276,7 +276,8 @@ THUMBNAIL_PROCESSORS = (
 ) + ThumbnailSettings.THUMBNAIL_PROCESSORS
 
 WIALON_BASE_URL = 'https://hst-api.wialon.com/wialon/ajax.html'
-WIALON_TOKEN = 'daadc13a64d51f2b403fa5b8f6466302FF67063574309D15B04AB72B7B41A99DBD7CAEE9'
+WIALON_TOKEN = 'b6b095979c28e8e60941c3617b83c1aeF5A453028C640582DC90333E147865A10F5B2BB3'
+# daadc13a64d51f2b403fa5b8f6466302FF67063574309D15B04AB72B7B41A99DBD7CAEE9'
 
 try:
     from project.settings.settings_local import *  # NOQA

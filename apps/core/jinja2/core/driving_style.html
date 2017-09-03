@@ -144,7 +144,7 @@
 		</div>
 	</div>
 
-{%- else -%}
+{%- elif report_data == None -%}
 	<form class="form" method="post" action="">
 		<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 		<fieldset class="uk-fieldset">
@@ -173,6 +173,15 @@
 	<div class="uk-margin">
 		<a href="{{ url('core:home') }}" class="uk-button uk-button-default">Назад</a>
 	</div>
+
+{%- else -%}
+<div class="report">
+	<h3>Данные за указанный период не найдены</h3>
+
+	<div class="uk-margin-top">
+		<a href="{{ url('core:driving_style') }}" class="uk-button uk-button-default">Назад</a>
+	</div>
+</div>
 {%- endif -%}
 
 {%- endblock -%}

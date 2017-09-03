@@ -29,6 +29,11 @@ class BaseReportView(BaseTemplateView):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
+    def get_context_data(self, **kwargs):
+        kwargs = super(BaseReportView, self).get_context_data(**kwargs)
+        kwargs['None'] = None
+        return kwargs
+
 
 class DrivingStyleView(BaseReportView):
     """Стиль вождения"""
@@ -97,11 +102,13 @@ class DrivingStyleView(BaseReportView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(DrivingStyleView, self).get_context_data(**kwargs)
-        report_data = OrderedDict()
+        report_data = None
         kwargs['today'] = date.today()
 
         if kwargs['view'].request.POST:
             form = forms.DrivingStyleForm(kwargs['view'].request.POST)
+            report_data = OrderedDict()
+
             if form.is_valid():
                 # получение сессии:
                 r = requests.get(
@@ -260,13 +267,15 @@ class OverSpandingView(BaseReportView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(OverSpandingView, self).get_context_data(**kwargs)
-        report_data = OrderedDict()
+        report_data = None
         overspanding_total = .0
         discharge_total = .0
         overspanding_count = 0
 
         if kwargs['view'].request.POST:
             form = forms.FuelDischargeForm(kwargs['view'].request.POST)
+            report_data = OrderedDict()
+
             if form.is_valid():
                 # получение сессии:
                 r = requests.get(

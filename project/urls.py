@@ -15,6 +15,7 @@ handler500 = 'snippets.general.views.e500'
 urlpatterns = (
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^ura/', include('ura.urls', namespace='ura')),
     url(r'^', include('base.urls', namespace='base')),
     url(r'^', include('snippets.seo.urls', namespace='seo')),
 )

@@ -149,7 +149,8 @@ INSTALLED_APPS = (
     # приложения проекта
     'core',
     'dicts',
-    'users',
+    'ura',
+    'users'
 )
 
 LOGIN_URL = reverse_lazy('auth_login')

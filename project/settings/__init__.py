@@ -207,6 +207,7 @@ SUIT_CONFIG = {
         'core',
         'dicts',
         'general',
+        'ura',
         'users'
     ]
 }

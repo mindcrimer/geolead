@@ -6,6 +6,11 @@ from ura.lib.response import XMLResponse
 from ura.utils import parse_datetime
 
 
+class URAEchoResource(URAResource):
+    def post(self, request, *args, **kwargs):
+        return XMLResponse('ura/ackjobs.xml', {})
+
+
 class URAJobsResource(URAResource):
     model_mapping = {
         'name': ('jobName', str),

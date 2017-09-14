@@ -153,11 +153,6 @@ INSTALLED_APPS = (
     'users'
 )
 
-LOGIN_URL = reverse_lazy('auth_login')
-LOGIN_REDIRECT_URL = '/'
-LOGIN_ALWAYS_REQUIRED = False
-# url, которые игнорируются при проверке входа
-LOGIN_EXEMPT_URLS = (r'^media/.*', '^api/.*')
 
 AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)

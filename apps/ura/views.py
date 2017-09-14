@@ -2,13 +2,23 @@
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
-from ura.lib.response import XMLResponse
+from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime
 
 
 class URAEchoResource(URAResource):
-    def post(self, request, *args, **kwargs):
-        return XMLResponse('ura/ackjobs.xml', {})
+    @staticmethod
+    def post(request, *args, **kwargs):
+
+        echo = request.data.xpath('/echoRequest')
+        doc_id = echo.get('idDoc')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc')
+
+        return XMLResponse('ura/ackjobs.xml', {
+            'doc_id': echo.get('idDoc'),
+            'create_date': utcnow()
+        })
 
 
 class URAJobsResource(URAResource):
@@ -37,6 +47,9 @@ class URAJobsResource(URAResource):
                     data[k] = v[1](j.get(v[0]))
 
                 name = data.pop('name')
+                if not name:
+                    return error_response('Не указан параметр jobName')
+
                 job = self.model.objects.update_or_create(name=name, defaults=data)[0]
                 jobs.append(job)
 

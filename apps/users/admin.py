@@ -43,7 +43,7 @@ class UserAdmin(UserAdmin):
     form = UserAdminForm
     list_display = ('username', 'get_full_name', 'is_active')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
-    readonly_fields = ('last_login', 'date_joined', 'created', 'updated')
+    readonly_fields = ('last_login', 'date_joined', 'created', 'updated', 'full_name')
     search_fields = ('=id', 'username', 'full_name', 'email')
     suit_form_tabs = (
         ('general', _('Общее')),

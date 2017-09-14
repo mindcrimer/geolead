@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 
 
 class Response(JsonResponse):
     pass
-
-
-class XMLResponse(HttpResponse):
-    def __init__(self, data, **kwargs):
-        kwargs.setdefault('content_type', 'application/xml')
-        super(XMLResponse, self).__init__(content=data, **kwargs)
-
 
 
 def error_response(message=None, status=400, code=None):

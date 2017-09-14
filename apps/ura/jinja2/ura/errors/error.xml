@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<result>
+    <status>{{ status }}</status>
+    {%- if detail is defined() %}
+    <detail
+        {%- if detail.message %} message="{{ detail.message }}"{% endif -%}
+        {%- if detail.errors %}>
+        <errors>
+            {%- for error in detail.errors %}
+            <error code="{{ error.get('code', '') }}" message="{{  error.get('message', '')|e }}" name="{{  error.get('name', '') }}"/>
+            {%- endfor %}
+        </errors>
+    </detail>
+        {%- else %}/>{% endif -%}
+    {%- endif %}
+</result>

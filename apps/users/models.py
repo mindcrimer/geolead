@@ -13,21 +13,8 @@ class User(AbstractUser, LastModMixin, BasicModel):
 
     middle_name = models.CharField(_('Отчество'), max_length=150, blank=True, null=True)
     full_name = models.TextField(_('ФИО'), max_length=500, blank=True)
-    email_verified_date = models.DateTimeField(
-        _('Дата и время подтверждения email'), blank=True, null=True
-    )
-
-    restore_salt = models.CharField(
-        _('Соль восстановления пароля'), max_length=50,
-        help_text=_(
-            'Выставляется при запросе восстановления пароля и удаляется '
-            'после успешной смены пароля, либо по сроку годности'
-        ),
-        blank=True, null=True
-    )
-    restore_salt_expiry = models.DateTimeField(
-        _('Срок годности соли восстановления'), blank=True, null=True
-    )
+    wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)
+    org_id = models.CharField(_('orgId УРА'), blank=True, null=True, max_length=255)
 
     class Meta:
         verbose_name = _('Профиль пользователя')

@@ -7,6 +7,6 @@ from ura import views
 urlpatterns = (
     url(
         r'^jobs/$',
-        views.URAJobsView.as_view(), name='ura_jobs'
+        views.URAJobsResource.as_view(), name='ura_jobs'
     ),
 )

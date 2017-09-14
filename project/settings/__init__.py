@@ -201,7 +201,7 @@ EMAIL_BATCH_SIZE = 100
 
 SUIT_CONFIG = {
     # 'SEARCH_URL': 'admin:catalog_product_changelist',
-    'ADMIN_NAME': 'АНАС Медикал',
+    'ADMIN_NAME': 'Ресурс',
     'MENU_OPEN_FIRST_CHILD': True,
     'MENU': [
         'core',

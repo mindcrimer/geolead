@@ -11,12 +11,16 @@ class URAEchoResource(URAResource):
     def post(request, *args, **kwargs):
 
         echo = request.data.xpath('/echoRequest')
+        if len(echo) < 1:
+            return error_response('Не найден объект echoRequest')
+
+        echo = echo[0]
         doc_id = echo.get('idDoc')
         if not doc_id:
             return error_response('Не указан параметр idDoc')
 
-        return XMLResponse('ura/ackjobs.xml', {
-            'doc_id': echo.get('idDoc'),
+        return XMLResponse('ura/echo.xml', {
+            'doc_id': doc_id,
             'create_date': utcnow()
         })
 

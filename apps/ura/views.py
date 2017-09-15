@@ -4,6 +4,44 @@ from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime
+from ura.wialon.api import get_drivers_list
+
+
+class URADriversResource(URAResource):
+    """Список водителей"""
+    @staticmethod
+    def post(request, *args, **kwargs):
+
+        doc = request.data.xpath('/driversRequest')
+        if len(doc) < 1:
+            return error_response('Не найден объект driversRequest')
+
+        doc = doc[0]
+        doc_id = doc.get('idDoc')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc')
+
+        try:
+            org_id = int(doc.get('idOrg'))
+        except ValueError:
+            org_id = 0
+
+        if not org_id:
+            return error_response('Не указан параметр idOrg')
+
+        if org_id != request.user.id:
+            return error_response(
+                'Параметр idOrg не соответствует идентификатору текущего пользователя'
+            )
+
+        drivers = get_drivers_list(request)
+
+        return XMLResponse('ura/drivers.xml', {
+            'doc_id': doc_id,
+            'create_date': utcnow(),
+            'drivers': drivers,
+            'org': request.user
+        })
 
 
 class URAEchoResource(URAResource):
@@ -22,27 +60,6 @@ class URAEchoResource(URAResource):
 
         return XMLResponse('ura/echo.xml', {
             'doc_id': doc_id,
-            'create_date': utcnow()
-        })
-
-
-class URAOrgsResource(URAResource):
-    """Получение списка организаций"""
-    @staticmethod
-    def post(request, *args, **kwargs):
-
-        doc = request.data.xpath('/orgRequest')
-        if len(doc) < 1:
-            return error_response('Не найден объект mon:orgRequest')
-
-        doc = doc[0]
-        doc_id = doc.get('idDoc')
-        if not doc_id:
-            return error_response('Не указан параметр idDoc')
-
-        return XMLResponse('ura/orgs.xml', {
-            'doc_id': doc_id,
-            'org': request.user,
             'create_date': utcnow()
         })
 
@@ -84,3 +101,24 @@ class URAJobsResource(URAResource):
             'acceptedJobs': jobs
         }
         return XMLResponse('ura/ackjobs.xml', result)
+
+
+class URAOrgsResource(URAResource):
+    """Получение списка организаций"""
+    @staticmethod
+    def post(request, *args, **kwargs):
+
+        doc = request.data.xpath('/orgRequest')
+        if len(doc) < 1:
+            return error_response('Не найден объект mon:orgRequest')
+
+        doc = doc[0]
+        doc_id = doc.get('idDoc')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc')
+
+        return XMLResponse('ura/orgs.xml', {
+            'doc_id': doc_id,
+            'org': request.user,
+            'create_date': utcnow()
+        })

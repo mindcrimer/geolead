@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<driversAnswer idOrg="{{ org.pk }}" idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
+    {%- for driver in drivers %}
+	<Driver driverFio="{{ driver['name'] }}" idDriver="{{ driver['id'] }}"/>
+    {%- endfor %}
+</driversAnswer>

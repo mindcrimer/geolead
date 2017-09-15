@@ -4,10 +4,12 @@ django
 django-ckeditor
 django-image-cropping
 django-mptt
+django-redis-cache
 django-suit
 django-solo
 easy-thumbnails
 flake8
+hiredis
 Jinja2
 lxml
 Markdown
@@ -16,6 +18,7 @@ pep8
 Pillow
 pytz
 psycopg2
+redis
 ujson
 uWSGI
 uwsgitop

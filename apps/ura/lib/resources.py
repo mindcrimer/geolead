@@ -95,7 +95,7 @@ class URAResource(TemplateView):
         try:
             return etree.parse(BytesIO(request.body))
 
-        except ParseError:
-            APIParseError(
+        except ParseError as e:
+            raise APIParseError(
                 _('Отправлены неправильные данные'), code='invalid_request_body_received'
             )

@@ -1,0 +1,84 @@
+.jcrop-holder.jcrop-image div img {
+	max-width: none;
+}
+input.vIntegerField {
+    max-width: 60px;
+    min-width: 0;
+}
+select[name*='-gender'] {
+    width: 60px;
+}
+select[name*='-status'] {
+    width: 100px;
+}
+select[name^='telephones-'][name*='-type'] {
+    max-width: 120px;
+}
+
+#result_list {
+	width: 100%;
+}
+#result_list th {
+	text-align: left;
+}
+input, textarea {
+	min-width: 50%;
+}
+#result_list input[type='text'], #result_list select {
+    min-width: 30px;
+    max-width: 100px;
+}
+#result_list input[id*='-ordering'] {
+    max-width: 50px;
+}
+input.btn {
+	min-width: 80px;
+}
+#searchbar {
+	min-width: 260px;
+}
+.jcrop-holder img {
+	max-width: none;
+}
+.tabular .vLargeTextField {
+	height: 120px;
+	resize: both;
+}
+input[type="checkbox"] {
+	min-width: 0;
+}
+.suit-date input.vDateField {
+    width: 57px;
+}
+.required:after {
+    color: #B40700;
+}
+select[multiple] {
+	min-height: 120px;
+}
+#id_parent {
+    min-width: 450px;
+}
+.form-horizontal .control-group .controls .selector .selector-available,
+.form-horizontal .control-group .controls .selector .selector-chosen {
+    max-width: 450px;
+}
+input.vForeignKeyRawIdAdminField {
+    max-width: 50px !important;
+}
+.related-widget-wrapper-link.delete-related {
+    display: none;
+}
+
+/*VIRTUAL DELETION */
+#result_list tr.is-deleted {
+    opacity: .55;
+}
+#result_list tr.is-archived {
+    font-style: italic;
+}
+
+.hidden {
+    display: none !important;
+    visibility: hidden;
+}

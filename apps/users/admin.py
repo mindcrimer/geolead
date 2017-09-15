@@ -38,6 +38,10 @@ class UserAdmin(UserAdmin):
         (_('Права доступа'), {
             'classes': ('suit-tab', 'suit-tab-permission'),
             'fields': ('is_staff', 'is_superuser')
+        }),
+        (_('Wialon'), {
+            'classes': ('suit-tab', 'suit-tab-wialon'),
+            'fields': ('wialon_token', 'org_id')
         })
     )
     form = UserAdminForm
@@ -47,7 +51,8 @@ class UserAdmin(UserAdmin):
     search_fields = ('=id', 'username', 'full_name', 'email')
     suit_form_tabs = (
         ('general', _('Общее')),
-        ('permission', _('Права'))
+        ('permission', _('Права')),
+        ('wialon', _('Wialon'))
     )
 
     def get_actions(self, request):

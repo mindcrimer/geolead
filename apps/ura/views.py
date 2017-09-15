@@ -7,20 +7,42 @@ from ura.utils import parse_datetime
 
 
 class URAEchoResource(URAResource):
+    """Тест работоспособности сервиса"""
     @staticmethod
     def post(request, *args, **kwargs):
 
-        echo = request.data.xpath('/echoRequest')
-        if len(echo) < 1:
+        doc = request.data.xpath('/echoRequest')
+        if len(doc) < 1:
             return error_response('Не найден объект echoRequest')
 
-        echo = echo[0]
-        doc_id = echo.get('idDoc')
+        doc = doc[0]
+        doc_id = doc.get('idDoc')
         if not doc_id:
             return error_response('Не указан параметр idDoc')
 
         return XMLResponse('ura/echo.xml', {
             'doc_id': doc_id,
+            'create_date': utcnow()
+        })
+
+
+class URAOrgsResource(URAResource):
+    """Получение списка организаций"""
+    @staticmethod
+    def post(request, *args, **kwargs):
+
+        doc = request.data.xpath('/orgRequest')
+        if len(doc) < 1:
+            return error_response('Не найден объект mon:orgRequest')
+
+        doc = doc[0]
+        doc_id = doc.get('idDoc')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc')
+
+        return XMLResponse('ura/orgs.xml', {
+            'doc_id': doc_id,
+            'org': request.user,
             'create_date': utcnow()
         })
 

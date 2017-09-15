@@ -1,0 +1,3 @@
+<orgAnswer idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
+    <Organization idOrg="{{ org.pk }}" nameOrg="{{ org.full_name|e }}"/>
+</orgAnswer>

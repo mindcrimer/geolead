@@ -83,7 +83,7 @@ def get_units_list(request, sess_id=None):
             'propType': 'property'
         },
         'force': 1,
-        'flags': 8388609,
+        'flags': 1 + 8388608,
         'from': 0,
         'to': 0
     })

@@ -2,7 +2,7 @@
 import json
 import time
 from collections import OrderedDict
-from datetime import timedelta, datetime, date
+from datetime import timedelta, date
 
 from core.jinjaglobals import render_background
 from django.conf import settings
@@ -13,7 +13,7 @@ import requests
 from core import forms
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
-
+from ura.wialon.auth import authenticate_at_wialon
 
 OVERSPANDING_COEFF = 0.05
 
@@ -110,13 +110,7 @@ class DrivingStyleView(BaseReportView):
             report_data = OrderedDict()
 
             if form.is_valid():
-                # получение сессии:
-                r = requests.get(
-                    settings.WIALON_BASE_URL + '?svc=token/login&params={%22token%22:%22' +
-                    settings.WIALON_TOKEN + '%22}'
-                )
-                res = r.json()
-                sess_id = res['eid']
+                sess_id = authenticate_at_wialon(settings.WIALON_TOKEN)
 
                 dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
                 dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
@@ -277,13 +271,7 @@ class OverSpandingView(BaseReportView):
             report_data = OrderedDict()
 
             if form.is_valid():
-                # получение сессии:
-                r = requests.get(
-                    settings.WIALON_BASE_URL + '?svc=token/login&params={%22token%22:%22' +
-                    settings.WIALON_TOKEN + '%22}'
-                )
-                res = r.json()
-                sess_id = res['eid']
+                sess_id = authenticate_at_wialon(settings.WIALON_TOKEN)
 
                 dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
                 dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)

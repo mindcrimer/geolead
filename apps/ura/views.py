@@ -4,7 +4,7 @@ from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime
-from ura.wialon.api import get_drivers_list
+from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 
 
 class URADriversResource(URAResource):
@@ -121,4 +121,78 @@ class URAOrgsResource(URAResource):
             'doc_id': doc_id,
             'org': request.user,
             'create_date': utcnow()
+        })
+
+
+class URARoutesResource(URAResource):
+    """Список маршрутов"""
+    @staticmethod
+    def post(request, *args, **kwargs):
+
+        doc = request.data.xpath('/routesRequest')
+        if len(doc) < 1:
+            return error_response('Не найден объект routesRequest')
+
+        doc = doc[0]
+        doc_id = doc.get('idDoc')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc')
+
+        try:
+            org_id = int(doc.get('idOrg'))
+        except ValueError:
+            org_id = 0
+
+        if not org_id:
+            return error_response('Не указан параметр idOrg')
+
+        if org_id != request.user.id:
+            return error_response(
+                'Параметр idOrg не соответствует идентификатору текущего пользователя'
+            )
+
+        routes = get_routes_list(request)
+
+        return XMLResponse('ura/routes.xml', {
+            'doc_id': doc_id,
+            'create_date': utcnow(),
+            'routes': routes,
+            'org': request.user
+        })
+
+
+class URAUnitsResource(URAResource):
+    """Список элементов"""
+    @staticmethod
+    def post(request, *args, **kwargs):
+
+        doc = request.data.xpath('/unitsRequest')
+        if len(doc) < 1:
+            return error_response('Не найден объект unitsRequest')
+
+        doc = doc[0]
+        doc_id = doc.get('idDoc')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc')
+
+        try:
+            org_id = int(doc.get('idOrg'))
+        except ValueError:
+            org_id = 0
+
+        if not org_id:
+            return error_response('Не указан параметр idOrg')
+
+        if org_id != request.user.id:
+            return error_response(
+                'Параметр idOrg не соответствует идентификатору текущего пользователя'
+            )
+
+        units = get_units_list(request)
+
+        return XMLResponse('ura/units.xml', {
+            'doc_id': doc_id,
+            'create_date': utcnow(),
+            'units': units,
+            'org': request.user
         })

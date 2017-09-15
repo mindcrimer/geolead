@@ -24,5 +24,15 @@ urlpatterns = (
         r'^orgs/$',
         views.URAOrgsResource.as_view(),
         name='ura_orgs'
+    ),
+    url(
+        r'^routes/$',
+        views.URARoutesResource.as_view(),
+        name='ura_routes'
+    ),
+    url(
+        r'^units/$',
+        views.URAUnitsResource.as_view(),
+        name='ura_units'
     )
 )

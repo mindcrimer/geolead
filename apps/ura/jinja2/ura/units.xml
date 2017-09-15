@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unitsAnswer idOrg="{{ org.pk }}" idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
+    {%- for unit in units %}
+    <Unit unitNumber="{{ unit['number']|e }}" idUnit="{{ unit['id'] }}" VIN="{{ unit['vin']|e }}" name="{{ unit['name']|e }}"/>
+    {%- endfor %}
+</unitsAnswer>

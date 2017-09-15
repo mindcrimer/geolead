@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ackJobs scriptVersion="0.1.9" dateCreate="{{ now|date('d.m.Y H:i:s') }}">
 	{%- for job in acceptedJobs %}
-    <job idJob="{{ job.id }}" jobName="{{ job.name }}" idUnit="{{ job.unit_id }}" idRoute="{{ job.route_id }}" dateBegin="{{ job.date_begin|date('d.m.Y H:i:s') }}" dateEnd="{{ job.date_end|date('d.m.Y H:i:s') }}"/>
+    <job idJob="{{ job.id }}" jobName="{{ job.name|e }}" idUnit="{{ job.unit_id }}" idRoute="{{ job.route_id }}" dateBegin="{{ job.date_begin|date('d.m.Y H:i:s') }}" dateEnd="{{ job.date_end|date('d.m.Y H:i:s') }}"/>
 	{%- endfor %}
 </ackJobs>

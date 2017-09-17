@@ -14,10 +14,10 @@
 				Дата: {{ today|date('d.m.Y') -}}
 			</div>
 			<div class="report__heading-row uk-margin">
-				Итого перерасход, л: {{ overspanding_total -}}
+				Итого перерасход, л: {{ overspanding_total|floatformat(-2) -}}
 			</div>
 			<div class="report__heading-row uk-margin">
-				Итого слив, л: {{ discharge_total -}}
+				Итого слив, л: {{ discharge_total|floatformat(-2) -}}
 			</div>
 			<div class="report__heading-row uk-margin">
 				Зафиксировано случаев слива: {{ overspanding_count -}}
@@ -36,15 +36,17 @@
 						водителя (время с - время по)
 					</td>
 					<td rowspan="2">ФИО водителя</td>
-					<td colspan="2">Событие слив</td>
-					<td colspan="3">Израсходовано топлива за запрашиваемый период, л</td>
-					<td rowspan="2">*Перерасход, л.</td>
+					<td colspan="3">Событие слив</td>
+					<td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
+					<td rowspan="2">*Перерасход,<br/>%</td>
 				</tr>
 				<tr>
 					<td>Место/геозона</td>
 					<td>Время</td>
+					<td>Объем</td>
 					<td>По норме<br/>от пробега**</td>
 					<td>По норме<br/>от времени работы***</td>
+					<td>По норме<br/>от работы доп.<br/>оборудования****</td>
 					<td>По факту<br/>с ДУТ</td>
 				</tr>
 				</thead>
@@ -56,10 +58,12 @@
 					<td>{{ row['driver_name'] }}</td>
 					<td>{{ row['discharge']['place'] }}</td>
 					<td>{{ row['discharge']['dt'] }}</td>
-					<td>{{ row['consumption']['standard_mileage'] }}</td>
-					<td>{{ row['consumption']['standard_worktime'] }}</td>
-					<td>{{ row['consumption']['fact'] }}</td>
-					<td>{{ row['overspanding'] }}</td>
+					<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['fact']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
 				</tr>
 				{%- endfor -%}
 				</tbody>

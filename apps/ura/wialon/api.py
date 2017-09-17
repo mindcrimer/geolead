@@ -69,7 +69,7 @@ def get_routes_list(request, sess_id=None):
     return routes
 
 
-def get_units_list(request, sess_id=None):
+def get_units_list(request, sess_id=None, extra_fields=False):
     """Получает список элементов"""
     if sess_id is None:
         sess_id = authenticate_at_wialon(request.user.wialon_token)
@@ -83,7 +83,7 @@ def get_units_list(request, sess_id=None):
             'propType': 'property'
         },
         'force': 1,
-        'flags': 1 + 8388608,
+        'flags': 1 + 8388608 + (8 if extra_fields else 0),
         'from': 0,
         'to': 0
     })
@@ -108,11 +108,16 @@ def get_units_list(request, sess_id=None):
             if number and vin:
                 break
 
-        units.append({
+        data = {
             'id': item['id'],
             'name': item['nm'],
             'number': number,
             'vin': vin
-        })
+        }
+
+        if extra_fields:
+            data['fields'] = list(item.get('flds', {}).values())
+
+        units.append(data)
 
     return units

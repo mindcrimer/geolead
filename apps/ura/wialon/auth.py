@@ -28,6 +28,6 @@ def authenticate_at_wialon(token):
                 'Невозможно открыть сессию в Wialon. Возможно, токен недействителен или устарел.',
                 code='wialon_token_invalid'
             )
-        cache.set(cache_key, sess_id, 60 * 5)
+        cache.set(cache_key, sess_id, 60 * 3)
 
     return sess_id

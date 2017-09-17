@@ -5,6 +5,7 @@ from collections import OrderedDict
 from datetime import timedelta, date
 
 from core.jinjaglobals import render_background
+from core.utils import parse_timedelta
 from django.conf import settings
 from django.utils.timezone import utc
 
@@ -13,6 +14,7 @@ import requests
 from core import forms
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
+from ura.wialon.api import get_units_list
 from ura.wialon.auth import authenticate_at_wialon
 
 OVERSPANDING_COEFF = 0.05
@@ -142,7 +144,6 @@ class DrivingStyleView(BaseReportView):
                 )
 
                 r = res.json()
-                print(r)
 
                 res = requests.post(
                     settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
@@ -163,7 +164,6 @@ class DrivingStyleView(BaseReportView):
                 )
 
                 r = res.json()
-                print(r)
 
                 for index, table in enumerate(r['reportResult']['tables']):
                     if table['name'] == 'unit_group_ecodriving':
@@ -249,11 +249,13 @@ class OverSpandingView(BaseReportView):
             'driver_name': '',
             'discharge': {
                 'place': '',
-                'dt': ''
+                'dt': '',
+                'volume': ''
             },
             'consumption': {
                 'standard_mileage': '',
                 'standard_worktime': '',
+                'standard_extra_device': '',
                 'fact': ''
             },
             'overspanding': ''
@@ -279,7 +281,20 @@ class OverSpandingView(BaseReportView):
                 dt_from = int(time.mktime(dt_from.timetuple()))
                 dt_to = int(time.mktime(dt_to.timetuple()))
 
-                res = requests.post(
+                units = get_units_list(kwargs['view'].request, sess_id=sess_id, extra_fields=True)
+                extra_device_standards = {}
+                for unit in units:
+                    extra_standard = [
+                        x['v'] for x in unit.get('fields', []) if x.get('n') == 'механизм'
+                    ]
+
+                    if extra_standard:
+                        try:
+                            extra_device_standards[unit['name']] = float(extra_standard[0])
+                        except ValueError:
+                            pass
+
+                requests.post(
                     settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
                         'params': json.dumps({
                             'params': [
@@ -302,9 +317,6 @@ class OverSpandingView(BaseReportView):
                     }
                 )
 
-                r = res.json()
-                print(r)
-
                 res = requests.post(
                     settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
                         'params': json.dumps({
@@ -324,7 +336,6 @@ class OverSpandingView(BaseReportView):
                 )
 
                 r = res.json()
-                print(r)
 
                 for index, table in enumerate(r['reportResult']['tables']):
                     rows = requests.post(
@@ -337,7 +348,7 @@ class OverSpandingView(BaseReportView):
                                     'data': {
                                         'from': 0,
                                         'to': table['rows'] - 1,
-                                        'level': 0
+                                        'level': 1 if table['name'] == 'unit_group_trips' else 0
                                     }
                                 }
                             }),
@@ -367,6 +378,12 @@ class OverSpandingView(BaseReportView):
                             report_row['discharge']['dt'] = data[2]['t'] \
                                 if data[2] and isinstance(data[2], dict) else ''
 
+                            try:
+                                report_row['discharge']['volume'] = float(data[3].split(' ')[0]) \
+                                    if data[3] else ''
+                            except ValueError:
+                                report_row['discharge']['volume'] = 0.0
+
                             if len(data[3].replace('-', '')) > 0:
                                 discharge_total += float(data[3].split(' ')[0])
 
@@ -374,15 +391,26 @@ class OverSpandingView(BaseReportView):
                                 overspanding_count += int(data[4])
 
                         elif table['name'] == 'unit_group_generic':
-                            standard = report_row['consumption']['standard_mileage'] = \
-                                report_row['consumption']['standard_worktime'] = \
-                                float(data[4].split(' ')[0]) if data[4] else 0
+                            try:
+                                standard = report_row['consumption']['standard_mileage'] = \
+                                    report_row['consumption']['standard_worktime'] = \
+                                    float(data[4].split(' ')[0]) if data[4] else 0.0
+                            except ValueError:
+                                standard = report_row['consumption']['standard_mileage'] = \
+                                    report_row['consumption']['standard_worktime'] = 0
+
+                            extra_standard = extra_device_standards.get(key, 0.0)
+                            if extra_standard:
+                                motohours = parse_timedelta(data[2]).seconds / (60.0 * 60.0)
+                                extra_standard *= motohours
+
+                                report_row['consumption']['standard_extra_device'] = extra_standard
 
                             fact = report_row['consumption']['fact'] = \
-                                float(data[3].split(' ')[0]) if data[3] else 0
+                                (float(data[3].split(' ')[0]) if data[3] else 0.0) + extra_standard
 
                             if standard and fact / standard > (1.0 + OVERSPANDING_COEFF):
-                                report_row['overspanding'] = fact - standard
+                                report_row['overspanding'] = ((fact / standard) - 1.0) * 100.0
                                 overspanding_total += fact - standard
 
         else:

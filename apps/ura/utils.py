@@ -19,7 +19,7 @@ def get_organization(request, org_id):
     try:
         user = User.objects.filter(is_active=True, wialon_token__isnull=False).get(pk=org_id)
     except User.DoesNotExist:
-        raise APIProcessError('Организация не найдена')
+        raise APIProcessError('Организация не найдена', code='org_not_found')
 
     if user.pk != request.user.pk and user.supervisor_id != request.user.pk:
         raise APIProcessError('Нет доступа к данной организации', code='org_forbidden')

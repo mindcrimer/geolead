@@ -98,15 +98,17 @@ def get_units_list(organization, sess_id=None, extra_fields=False):
     for item in res['items']:
         number, vin = '', ''
 
-        for f in item['pflds'].values():
-            if f['n'] == 'vin':
-                vin = f['v']
+        if 'pflds' in item:
 
-            elif f['n'] == 'registration_plate':
-                number = f['v']
+            for f in item['pflds'].values():
+                if f['n'] == 'vin':
+                    vin = f['v']
 
-            if number and vin:
-                break
+                elif f['n'] == 'registration_plate':
+                    number = f['v']
+
+                if number and vin:
+                    break
 
         data = {
             'id': item['id'],

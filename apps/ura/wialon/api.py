@@ -7,10 +7,10 @@ from django.conf import settings
 from ura.wialon.auth import authenticate_at_wialon
 
 
-def get_drivers_list(request, sess_id=None):
+def get_drivers_list(organization, sess_id=None):
     """Получает список водителей"""
     if sess_id is None:
-        sess_id = authenticate_at_wialon(request.user.wialon_token)
+        sess_id = authenticate_at_wialon(organization.wialon_token)
 
     request_params = json.dumps({
         'spec': {
@@ -40,10 +40,10 @@ def get_drivers_list(request, sess_id=None):
     return drivers
 
 
-def get_routes_list(request, sess_id=None):
+def get_routes_list(organization, sess_id=None):
     """Получает список маршрутов"""
     if sess_id is None:
-        sess_id = authenticate_at_wialon(request.user.wialon_token)
+        sess_id = authenticate_at_wialon(organization.wialon_token)
 
     request_params = json.dumps({
         'spec': {
@@ -69,10 +69,10 @@ def get_routes_list(request, sess_id=None):
     return routes
 
 
-def get_units_list(request, sess_id=None, extra_fields=False):
+def get_units_list(organization, sess_id=None, extra_fields=False):
     """Получает список элементов"""
     if sess_id is None:
-        sess_id = authenticate_at_wialon(request.user.wialon_token)
+        sess_id = authenticate_at_wialon(organization.wialon_token)
 
     request_params = json.dumps({
         'spec': {

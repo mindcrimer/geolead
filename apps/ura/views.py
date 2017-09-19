@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+from django.db.models import Q
+
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
-from ura.utils import parse_datetime
+from ura.utils import parse_datetime, get_organization
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
+from users.models import User
 
 
 class URADriversResource(URAResource):
@@ -14,27 +17,23 @@ class URADriversResource(URAResource):
 
         doc = request.data.xpath('/driversRequest')
         if len(doc) < 1:
-            return error_response('Не найден объект driversRequest')
+            return error_response(
+                'Не найден объект driversRequest', code='driversRequest_not_found'
+            )
 
         doc = doc[0]
-        doc_id = doc.get('idDoc')
+        doc_id = doc.get('idDoc', '')
         if not doc_id:
-            return error_response('Не указан параметр idDoc')
+            return error_response('Не указан параметр idDoc', code='idDoc_not_found')
 
         try:
-            org_id = int(doc.get('idOrg'))
+            org_id = int(doc.get('idOrg', ''))
         except ValueError:
             org_id = 0
 
-        if not org_id:
-            return error_response('Не указан параметр idOrg')
+        organization = get_organization(request, org_id)
 
-        if org_id != request.user.id:
-            return error_response(
-                'Параметр idOrg не соответствует идентификатору текущего пользователя'
-            )
-
-        drivers = get_drivers_list(request)
+        drivers = get_drivers_list(organization)
 
         return XMLResponse('ura/drivers.xml', {
             'doc_id': doc_id,
@@ -51,12 +50,12 @@ class URAEchoResource(URAResource):
 
         doc = request.data.xpath('/echoRequest')
         if len(doc) < 1:
-            return error_response('Не найден объект echoRequest')
+            return error_response('Не найден объект echoRequest', code='echoRequest_not_found')
 
         doc = doc[0]
-        doc_id = doc.get('idDoc')
+        doc_id = doc.get('idDoc', '')
         if not doc_id:
-            return error_response('Не указан параметр idDoc')
+            return error_response('Не указан параметр idDoc', code='idDoc_not_found')
 
         return XMLResponse('ura/echo.xml', {
             'doc_id': doc_id,
@@ -91,7 +90,7 @@ class URAJobsResource(URAResource):
 
                 name = data.pop('name')
                 if not name:
-                    return error_response('Не указан параметр jobName')
+                    return error_response('Не указан параметр jobName', code='jobName_not_found')
 
                 job = self.model.objects.update_or_create(name=name, defaults=data)[0]
                 jobs.append(job)
@@ -110,16 +109,20 @@ class URAOrgsResource(URAResource):
 
         doc = request.data.xpath('/orgRequest')
         if len(doc) < 1:
-            return error_response('Не найден объект mon:orgRequest')
+            return error_response('Не найден объект orgRequest', code='orgRequest_not_found')
 
         doc = doc[0]
-        doc_id = doc.get('idDoc')
+        doc_id = doc.get('idDoc', '')
         if not doc_id:
-            return error_response('Не указан параметр idDoc')
+            return error_response('Не указан параметр idDoc', code='idDoc_not_found')
+
+        orgs = User.objects\
+            .filter(Q(pk=request.user.pk) | Q(supervisor=request.user))\
+            .filter(wialon_token__isnull=False, is_active=True)
 
         return XMLResponse('ura/orgs.xml', {
             'doc_id': doc_id,
-            'org': request.user,
+            'orgs': orgs,
             'create_date': utcnow()
         })
 
@@ -131,27 +134,21 @@ class URARoutesResource(URAResource):
 
         doc = request.data.xpath('/routesRequest')
         if len(doc) < 1:
-            return error_response('Не найден объект routesRequest')
+            return error_response('Не найден объект routesRequest', code='routesRequest_not_found')
 
         doc = doc[0]
-        doc_id = doc.get('idDoc')
+        doc_id = doc.get('idDoc', '')
         if not doc_id:
-            return error_response('Не указан параметр idDoc')
+            return error_response('Не указан параметр idDoc', code='idDoc_not_found')
 
         try:
-            org_id = int(doc.get('idOrg'))
+            org_id = int(doc.get('idOrg', ''))
         except ValueError:
             org_id = 0
 
-        if not org_id:
-            return error_response('Не указан параметр idOrg')
+        organization = get_organization(request, org_id)
 
-        if org_id != request.user.id:
-            return error_response(
-                'Параметр idOrg не соответствует идентификатору текущего пользователя'
-            )
-
-        routes = get_routes_list(request)
+        routes = get_routes_list(organization)
 
         return XMLResponse('ura/routes.xml', {
             'doc_id': doc_id,
@@ -168,27 +165,21 @@ class URAUnitsResource(URAResource):
 
         doc = request.data.xpath('/unitsRequest')
         if len(doc) < 1:
-            return error_response('Не найден объект unitsRequest')
+            return error_response('Не найден объект unitsRequest', code='unitsRequest_not_found')
 
         doc = doc[0]
-        doc_id = doc.get('idDoc')
+        doc_id = doc.get('idDoc', '')
         if not doc_id:
-            return error_response('Не указан параметр idDoc')
+            return error_response('Не указан параметр idDoc', code='idDoc_not_found')
 
         try:
-            org_id = int(doc.get('idOrg'))
+            org_id = int(doc.get('idOrg', ''))
         except ValueError:
             org_id = 0
 
-        if not org_id:
-            return error_response('Не указан параметр idOrg')
+        organization = get_organization(request, org_id)
 
-        if org_id != request.user.id:
-            return error_response(
-                'Параметр idOrg не соответствует идентификатору текущего пользователя'
-            )
-
-        units = get_units_list(request)
+        units = get_units_list(organization)
 
         return XMLResponse('ura/units.xml', {
             'doc_id': doc_id,

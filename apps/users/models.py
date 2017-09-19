@@ -21,12 +21,13 @@ class User(AbstractUser, LastModMixin, BasicModel):
         _('Отчество ответственного лица'), max_length=150, blank=True, null=True
     )
     full_name = models.TextField(_('ФИО ответственного лица'), max_length=500, blank=True)
+
     wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)
     organization_name = models.CharField(
         _('Название организации в Wialon'), blank=True, null=False, max_length=255
     )
 
-    supervisor_id = models.ForeignKey(
+    supervisor = models.ForeignKey(
         'self', blank=True, null=True, verbose_name=_('Супервайзер'),
         help_text=_(
             'Указание супервайзера позволит УРА работать сразу с несколькими учетными записями '

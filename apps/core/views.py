@@ -281,7 +281,10 @@ class OverSpandingView(BaseReportView):
                 dt_from = int(time.mktime(dt_from.timetuple()))
                 dt_to = int(time.mktime(dt_to.timetuple()))
 
-                units = get_units_list(kwargs['view'].request, sess_id=sess_id, extra_fields=True)
+                units = get_units_list(
+                    kwargs['view'].request.user, sess_id=sess_id, extra_fields=True
+                )
+
                 extra_device_standards = {}
                 for unit in units:
                     extra_standard = [

@@ -34,7 +34,7 @@ def get_drivers_list(organization, sess_id=None):
 
     drivers = []
     for item in res['items']:
-        if item['drvrs']:
+        if item and item['drvrs']:
             drivers.extend([{'id': x['id'], 'name': x['n']} for x in item['drvrs'].values()])
 
     return drivers

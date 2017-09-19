@@ -39,7 +39,7 @@ class URADriversResource(URAResource):
             'doc_id': doc_id,
             'create_date': utcnow(),
             'drivers': drivers,
-            'org': request.user
+            'org_id': org_id
         })
 
 
@@ -154,7 +154,7 @@ class URARoutesResource(URAResource):
             'doc_id': doc_id,
             'create_date': utcnow(),
             'routes': routes,
-            'org': request.user
+            'org_id': org_id
         })
 
 
@@ -185,5 +185,5 @@ class URAUnitsResource(URAResource):
             'doc_id': doc_id,
             'create_date': utcnow(),
             'units': units,
-            'org': request.user
+            'org_id': org_id
         })

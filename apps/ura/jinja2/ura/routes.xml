@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<routesAnswer idOrg="{{ org.pk }}" idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
+<routesAnswer idOrg="{{ org_id }}" idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
     {%- for route in routes %}
     <Route idRoute="{{ route['id'] }}" routeName="{{ route['name']|e }}"/>
     {%- endfor %}

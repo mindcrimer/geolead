@@ -41,14 +41,15 @@ class UserAdmin(UserAdmin):
         }),
         (_('Wialon'), {
             'classes': ('suit-tab', 'suit-tab-wialon'),
-            'fields': ('wialon_token', 'org_id')
+            'fields': ('wialon_token', 'organization_name', 'supervisor_id')
         })
     )
     form = UserAdminForm
     list_display = ('username', 'get_full_name', 'is_active')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
+    raw_id_fields = ('supervisor_id',)
     readonly_fields = ('last_login', 'date_joined', 'created', 'updated', 'full_name')
-    search_fields = ('=id', 'username', 'full_name', 'email')
+    search_fields = ('=id', 'username', 'full_name', 'email', 'wialon_token', 'organization_name')
     suit_form_tabs = (
         ('general', _('Общее')),
         ('permission', _('Права')),

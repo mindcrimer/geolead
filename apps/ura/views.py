@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
+import random
+from datetime import timedelta
+
 from django.db.models import Q
+from django.http import HttpResponse
 
 from snippets.utils.datetime import utcnow
+from snippets.utils.passwords import generate_random_string
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
+from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
 from ura.utils import parse_datetime, get_organization
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 from users.models import User
@@ -187,3 +193,55 @@ class URAUnitsResource(URAResource):
             'units': units,
             'org_id': org_id
         })
+
+
+class URAJobsTestDataView(URAResource):
+    @staticmethod
+    def generate_fio():
+        last_name = random.choice(SURNAMES_CHOICES)
+        first_name = random.choice(NAMES_CHOICES).upper()
+        middle_name = random.choice(NAMES_CHOICES).upper()
+        return '%s %s.%s' % (last_name, first_name, middle_name)
+
+    @classmethod
+    def post(cls, request, *args, **kwargs):
+        units = get_units_list(request.user)
+        routes = get_routes_list(request.user)
+        if not routes:
+            routes = [{
+                'id': 1,
+                'name': 'test route'
+            }]
+        now = utcnow().replace(hour=0, minute=0, second=0)
+        dt = utcnow() - timedelta(days=30)
+        delta = timedelta(seconds=60 * 60 * 8)
+
+        drivers = [cls.generate_fio() for _ in range(50)]
+
+        periods = []
+        while dt < now:
+            dt += delta
+            periods.append(dt)
+
+        for dt in periods:
+            to_dt = dt + delta
+            print(dt, to_dt)
+
+            for unit in units:
+                fio = random.choice(drivers)
+                print(fio)
+                route = random.choice(routes)
+
+                models.UraJob.objects.create(
+                    name=generate_random_string(),
+                    unit_id=unit['id'],
+                    route_id=route['id'],
+                    driver_id=random.randint(1, 1000000),
+                    driver_fio=fio,
+                    date_begin=dt,
+                    date_end=to_dt,
+                    return_time=to_dt,
+                    leave_time=dt
+                )
+
+        return HttpResponse('OK')

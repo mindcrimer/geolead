@@ -1,0 +1,168 @@
+{%- extends 'reports/base.html' -%}
+
+
+{% block REPORT_NAME %}Стиль вождения{% endblock %}
+
+
+{%- block REPORT_HEADING -%}
+<div class="report__heading-row uk-margin">
+	Период: {{ form.cleaned_data.dt_from|date('d.m.Y') -}}
+	&nbsp;&mdash;&nbsp;
+	{{- form.cleaned_data.dt_to|date('d.m.Y') -}}
+</div>
+<div class="report__heading-row uk-margin">
+	ФИО ответственного за разбор событий: ____________________________________________
+</div>
+{%- endblock -%}
+
+
+{%- block REPORT_HEAD_RIGHT %}
+Детализация нарушений ПДД и инструкции по эксплуатации техники
+{%- endblock -%}
+
+
+{%- block REPORT_TABLE -%}
+<div class="table-wrap">
+	<table class="report-table">
+		<thead>
+			<tr>
+				<td rowspan="3" class="td-small">ФИО</td>
+				<td rowspan="3" class="td-small">№ ТС</td>
+				<td rowspan="3" class="td-small">Суммарное время<br/>в движении<br/>за период, ч</td>
+				<td colspan="8" class="td-small">Нарушения</td>
+				<td colspan="4" class="td-small">% нарушений</td>
+				<td rowspan="3" class="td-small">Оценка<br/>вождения, %</td>
+			</tr>
+
+			<tr>
+				<td colspan="2" class="td-small">Превышение скоростного<br/>режима, км/ч</td>
+				<td colspan="2" class="td-small">Выключенный свет фар<br/>при движении</td>
+				<td colspan="2" class="td-small">Непристегнутый ремень<br/>безопасности при движении</td>
+				<td colspan="2" class="td-small">Не транспортное положение<br/>оборудования при движении</td>
+				<td rowspan="2" class="td-small">Скоростной<br/>режим</td>
+				<td rowspan="2" class="td-small">Свет</td>
+				<td rowspan="2" class="td-small">Ремень</td>
+				<td rowspan="2" class="td-small">Доп.<br/>оборудование</td>
+			</tr>
+
+			<tr>
+				<td class="td-small">Кол-во<br/>случаев</td>
+				<td class="td-small">Часов<br/>нарушения</td>
+				<td class="td-small">Кол-во<br/>случаев</td>
+				<td class="td-small">Часов<br/>нарушения</td>
+				<td class="td-small">Кол-во<br/>случаев</td>
+				<td class="td-small">Часов<br/>нарушения</td>
+				<td class="td-small">Кол-во<br/>случаев</td>
+				<td class="td-small">Часов<br/>нарушения</td>
+			</tr>
+		</thead>
+
+		<tbody>
+			{%- for key, row in report_data.items() -%}
+			<tr>
+				<td>{{ key[1] }}</td>
+				<td>{{ key[0] }}</td>
+				<td>{{ row['total_time']|render_timedelta }}</td>
+				<td>{{ row['facts']['speed']['count'] }}</td>
+				<td>{{ row['facts']['speed']['seconds']|render_timedelta }}</td>
+				<td>{{ row['facts']['lights']['count'] }}</td>
+				<td>{{ row['facts']['lights']['seconds']|render_timedelta }}</td>
+				<td>{{ row['facts']['belt']['count'] }}</td>
+				<td>{{ row['facts']['belt']['seconds']|render_timedelta }}</td>
+				<td>{{ row['facts']['devices']['count'] }}</td>
+				<td>{{ row['facts']['devices']['seconds']|render_timedelta }}</td>
+				<td style="background-color:{{ row['percentage']['speed']|render_background }}">
+					{{- row['percentage']['speed']|floatcomma(-2) if row['percentage']['speed'] else '' -}}
+				</td>
+				<td style="background-color:{{ row['percentage']['lights']|render_background }}">
+					{{- row['percentage']['lights']|floatcomma(-2) if row['percentage']['lights'] else '' -}}
+				</td>
+				<td style="background-color:{{ row['percentage']['belt']|render_background }}">
+					{{- row['percentage']['belt']|floatcomma(-2) if row['percentage']['belt'] else '' -}}
+				</td>
+				<td style="background-color:{{ row['percentage']['devices']|render_background }}">
+					{{- row['percentage']['devices']|floatcomma(-2) if row['percentage']['devices'] else '' -}}
+				</td>
+				<td>{{ row['rating']|floatcomma(-2) }}</td>
+			</tr>
+			{%- endfor -%}
+		</tbody>
+	</table>
+</div>
+{%- endblock -%}
+
+
+{%- block REPORT_HINT -%}
+<div class="hint uk-margin-top">
+	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
+		<tr>
+			<td style="text-align:right;vertical-align:top" rowspan="3">
+				<b>Условия форматирования ячеек:</b>
+			</td>
+			<td style="background-color:lightgreen">
+				до 10% нарушений - норма
+			</td>
+		</tr>
+		<tr>
+			<td style="background-color:yellow">
+				от 10% до 30% нарушений - требуется профилактическая беседа
+			</td>
+		</tr>
+		<tr>
+			<td style="background-color:orangered">
+				от 30% до 100% нарушений -
+				требуется профилактическая беседа с возможным лишением части премии
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="hint uk-margin-top">
+	<table border="0" cellpadding="5" cellspacing="0">
+		<tr>
+			<td style="text-align:right;vertical-align:top;font-style:italic">
+				<b>Условия расчета количества случаев, 1 случаем считать:</b>
+			</td>
+			<td>
+				Скорость - с момента превышения заданной отметки <span class="red">+10км/ч</span>
+				до снижения скорости ниже заданной отметки;<br/>
+				Свет - с момента неактивности во время движения в течение более
+				<span class="red">15 секунд</span> до момента выключения зажигания или активации
+				света;<br/>
+				Ремень - с момента неактивности во время движения в течение более
+				<span class="red">15 секунд</span> до момента выключения зажигания или активации ремня;<br/>
+				Оборудование - с момента если датчик был активен при скорости
+				<span class="red">5 км/ч</span> и до момента когда датчик станет неактивен.
+			</td>
+		</tr>
+	</table>
+</div>
+{%- endblock -%}
+
+
+{%- block FORM -%}
+<form class="form" method="post" action="">
+	<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+	<fieldset class="uk-fieldset">
+
+		<legend class="uk-legend">Отчет "Стиль вождения"</legend>
+
+		<div class="uk-margin">
+			<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
+						 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_from') else '' }}">
+			<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+		</div>
+
+		<div class="uk-margin">
+			<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
+						 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else '' }}">
+			<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+		</div>
+
+		<div class="uk-margin">
+			<button class="uk-button uk-button-primary">Создать</button>
+		</div>
+
+	</fieldset>
+</form>
+{%- endblock -%}

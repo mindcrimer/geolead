@@ -127,6 +127,7 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'project.urls'
 
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -149,6 +150,7 @@ INSTALLED_APPS = (
     # приложения проекта
     'core',
     'dicts',
+    'reports',
     'ura',
     'users'
 )
@@ -201,7 +203,7 @@ SUIT_CONFIG = {
     'MENU': [
         'core',
         'dicts',
-        'general',
+        'reports',
         'ura',
         'users'
     ]

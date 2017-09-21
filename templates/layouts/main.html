@@ -13,12 +13,12 @@
 		{%- block PAGE_CONTENT %}{% endblock -%}
 	</div>
 
-	<link rel="stylesheet" href="{{ STATIC_URL }}css/uikit.min.css" />
-	<link rel="stylesheet" href="{{ STATIC_URL }}css/core.css" />
-	<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.datetimepicker.css" />
-	<script src="{{ STATIC_URL }}js/jquery-3.2.1.min.js"></script>
-	<script src="{{ STATIC_URL }}js/uikit.min.js"></script>
-	<script src="{{ STATIC_URL }}js/jquery.datetimepicker.full.min.js"></script>
-	<script src="{{ STATIC_URL }}js/core.js"></script>
+	<link rel="stylesheet" href="{{ static_with_mtime('css/uikit.min.css') }}" />
+	<link rel="stylesheet" href="{{ static_with_mtime('css/core.css') }}" />
+	<link rel="stylesheet" href="{{ static_with_mtime('css/jquery.datetimepicker.css') }}" />
+	<script src="{{ static_with_mtime('js/jquery-3.2.1.min.js') }}"></script>
+	<script src="{{ static_with_mtime('js/uikit.min.js') }}"></script>
+	<script src="{{ static_with_mtime('js/jquery.datetimepicker.full.min.js') }}"></script>
+	<script src="{{ static_with_mtime('s/core.js') }}j"></script>
 </body>
 </html>

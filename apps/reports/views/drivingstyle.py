@@ -50,7 +50,8 @@ class DrivingStyleView(BaseReportView):
                 'belt': .0,
                 'devices': .0
             },
-            'rating': 100.0
+            'rating': 100.0,
+            'details': []
         }
 
     @staticmethod

@@ -8,7 +8,7 @@ from snippets.views import BaseTemplateView
 
 WIALON_INTERNAL_EXCEPTION = \
     'Произошла ошибка при получении данных. ' \
-    'Пожалуйста, повторите ваш щапрос позже или сократите период отчета.'
+    'Пожалуйста, повторите ваш запрос позже или сократите период отчета.'
 
 
 class ReportException(Exception):

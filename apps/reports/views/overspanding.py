@@ -38,7 +38,8 @@ class OverSpandingView(BaseReportView):
                 'standard_extra_device': '',
                 'fact': ''
             },
-            'overspanding': ''
+            'overspanding': '',
+            'details': []
         }
 
     def get_context_data(self, **kwargs):
@@ -120,6 +121,7 @@ class OverSpandingView(BaseReportView):
                 r = res.json()
 
                 for index, table in enumerate(r['reportResult']['tables']):
+
                     rows = requests.post(
                         settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
                         sess_id, {
@@ -130,7 +132,7 @@ class OverSpandingView(BaseReportView):
                                     'data': {
                                         'from': 0,
                                         'to': table['rows'] - 1,
-                                        'level': 1 if table['name'] == 'unit_group_trips' else 0
+                                        'level': 2 if table['name'] == 'unit_group_thefts' else 1
                                     }
                                 }
                             }),
@@ -182,6 +184,26 @@ class OverSpandingView(BaseReportView):
 
                             if data[4]:
                                 overspanding_count += int(data[4])
+
+                            details = row['r']
+                            if len(details) > 1:
+                                for detail in details:
+                                    detail_data = detail['c']
+                                    try:
+                                        detail_volume = float(detail_data[3].split(' ')[0])\
+                                            if detail_data[3] else ''
+                                    except ValueError:
+                                        detail_volume = 0.0
+
+                                    report_row['details'].append({
+                                        'place': detail_data[1]['t']
+                                        if detail_data[1] and isinstance(detail_data[1], dict)
+                                        else '',
+                                        'dt': detail_data[2]['t']
+                                        if detail_data[2] and isinstance(detail_data[2], dict)
+                                        else '',
+                                        'volume': detail_volume
+                                    })
 
                         elif table['name'] == 'unit_group_generic':
                             try:

@@ -32,8 +32,9 @@
 		<tr>
 			<td rowspan="2">Гос№ ТС</td>
 			<td rowspan="2">
-				Плановый график работы<br/>
-				водителя (время с - время по)
+				Плановый график<br/>
+				работы водителя<br/>
+				(время с - время по)
 			</td>
 			<td rowspan="2">ФИО водителя</td>
 			<td colspan="3">Событие слив</td>
@@ -41,32 +42,47 @@
 			<td rowspan="2">*Перерасход,<br/>%</td>
 		</tr>
 		<tr>
-			<td style="max-width:150px;">Место/геозона</td>
+			<td style="max-width:150px;">Место/<br/>геозона</td>
 			<td>Время</td>
 			<td>Объем</td>
 			<td>По норме<br/>от пробега**</td>
-			<td>По норме<br/>от времени работы***</td>
+			<td>По норме<br/>от времени<br/>работы***</td>
 			<td>По норме<br/>от работы доп.<br/>оборудования****</td>
 			<td>По факту<br/>с ДУТ</td>
 		</tr>
 		</thead>
-		<tbody>
 		{%- for key, row in report_data.items() -%}
-		<tr>
-			<td>{{ key }}</td>
-			<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
-			<td class="nowrap">{{ row['driver_name'] }}</td>
-			<td>{{ row['discharge']['place'] }}</td>
-			<td>{{ row['discharge']['dt'] }}</td>
-			<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
-			<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
-			<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
-			<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
-			<td class="tright">{{ row['consumption']['fact']|floatformat(-2) }}</td>
-			<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
-		</tr>
-		{%- endfor -%}
+		<tbody>
+			<tr>
+				<td>{{ key }}</td>
+				<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
+				<td class="nowrap">{{ row['driver_name'] }}</td>
+				<td>{{ row['discharge']['place'] }}</td>
+				<td>{{ row['discharge']['dt'] }}</td>
+				<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
+				<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
+				<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
+				<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
+				<td class="tright">{{ row['consumption']['fact']|floatformat(-2) }}</td>
+				<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
+			</tr>
+			{%- for detail in row['details'] -%}
+				<tr class="detailed">
+					<td>{{ key }}</td>
+					<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
+					<td class="nowrap">{{ row['driver_name'] }}</td>
+					<td>{{ detail['place'] }}</td>
+					<td>{{ detail['dt'] }}</td>
+					<td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
+					<td class="tright">&nbsp;</td>
+					<td class="tright">&nbsp;</td>
+					<td class="tright">&nbsp;</td>
+					<td class="tright">&nbsp;</td>
+					<td class="tright">&nbsp;</td>
+				</tr>
+			{%- endfor -%}
 		</tbody>
+		{%- endfor -%}
 	</table>
 </div>
 {%- endblock -%}

@@ -1,9 +1,7 @@
 @page {
-    size: landscape;
-}
-body {
+  size: landscape;
 }
 
 form, .uk-btn {
-    display: none;
+  display: none;
 }

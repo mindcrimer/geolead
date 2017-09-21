@@ -1,62 +1,71 @@
 .wrapper {
-	margin: 0 auto;
-	max-width: 1600px;
-	font-size: 14px;
-	padding: 0 30px;
+  margin: 0 auto;
+  max-width: 1600px;
+  font-size: 14px;
+  padding: 0 30px;
 }
 
 .tright {
-	text-align: right;
+  text-align: right;
 }
 
 .form {
-	margin: 40px 0 0;
+  margin: 40px 0 0;
 
-	.errors {
-		color: red;
-	}
+  .errors {
+    color: red;
+  }
 }
 
 .messages {
-	list-style: none;
-	padding: 20px;
-	margin: 0 0 20px;
+  list-style: none;
+  padding: 20px;
+  margin: 0 0 20px;
 }
 
 .nowrap {
-	white-space: nowrap;
+  white-space: nowrap;
 }
 
 .report {
-	margin: 20px 0;
+  margin: 20px 0;
 
-	.table-wrap {
-		width: 100%;
-	}
+  .table-wrap {
+    width: 100%;
+  }
 
-	.report-table {
-		width: 100%;
-		border-collapse: collapse;
+  .detailed {
+    background: #eee;
 
-		thead {
-			td {
-				text-align: center;
-				white-space: nowrap;
-			}
-		}
+    @media print {
+      background-color: #eee !important;
+      -webkit-print-color-adjust: exact;
+    }
+  }
 
-		td {
-			border: 1px solid #000;
-			padding: 4px 8px;
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
 
-			&.td-small {
-				font-size: 12px;
-			}
+    thead {
+      td {
+        text-align: center;
+        white-space: nowrap;
+      }
+    }
 
-		}
-	}
+    td {
+      border: 1px solid #000;
+      padding: 4px 8px;
+
+      &.td-small {
+        font-size: 12px;
+      }
+
+    }
+  }
 }
 
 .red {
-	color: red;
+  color: red;
 }

@@ -6,8 +6,9 @@ from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
 
 
-WIALON_INTERNAL_EXCEPTION = 'Произошла ошибка при получении данных. ' \
-                            'Пожалуйста, повторите ваш щапрос позже'
+WIALON_INTERNAL_EXCEPTION = \
+    'Произошла ошибка при получении данных. ' \
+    'Пожалуйста, повторите ваш щапрос позже или сократите период отчета.'
 
 
 class ReportException(Exception):
@@ -21,6 +22,7 @@ class BaseReportView(BaseTemplateView):
     def get_default_context_data(self, **kwargs):
         context = {
             'None': None,
+            'report_data': None,
             'messages': get_messages(kwargs['view'].request) or []
         }
 

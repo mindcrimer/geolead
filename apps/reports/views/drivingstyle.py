@@ -11,7 +11,9 @@ import requests
 
 from reports import forms
 from reports.jinjaglobals import render_background
+from reports.utils import get_drivers_fio
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION
+from ura.wialon.api import get_units_list
 from ura.wialon.auth import authenticate_at_wialon
 
 
@@ -92,6 +94,9 @@ class DrivingStyleView(BaseReportView):
 
             if form.is_valid():
                 sess_id = authenticate_at_wialon(settings.WIALON_TOKEN)
+                units_list = get_units_list(
+                    kwargs['view'].request.user, sess_id=sess_id, extra_fields=True
+                )
 
                 dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
                 dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
@@ -168,6 +173,13 @@ class DrivingStyleView(BaseReportView):
                         for row in rows:
                             data = row['c']
                             details = row['r']
+                            if not data[1]:
+                                data[1] = get_drivers_fio(
+                                    units_list,
+                                    data[0],
+                                    form.cleaned_data['dt_from'],
+                                    form.cleaned_data['dt_to']
+                                ) or ''
                             key = (data[0], data[1])
 
                             if key not in report_data:

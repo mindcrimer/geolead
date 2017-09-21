@@ -41,7 +41,7 @@
 			<td rowspan="2">*Перерасход,<br/>%</td>
 		</tr>
 		<tr>
-			<td>Место/геозона</td>
+			<td style="max-width:150px;">Место/геозона</td>
 			<td>Время</td>
 			<td>Объем</td>
 			<td>По норме<br/>от пробега**</td>
@@ -55,7 +55,7 @@
 		<tr>
 			<td>{{ key }}</td>
 			<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
-			<td>{{ row['driver_name'] }}</td>
+			<td class="nowrap">{{ row['driver_name'] }}</td>
 			<td>{{ row['discharge']['place'] }}</td>
 			<td>{{ row['discharge']['dt'] }}</td>
 			<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>

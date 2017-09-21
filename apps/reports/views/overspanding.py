@@ -10,7 +10,7 @@ from django.utils.timezone import utc
 import requests
 
 from reports import forms
-from reports.utils import parse_timedelta
+from reports.utils import parse_timedelta, get_drivers_fio
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION
 from ura.wialon.api import get_units_list
 from ura.wialon.auth import authenticate_at_wialon
@@ -54,6 +54,9 @@ class OverSpandingView(BaseReportView):
 
             if form.is_valid():
                 sess_id = authenticate_at_wialon(settings.WIALON_TOKEN)
+                units_list = get_units_list(
+                    kwargs['view'].request.user, sess_id=sess_id, extra_fields=True
+                )
 
                 dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
                 dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
@@ -61,12 +64,8 @@ class OverSpandingView(BaseReportView):
                 dt_from = int(time.mktime(dt_from.timetuple()))
                 dt_to = int(time.mktime(dt_to.timetuple()))
 
-                units = get_units_list(
-                    kwargs['view'].request.user, sess_id=sess_id, extra_fields=True
-                )
-
                 extra_device_standards = {}
-                for unit in units:
+                for unit in units_list:
                     extra_standard = [
                         x['v'] for x in unit.get('fields', []) if x.get('n') == 'механизм'
                     ]
@@ -152,9 +151,17 @@ class OverSpandingView(BaseReportView):
                                 r['reportResult']['stats'][0][1],
                                 r['reportResult']['stats'][1][1]
                             )
+
+                            report_data[key]['driver_name'] = get_drivers_fio(
+                                units_list,
+                                key,
+                                report_data[key]['plan_worktime'][0],
+                                report_data[key]['plan_worktime'][1]
+                            ) or ''
+
                         report_row = report_data[key]
 
-                        if table['name'] == 'unit_group_trips':
+                        if table['name'] == 'unit_group_trips' and data[4]:
                             report_row['driver_name'] = data[4]
 
                         elif table['name'] == 'unit_group_thefts':

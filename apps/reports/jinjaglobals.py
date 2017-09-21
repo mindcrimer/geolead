@@ -33,6 +33,9 @@ def date(value, arg, use_l10n=True):
 
 @jinjafilter
 def render_timedelta(value):
+    if not value:
+        return ''
+
     result = str(datetime.timedelta(seconds=value))
     if 'day' in result:
         result = result.replace('days', 'day')

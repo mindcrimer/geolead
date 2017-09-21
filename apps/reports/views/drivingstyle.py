@@ -173,7 +173,7 @@ class DrivingStyleView(BaseReportView):
 
                         for row in rows:
                             data = row['c']
-                            details = row['r']
+
                             if not data[1]:
                                 data[1] = get_drivers_fio(
                                     units_list,
@@ -191,7 +191,30 @@ class DrivingStyleView(BaseReportView):
                                 self.parse_time_delta(data[5]).seconds \
                                 + (self.parse_time_delta(data[5]).days * 3600 * 24)
 
+                            details = row['r']
+
                             for subject in details:
+                                detail_data = None
+
+                                if len(details) > 1:
+                                    detail_data = {
+                                        'speed': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'lights': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'belt': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'devices': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        }
+                                    }
                                 violation = subject['c'][3].lower() if subject['c'][3] else ''
                                 if 'свет' in violation or 'фар' in violation:
                                     viol_key = 'lights'
@@ -203,10 +226,14 @@ class DrivingStyleView(BaseReportView):
                                     viol_key = ''
 
                                 if viol_key:
+                                    delta = subject['t2'] - subject['t1']
                                     report_row['facts'][viol_key]['count'] += 1
-                                    report_row['facts'][viol_key]['seconds'] += (
-                                        subject['t2'] - subject['t1']
-                                    )
+                                    report_row['facts'][viol_key]['seconds'] += delta
+
+                                    if detail_data:
+                                        # detail_data[viol_key]['count'] = 1
+                                        detail_data[viol_key]['seconds'] = delta
+                                        report_row['details'].append(detail_data)
 
             for data in report_data.values():
                 for viol_key in ('speed', 'lights', 'belt', 'devices'):

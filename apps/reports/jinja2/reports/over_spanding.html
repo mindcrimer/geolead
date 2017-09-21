@@ -52,36 +52,36 @@
 		</tr>
 		</thead>
 		{%- for key, row in report_data.items() -%}
-		<tbody>
-			<tr>
-				<td>{{ key }}</td>
-				<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
-				<td class="nowrap">{{ row['driver_name'] }}</td>
-				<td>{{ row['discharge']['place'] }}</td>
-				<td>{{ row['discharge']['dt'] }}</td>
-				<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
-				<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
-				<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
-				<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
-				<td class="tright">{{ row['consumption']['fact']|floatformat(-2) }}</td>
-				<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
-			</tr>
-			{%- for detail in row['details'] -%}
-				<tr class="detailed">
+			<tbody>
+				<tr>
 					<td>{{ key }}</td>
 					<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
 					<td class="nowrap">{{ row['driver_name'] }}</td>
-					<td>{{ detail['place'] }}</td>
-					<td>{{ detail['dt'] }}</td>
-					<td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
-					<td class="tright">&nbsp;</td>
-					<td class="tright">&nbsp;</td>
-					<td class="tright">&nbsp;</td>
-					<td class="tright">&nbsp;</td>
-					<td class="tright">&nbsp;</td>
+					<td>{{ row['discharge']['place'] }}</td>
+					<td>{{ row['discharge']['dt'] }}</td>
+					<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['fact']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
 				</tr>
-			{%- endfor -%}
-		</tbody>
+				{%- for detail in row['details'] -%}
+					<tr class="detailed">
+						<td>{{ key }}</td>
+						<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
+						<td class="nowrap">{{ row['driver_name'] }}</td>
+						<td>{{ detail['place'] }}</td>
+						<td>{{ detail['dt'] }}</td>
+						<td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
+						<td class="tright">&nbsp;</td>
+						<td class="tright">&nbsp;</td>
+						<td class="tright">&nbsp;</td>
+						<td class="tright">&nbsp;</td>
+						<td class="tright">&nbsp;</td>
+					</tr>
+				{%- endfor -%}
+			</tbody>
 		{%- endfor -%}
 	</table>
 </div>

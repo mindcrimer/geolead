@@ -140,6 +140,7 @@ INSTALLED_APPS = (
     'mptt',
     'ckeditor',
     'ckeditor_uploader',
+    'timezone_field',
     'solo',
     'easy_thumbnails',
     'image_cropping',

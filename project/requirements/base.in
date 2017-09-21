@@ -7,6 +7,7 @@ django-mptt
 django-redis-cache
 django-suit
 django-solo
+django-timezone-field
 easy-thumbnails
 flake8
 hiredis

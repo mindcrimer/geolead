@@ -19,14 +19,15 @@ django-mptt==0.8.7
 django-redis-cache==1.7.1
 django-solo==1.1.2
 django-suit==0.2.25
+django-timezone-field==2.0
 django==1.11.5
-easy-thumbnails==2.4.1
+easy-thumbnails==2.4.2
 flake8==3.4.1
 greenlet==0.4.12          # via bpython
 hiredis==0.2.0
 idna==2.6                 # via requests
 jinja2==2.9.6
-lxml==3.8.0
+lxml==4.0.0
 markdown==2.6.9
 markupsafe==1.0           # via jinja2
 marshmallow==2.13.6
@@ -42,7 +43,7 @@ pytz==2017.2
 redis==2.10.6
 requests==2.18.4          # via bpython
 simplejson==3.11.1        # via uwsgitop
-six==1.10.0               # via bpython, django-appconf, django-image-cropping
+six==1.11.0               # via bpython, django-appconf, django-image-cropping
 ujson==1.35
 urllib3==1.22             # via requests
 uwsgi==2.0.15

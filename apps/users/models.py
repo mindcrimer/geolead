@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import pytz
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from snippets.models import LastModMixin, BasicModel
+from timezone_field import TimeZoneField
 from users.managers import UserManager
 
 
@@ -34,6 +36,9 @@ class User(AbstractUser, LastModMixin, BasicModel):
             'под одним логин/паролем'
         )
     )
+
+    ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))
+    wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
 
     class Meta:
         verbose_name = _('Профиль пользователя')

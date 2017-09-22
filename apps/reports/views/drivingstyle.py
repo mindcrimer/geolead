@@ -21,6 +21,7 @@ class DrivingStyleView(BaseReportView):
     """Стиль вождения"""
     form = forms.DrivingStyleForm
     template_name = 'reports/driving_style.html'
+    report_name = 'Отчет нарушений ПДД и инструкции по эксплуатации техники'
 
     @staticmethod
     def get_new_grouping():
@@ -147,6 +148,8 @@ class DrivingStyleView(BaseReportView):
                 )
 
                 r = res.json()
+                if 'error' in r:
+                    raise ReportException(WIALON_INTERNAL_EXCEPTION)
 
                 for index, table in enumerate(r['reportResult']['tables']):
                     if table['name'] == 'unit_group_ecodriving':
@@ -194,27 +197,26 @@ class DrivingStyleView(BaseReportView):
                             details = row['r']
 
                             for subject in details:
-                                detail_data = None
 
-                                if len(details) > 1:
-                                    detail_data = {
-                                        'speed': {
-                                            'count': 0,
-                                            'seconds': .0
-                                        },
-                                        'lights': {
-                                            'count': 0,
-                                            'seconds': .0
-                                        },
-                                        'belt': {
-                                            'count': 0,
-                                            'seconds': .0
-                                        },
-                                        'devices': {
-                                            'count': 0,
-                                            'seconds': .0
-                                        }
-                                    }
+                                detail_data = {
+                                    'speed': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'lights': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'belt': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'devices': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'dt': ''
+                                }
                                 violation = subject['c'][3].lower() if subject['c'][3] else ''
                                 if 'свет' in violation or 'фар' in violation:
                                     viol_key = 'lights'
@@ -233,6 +235,11 @@ class DrivingStyleView(BaseReportView):
                                     if detail_data:
                                         # detail_data[viol_key]['count'] = 1
                                         detail_data[viol_key]['seconds'] = delta
+                                        try:
+                                            detail_data['dt'] = subject['c'][9]['t']
+                                        except (ValueError, IndexError, KeyError):
+                                            pass
+
                                         report_row['details'].append(detail_data)
 
             for data in report_data.values():

@@ -11,10 +11,13 @@
 
 .form {
   margin: 40px 0 0;
-  max-width: 384px;
 
   .errors {
     color: red;
+  }
+
+  &-controls {
+    max-width: 384px;
   }
 }
 

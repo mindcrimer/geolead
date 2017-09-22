@@ -1,7 +1,8 @@
 {%- extends 'reports/base.html' -%}
 
+{%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
 
-{% block REPORT_NAME %}Стиль вождения{% endblock %}
+{%- block REPORT_NAME %}{{ report_name|e }}{% endblock -%}
 
 
 {%- block REPORT_HEADING -%}
@@ -26,6 +27,7 @@
 	<table class="report-table">
 		<thead>
 			<tr>
+				<td rowspan="3" class="td-small">Время</td>
 				<td rowspan="3" class="td-small">ФИО</td>
 				<td rowspan="3" class="td-small">№&nbsp;ТС</td>
 				<td rowspan="3" class="td-small">Суммарное<br/>время<br/>в движении<br/>за период,&nbsp;ч</td>
@@ -60,6 +62,7 @@
 		{%- for key, row in report_data.items() -%}
 			<tbody>
 				<tr>
+					<td>&nbsp;</td>
 					<td>{{ key[1] }}</td>
 					<td>{{ key[0] }}</td>
 					<td>{{ row['total_time']|render_timedelta }}</td>
@@ -87,6 +90,7 @@
 				</tr>
 				{%- for detail in row['details'] -%}
 				<tr class="detailed">
+					<td>{{ detail['dt'] }}</td>
 					<td>{{ key[1] }}</td>
 					<td>{{ key[0] }}</td>
 					<td>{{ row['total_time']|render_timedelta }}</td>
@@ -165,22 +169,24 @@
 	<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 	<fieldset class="uk-fieldset">
 
-		<legend class="uk-legend">Отчет "Стиль вождения"</legend>
+		<legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
 
-		<div class="uk-margin">
-			<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
-						 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_from') else '' }}">
-			<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
-		</div>
+		<div class="form-controls">
+			<div class="uk-margin">
+				<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
+							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_from') else '' }}">
+				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+			</div>
 
-		<div class="uk-margin">
-			<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
-						 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else '' }}">
-			<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-		</div>
+			<div class="uk-margin">
+				<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
+							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else '' }}">
+				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+			</div>
 
-		<div class="uk-margin">
-			<button class="uk-button uk-button-primary">Создать</button>
+			<div class="uk-margin">
+				<button class="uk-button uk-button-primary">Создать</button>
+			</div>
 		</div>
 
 	</fieldset>

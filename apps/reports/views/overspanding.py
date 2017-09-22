@@ -20,6 +20,7 @@ class OverSpandingView(BaseReportView):
     """Перерасход топлива"""
     form = forms.FuelDischargeForm
     template_name = 'reports/over_spanding.html'
+    report_name = 'Отчет по перерасходу топлива'
     OVERSPANDING_COEFF = 0.05
 
     @staticmethod
@@ -119,6 +120,9 @@ class OverSpandingView(BaseReportView):
                 )
 
                 r = res.json()
+
+                if 'error' in r:
+                    raise ReportException(WIALON_INTERNAL_EXCEPTION)
 
                 for index, table in enumerate(r['reportResult']['tables']):
 

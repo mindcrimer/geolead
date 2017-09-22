@@ -18,11 +18,13 @@ class ReportException(Exception):
 class BaseReportView(BaseTemplateView):
     """Базовый класс отчета"""
     form = None
+    report_name = ''
 
     def get_default_context_data(self, **kwargs):
         context = {
             'None': None,
             'report_data': None,
+            'report_name': self.report_name,
             'messages': get_messages(kwargs['view'].request) or []
         }
 

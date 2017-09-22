@@ -1,5 +1,7 @@
 {%- extends 'layouts/main.html' -%}
 
+{%- block PAGE_TITLE %}Отчеты{% endblock -%}
+
 {%- block EXTRA_HEAD -%}
 	<link rel="stylesheet" media="print" href="{{ static_with_mtime('css/print.css') }}">
 {%- endblock -%}

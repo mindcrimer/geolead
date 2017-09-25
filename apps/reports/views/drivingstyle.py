@@ -11,10 +11,11 @@ import requests
 
 from reports import forms
 from reports.jinjaglobals import render_background
-from reports.utils import get_drivers_fio
-from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION
+from reports.utils import get_drivers_fio, parse_wialon_report_datetime
+from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
+    WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from ura.lib.exceptions import APIProcessError
 from ura.wialon.api import get_units_list
-from ura.wialon.auth import authenticate_at_wialon
 
 
 class DrivingStyleView(BaseReportView):
@@ -91,14 +92,22 @@ class DrivingStyleView(BaseReportView):
         form = kwargs['form']
         kwargs['today'] = date.today()
 
-        if kwargs['view'].request.POST:
+        if self.request.POST:
             report_data = OrderedDict()
 
             if form.is_valid():
-                sess_id = authenticate_at_wialon(settings.WIALON_TOKEN)
-                units_list = get_units_list(
-                    kwargs['view'].request.user, sess_id=sess_id, extra_fields=True
-                )
+                sess_id = form.cleaned_data.get('sid')
+                if not sess_id:
+                    raise ReportException(WIALON_NOT_LOGINED)
+
+                user = form.cleaned_data.get('user')
+                if not user:
+                    raise ReportException(WIALON_USER_NOT_FOUND)
+
+                try:
+                    units_list = get_units_list(sess_id=sess_id, extra_fields=True)
+                except APIProcessError as e:
+                    raise ReportException(str(e))
 
                 dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
                 dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
@@ -235,10 +244,9 @@ class DrivingStyleView(BaseReportView):
                                     if detail_data:
                                         # detail_data[viol_key]['count'] = 1
                                         detail_data[viol_key]['seconds'] = delta
-                                        try:
-                                            detail_data['dt'] = subject['c'][9]['t']
-                                        except (ValueError, IndexError, KeyError):
-                                            pass
+                                        detail_data['dt'] = parse_wialon_report_datetime(
+                                            subject['c'][9]['t'], user.wialon_tz
+                                        )
 
                                         report_row['details'].append(detail_data)
 

@@ -90,7 +90,7 @@
 				</tr>
 				{%- for detail in row['details'] -%}
 				<tr class="detailed">
-					<td class="td-small">{{ detail['dt'] }}</td>
+					<td class="td-small">{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
 					<td class="td-small">{{ key[1] }}</td>
 					<td class="td-small">{{ key[0] }}</td>
 					<td class="td-small">{{ row['total_time']|render_timedelta }}</td>
@@ -183,6 +183,9 @@
 							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
 			</div>
+
+			{{- form.sid -}}
+			{{- form.user -}}
 
 			<div class="uk-margin">
 				<button class="uk-button uk-button-primary">Создать</button>

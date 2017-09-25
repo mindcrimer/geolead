@@ -2,8 +2,11 @@
 import datetime
 
 from django.utils.timezone import get_current_timezone
+
+import pytz
+from snippets.utils.datetime import utcnow
+
 from ura.models import UraJob
-from ura.utils import parse_datetime
 
 
 def parse_timedelta(delta_string):
@@ -53,3 +56,10 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to):
         return qs[0].driver_fio
 
     return ''
+
+
+def parse_wialon_report_datetime(str_date, timezone):
+    pattern = '%Y-%m-%d %H:%M:%S' if str_date.count(':') >= 2 else '%Y-%m-%d %H:%M'
+    local_dt = datetime.datetime.strptime(str_date, pattern) + \
+        timezone.utcoffset(datetime.datetime.now())
+    return local_dt

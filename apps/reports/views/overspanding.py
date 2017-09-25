@@ -10,10 +10,11 @@ from django.utils.timezone import utc
 import requests
 
 from reports import forms
-from reports.utils import parse_timedelta, get_drivers_fio
-from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION
+from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime
+from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
+    WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from ura.lib.exceptions import APIProcessError
 from ura.wialon.api import get_units_list
-from ura.wialon.auth import authenticate_at_wialon
 
 
 class OverSpandingView(BaseReportView):
@@ -51,14 +52,22 @@ class OverSpandingView(BaseReportView):
         discharge_total = .0
         overspanding_count = 0
 
-        if kwargs['view'].request.POST:
+        if self.request.POST:
             report_data = OrderedDict()
 
             if form.is_valid():
-                sess_id = authenticate_at_wialon(settings.WIALON_TOKEN)
-                units_list = get_units_list(
-                    kwargs['view'].request.user, sess_id=sess_id, extra_fields=True
-                )
+                sess_id = form.cleaned_data.get('sid')
+                if not sess_id:
+                    raise ReportException(WIALON_NOT_LOGINED)
+
+                user = form.cleaned_data.get('user')
+                if not user:
+                    raise ReportException(WIALON_USER_NOT_FOUND)
+
+                try:
+                    units_list = get_units_list(sess_id=sess_id, extra_fields=True)
+                except APIProcessError as e:
+                    raise ReportException(str(e))
 
                 dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
                 dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
@@ -174,8 +183,9 @@ class OverSpandingView(BaseReportView):
                             report_row['discharge']['place'] = data[1]['t'] \
                                 if data[1] and isinstance(data[1], dict) else ''
 
-                            report_row['discharge']['dt'] = data[2]['t'] \
-                                if data[2] and isinstance(data[2], dict) else ''
+                            report_row['discharge']['dt'] = parse_wialon_report_datetime(
+                                data[2]['t'], user.wialon_tz
+                            ) if data[2] and isinstance(data[2], dict) else ''
 
                             try:
                                 report_row['discharge']['volume'] = float(data[3].split(' ')[0]) \
@@ -203,8 +213,9 @@ class OverSpandingView(BaseReportView):
                                         'place': detail_data[1]['t']
                                         if detail_data[1] and isinstance(detail_data[1], dict)
                                         else '',
-                                        'dt': detail_data[2]['t']
-                                        if detail_data[2] and isinstance(detail_data[2], dict)
+                                        'dt': parse_wialon_report_datetime(
+                                            detail_data[2]['t'], user.wialon_tz
+                                        ) if detail_data[2] and isinstance(detail_data[2], dict)
                                         else '',
                                         'volume': detail_volume
                                     })

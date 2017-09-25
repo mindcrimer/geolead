@@ -31,6 +31,7 @@
 	<table class="report-table">
 		<thead>
 		<tr>
+			<td rowspan="2">Время</td>
 			<td rowspan="2">Гос№ ТС</td>
 			<td rowspan="2">
 				Плановый график<br/>
@@ -38,13 +39,12 @@
 				(время с - время по)
 			</td>
 			<td rowspan="2">ФИО водителя</td>
-			<td colspan="3">Событие слив</td>
+			<td colspan="2">Событие слив</td>
 			<td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
 			<td rowspan="2">*Перерасход,<br/>%</td>
 		</tr>
 		<tr>
 			<td style="max-width:150px;">Место/<br/>геозона</td>
-			<td>Время</td>
 			<td>Объем</td>
 			<td>По норме<br/>от пробега**</td>
 			<td>По норме<br/>от времени<br/>работы***</td>
@@ -54,12 +54,18 @@
 		</thead>
 		{%- for key, row in report_data.items() -%}
 			<tbody>
-				<tr>
+				<tr{% if row['discharge']['volume'] and not row['details'] %} class="detailed"{% endif %}>
+					<td>
+						{%- if row['details'] -%}
+						&nbsp;
+						{%- else -%}
+						{{- row['discharge']['dt']|date('Y-m-d H:i:s') -}}
+						{%- endif -%}
+					</td>
 					<td>{{ key }}</td>
 					<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
 					<td class="nowrap">{{ row['driver_name'] }}</td>
 					<td>{{ row['discharge']['place'] }}</td>
-					<td>{{ row['discharge']['dt'] }}</td>
 					<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
 					<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
 					<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
@@ -69,11 +75,11 @@
 				</tr>
 				{%- for detail in row['details'] -%}
 					<tr class="detailed">
+						<td>{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
 						<td>{{ key }}</td>
 						<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
 						<td class="nowrap">{{ row['driver_name'] }}</td>
 						<td>{{ detail['place'] }}</td>
-						<td>{{ detail['dt'] }}</td>
 						<td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
 						<td class="tright">&nbsp;</td>
 						<td class="tright">&nbsp;</td>
@@ -110,15 +116,18 @@
 		<div class="form-controls">
 			<div class="uk-margin">
 				<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
-							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_from') else '' }}">
+							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:m:s') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
 			</div>
 
 			<div class="uk-margin">
 				<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
-							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data.get('dt_to') else '' }}">
+							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:m:s') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
 			</div>
+
+			{{- form.sid -}}
+			{{- form.user -}}
 
 			<div class="uk-margin">
 				<button class="uk-button uk-button-primary">Создать</button>

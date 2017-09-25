@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from snippets.utils.datetime import utcnow
 from snippets.utils.passwords import generate_random_string
 from ura import models
+from ura.lib.exceptions import APIProcessError
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
@@ -39,7 +40,10 @@ class URADriversResource(URAResource):
 
         organization = get_organization(request, org_id)
 
-        drivers = get_drivers_list(organization)
+        try:
+            drivers = get_drivers_list(organization)
+        except APIProcessError as e:
+            return error_response(str(e))
 
         return XMLResponse('ura/drivers.xml', {
             'doc_id': doc_id,
@@ -154,7 +158,10 @@ class URARoutesResource(URAResource):
 
         organization = get_organization(request, org_id)
 
-        routes = get_routes_list(organization)
+        try:
+            routes = get_routes_list(organization)
+        except APIProcessError as e:
+            return error_response(str(e))
 
         return XMLResponse('ura/routes.xml', {
             'doc_id': doc_id,
@@ -185,7 +192,10 @@ class URAUnitsResource(URAResource):
 
         organization = get_organization(request, org_id)
 
-        units = get_units_list(organization)
+        try:
+            units = get_units_list(organization)
+        except APIProcessError as e:
+            return error_response(str(e))
 
         return XMLResponse('ura/units.xml', {
             'doc_id': doc_id,
@@ -205,8 +215,16 @@ class URAJobsTestDataView(URAResource):
 
     @classmethod
     def post(cls, request, *args, **kwargs):
-        units = get_units_list(request.user)
-        routes = get_routes_list(request.user)
+        try:
+            units = get_units_list(request.user)
+        except APIProcessError as e:
+            return error_response(str(e))
+
+        try:
+            routes = get_routes_list(request.user)
+        except APIProcessError as e:
+            return error_response(str(e))
+
         if not routes:
             routes = [{
                 'id': 1,

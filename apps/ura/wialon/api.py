@@ -3,12 +3,16 @@ import json
 
 import requests
 from django.conf import settings
+from ura.lib.exceptions import APIProcessError
+from ura.wialon import WIALON_SESSION_ERROR
 
 from ura.wialon.auth import authenticate_at_wialon
 
 
-def get_drivers_list(organization, sess_id=None):
+def get_drivers_list(organization=None, sess_id=None):
     """Получает список водителей"""
+    assert organization or sess_id
+
     if sess_id is None:
         sess_id = authenticate_at_wialon(organization.wialon_token)
 
@@ -32,6 +36,9 @@ def get_drivers_list(organization, sess_id=None):
     )
     res = r.json()
 
+    if 'error' in res:
+        raise APIProcessError(WIALON_SESSION_ERROR)
+
     drivers = []
     for item in res['items']:
         if item and item['drvrs']:
@@ -40,8 +47,10 @@ def get_drivers_list(organization, sess_id=None):
     return drivers
 
 
-def get_routes_list(organization, sess_id=None):
+def get_routes_list(organization=None, sess_id=None):
     """Получает список маршрутов"""
+    assert organization or sess_id
+
     if sess_id is None:
         sess_id = authenticate_at_wialon(organization.wialon_token)
 
@@ -65,12 +74,17 @@ def get_routes_list(organization, sess_id=None):
     )
     res = r.json()
 
+    if 'error' in res:
+        raise APIProcessError(WIALON_SESSION_ERROR)
+
     routes = [{'id': r['id'], 'name': r['nm']} for r in res['items']]
     return routes
 
 
-def get_units_list(organization, sess_id=None, extra_fields=False):
+def get_units_list(organization=None, sess_id=None, extra_fields=False):
     """Получает список элементов"""
+    assert organization or sess_id
+
     if sess_id is None:
         sess_id = authenticate_at_wialon(organization.wialon_token)
 
@@ -93,6 +107,9 @@ def get_units_list(organization, sess_id=None, extra_fields=False):
         )
     )
     res = r.json()
+
+    if 'error' in res:
+        raise APIProcessError(WIALON_SESSION_ERROR)
 
     units = []
     for item in res['items']:

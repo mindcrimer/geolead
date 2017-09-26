@@ -9,12 +9,12 @@ from ura.wialon import WIALON_SESSION_ERROR
 from ura.wialon.auth import authenticate_at_wialon
 
 
-def get_drivers_list(organization=None, sess_id=None):
+def get_drivers_list(user=None, sess_id=None):
     """Получает список водителей"""
-    assert organization or sess_id
+    assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(organization.wialon_token)
+        sess_id = authenticate_at_wialon(user.wialon_token)
 
     request_params = json.dumps({
         'spec': {
@@ -47,12 +47,12 @@ def get_drivers_list(organization=None, sess_id=None):
     return drivers
 
 
-def get_routes_list(organization=None, sess_id=None):
+def get_routes_list(user=None, sess_id=None):
     """Получает список маршрутов"""
-    assert organization or sess_id
+    assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(organization.wialon_token)
+        sess_id = authenticate_at_wialon(user.wialon_token)
 
     request_params = json.dumps({
         'spec': {
@@ -81,12 +81,12 @@ def get_routes_list(organization=None, sess_id=None):
     return routes
 
 
-def get_units_list(organization=None, sess_id=None, extra_fields=False):
+def get_units_list(user=None, sess_id=None, extra_fields=False):
     """Получает список элементов"""
-    assert organization or sess_id
+    assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(organization.wialon_token)
+        sess_id = authenticate_at_wialon(user.wialon_token)
 
     request_params = json.dumps({
         'spec': {

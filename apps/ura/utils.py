@@ -12,7 +12,7 @@ def parse_datetime(str_date):
     return tz.localize(datetime.strptime(str_date, '%d.%m.%Y %H:%M:%S'))
 
 
-def get_organization(request, org_id):
+def get_organization_user(request, org_id):
     if not org_id:
         raise APIProcessError('Не указан параметр idOrg', code='idOrg_not_found')
 

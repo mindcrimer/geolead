@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-from django.core.urlresolvers import reverse_lazy
-
 from easy_thumbnails.conf import Settings as ThumbnailSettings
 
 
@@ -282,8 +280,12 @@ THUMBNAIL_PROCESSORS = (
 ) + ThumbnailSettings.THUMBNAIL_PROCESSORS
 
 WIALON_BASE_URL = 'https://hst-api.wialon.com/wialon/ajax.html'
-WIALON_TOKEN = 'b6b095979c28e8e60941c3617b83c1aeB545A8DB422E4D33B586790E7D17C9C6E6DB7FDE'
-# daadc13a64d51f2b403fa5b8f6466302FF67063574309D15B04AB72B7B41A99DBD7CAEE9'
+
+WIALON_DEFAULT_REPORT_RESOURCE_ID = 15828651
+WIALON_REPORTS_DEFAULT_OBJECT_ID = 15932813
+WIALON_DEFAULT_DISCHARGE_REPORT_TEMPLATE_ID = 8
+WIALON_DEFAULT_DRIVING_STYLE_REPORT_TEMPLATE_ID = 7
+
 
 try:
     from project.settings.settings_local import *  # NOQA

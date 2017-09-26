@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from django.conf import settings
 from django.utils.timezone import get_current_timezone
-
-import pytz
-from snippets.utils.datetime import utcnow
 
 from ura.models import UraJob
 
@@ -63,3 +61,27 @@ def parse_wialon_report_datetime(str_date, timezone):
     local_dt = datetime.datetime.strptime(str_date, pattern) + \
         timezone.utcoffset(datetime.datetime.now())
     return local_dt
+
+
+def get_wialon_report_object_id(user):
+    return user.wialon_report_object_id \
+        if user.wialon_report_object_id \
+        else settings.WIALON_REPORTS_DEFAULT_OBJECT_ID
+
+
+def get_wialon_report_resource_id(user):
+    return user.wialon_report_resource_id \
+        if user.wialon_report_resource_id \
+        else settings.WIALON_DEFAULT_REPORT_RESOURCE_ID
+
+
+def get_wialon_discharge_report_template_id(user):
+    return user.wialon_discharge_report_template_id \
+        if user.wialon_discharge_report_template_id \
+        else settings.WIALON_DEFAULT_DISCHARGE_REPORT_TEMPLATE_ID
+
+
+def get_wialon_driving_style_report_template_id(user):
+    return user.wialon_driving_style_report_template_id \
+        if user.wialon_driving_style_report_template_id \
+        else settings.WIALON_DEFAULT_DRIVING_STYLE_REPORT_TEMPLATE_ID

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import pytz
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -27,6 +26,19 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)
     organization_name = models.CharField(
         _('Название организации в Wialon'), blank=True, null=False, max_length=255
+    )
+
+    wialon_report_object_id = models.BigIntegerField(
+        _('ID группового объекта для отчетов в Wialon'), blank=True, null=True
+    )
+    wialon_report_resource_id = models.BigIntegerField(
+        _('ID ресурса отчетов в Wialon'), blank=True, null=True
+    )
+    wialon_discharge_report_template_id = models.BigIntegerField(
+        _('ID отчета "Перерасход топлива" в Wialon'), blank=True, null=True
+    )
+    wialon_driving_style_report_template_id = models.BigIntegerField(
+        _('ID отчета "Стиль вождения" в Wialon'), blank=True, null=True
     )
 
     supervisor = models.ForeignKey(

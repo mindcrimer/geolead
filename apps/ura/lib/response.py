@@ -7,7 +7,8 @@ BASIC_ERROR_TEMPLATE = 'ura/errors/error.xml'
 
 
 class XMLResponse(SimpleTemplateResponse):
-    def __init__(self, template=None, context=None, content_type=None, status=None, charset=None, using=None):
+    def __init__(self, template=None, context=None, content_type=None, status=None, charset=None,
+                 using=None):
         content_type = content_type if content_type else 'application/xml'
         template = template if template else BASIC_ERROR_TEMPLATE
         charset = charset if charset else 'utf-8'

@@ -10,17 +10,19 @@ from django.utils.timezone import utc
 import requests
 
 from reports import forms
-from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime
+from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
+    get_wialon_report_object_id, get_wialon_report_resource_id, \
+    get_wialon_discharge_report_template_id
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
 from ura.wialon.api import get_units_list
 
 
-class OverSpandingView(BaseReportView):
+class DischargeView(BaseReportView):
     """Перерасход топлива"""
     form = forms.FuelDischargeForm
-    template_name = 'reports/over_spanding.html'
+    template_name = 'reports/discharge.html'
     report_name = 'Отчет по перерасходу топлива'
     OVERSPANDING_COEFF = 0.05
 
@@ -45,7 +47,7 @@ class OverSpandingView(BaseReportView):
         }
 
     def get_context_data(self, **kwargs):
-        kwargs = super(OverSpandingView, self).get_context_data(**kwargs)
+        kwargs = super(DischargeView, self).get_context_data(**kwargs)
         form = kwargs['form']
         report_data = None
         overspanding_total = .0
@@ -98,8 +100,10 @@ class OverSpandingView(BaseReportView):
                                 {
                                     'svc': 'report/get_report_data',
                                     'params': {
-                                        'itemId': 15828651,  # 14175015,
-                                        'col': ['8'],  # ['3'],
+                                        'itemId': get_wialon_report_resource_id(user),
+                                        'col': [
+                                            str(get_wialon_discharge_report_template_id(user))
+                                        ],
                                         'flags': 0
                                     }
                                 }
@@ -113,10 +117,10 @@ class OverSpandingView(BaseReportView):
                 res = requests.post(
                     settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
                         'params': json.dumps({
-                            'reportResourceId': 15828651,  # 14175015,
-                            'reportTemplateId': 8,  # 3,
+                            'reportResourceId': get_wialon_report_resource_id(user),
+                            'reportTemplateId': get_wialon_discharge_report_template_id(user),
                             'reportTemplate': None,
-                            'reportObjectId': 15932813,  # 15826705,
+                            'reportObjectId': get_wialon_report_object_id(user),
                             'reportObjectSecId': 0,
                             'interval': {
                                 'flags': 0,

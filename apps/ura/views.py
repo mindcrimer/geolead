@@ -12,7 +12,7 @@ from ura.lib.exceptions import APIProcessError
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
-from ura.utils import parse_datetime, get_organization
+from ura.utils import parse_datetime, get_organization_user
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 from users.models import User
 
@@ -38,10 +38,10 @@ class URADriversResource(URAResource):
         except ValueError:
             org_id = 0
 
-        organization = get_organization(request, org_id)
+        user = get_organization_user(request, org_id)
 
         try:
-            drivers = get_drivers_list(organization)
+            drivers = get_drivers_list(user)
         except APIProcessError as e:
             return error_response(str(e))
 
@@ -156,10 +156,10 @@ class URARoutesResource(URAResource):
         except ValueError:
             org_id = 0
 
-        organization = get_organization(request, org_id)
+        user = get_organization_user(request, org_id)
 
         try:
-            routes = get_routes_list(organization)
+            routes = get_routes_list(user)
         except APIProcessError as e:
             return error_response(str(e))
 
@@ -190,10 +190,10 @@ class URAUnitsResource(URAResource):
         except ValueError:
             org_id = 0
 
-        organization = get_organization(request, org_id)
+        user = get_organization_user(request, org_id)
 
         try:
-            units = get_units_list(organization)
+            units = get_units_list(user)
         except APIProcessError as e:
             return error_response(str(e))
 

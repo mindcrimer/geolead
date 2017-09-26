@@ -11,7 +11,9 @@ import requests
 
 from reports import forms
 from reports.jinjaglobals import render_background
-from reports.utils import get_drivers_fio, parse_wialon_report_datetime
+from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
+    get_wialon_driving_style_report_template_id, get_wialon_report_resource_id, \
+    get_wialon_report_object_id
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
@@ -21,7 +23,7 @@ from ura.wialon.api import get_units_list
 class DrivingStyleView(BaseReportView):
     """Стиль вождения"""
     form = forms.DrivingStyleForm
-    template_name = 'reports/driving_style.html'
+    template_name = 'reports/discharge.html'
     report_name = 'Отчет нарушений ПДД и инструкции по эксплуатации техники'
 
     @staticmethod
@@ -126,8 +128,10 @@ class DrivingStyleView(BaseReportView):
                                 {
                                     'svc': 'report/get_report_data',
                                     'params': {
-                                        'itemId': 15828651,
-                                        'col': ['7'],
+                                        'itemId': get_wialon_report_resource_id(user),
+                                        'col': [
+                                            str(get_wialon_driving_style_report_template_id(user))
+                                        ],
                                         'flags': 0
                                     }
                                 }
@@ -141,10 +145,10 @@ class DrivingStyleView(BaseReportView):
                 res = requests.post(
                     settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
                         'params': json.dumps({
-                            'reportResourceId': 15828651,
-                            'reportTemplateId': 7,
+                            'reportResourceId': get_wialon_report_resource_id(user),
+                            'reportTemplateId': get_wialon_driving_style_report_template_id(user),
                             'reportTemplate': None,
-                            'reportObjectId': 15932813,
+                            'reportObjectId': get_wialon_report_object_id(user),
                             'reportObjectSecId': 0,
                             'interval': {
                                 'flags': 0,

@@ -6,8 +6,8 @@ from reports import views
 
 urlpatterns = (
     url(
-        r'^over-spanding/$',
-        views.OverSpandingView.as_view(), name='over_spanding'
+        r'^discharge/$',
+        views.DischargeView.as_view(), name='discharge'
     ),
     url(
         r'^driving-style/$',

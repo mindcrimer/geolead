@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import datetime
+import time
+
 from django.contrib import messages
 from django.contrib.messages import get_messages
+from django.utils.timezone import utc
 
-from snippets.utils.datetime import utcnow
+from reports.utils import local_to_utc_time
 from snippets.views import BaseTemplateView
 
 
@@ -35,8 +39,8 @@ class BaseReportView(BaseTemplateView):
         }
 
         data = self.request.POST if self.request.method == 'POST' else {
-            'dt_from': utcnow().replace(hour=0, minute=0, second=0),
-            'dt_to': utcnow().replace(hour=23, minute=59, second=59),
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
             'sid': context['sid'],
             'user': context['user']
         }
@@ -92,3 +96,13 @@ class BaseReportView(BaseTemplateView):
             raise ReportException(WIALON_USER_NOT_FOUND)
 
         return kwargs
+
+    @staticmethod
+    def get_period(user, form):
+        dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
+        dt_to = local_to_utc_time(form.cleaned_data['dt_to'], user.wialon_tz)
+
+        dt_from = int(time.mktime(dt_from.timetuple()))
+        dt_to = int(time.mktime(dt_to.timetuple()))
+
+        return dt_from, dt_to

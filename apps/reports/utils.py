@@ -63,6 +63,14 @@ def parse_wialon_report_datetime(str_date, timezone):
     return local_dt
 
 
+def utc_to_local_time(dt, timezone):
+    return dt + timezone.utcoffset(datetime.datetime.now())
+
+
+def local_to_utc_time(dt, timezone):
+    return dt - timezone.utcoffset(datetime.datetime.now())
+
+
 def get_wialon_report_object_id(user):
     return user.wialon_report_object_id \
         if user.wialon_report_object_id \

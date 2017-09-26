@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-from datetime import date
+import datetime
 import json
 import time
 
 from django.conf import settings
-from django.utils.timezone import utc
 
 import requests
 
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_report_object_id, get_wialon_report_resource_id, \
-    get_wialon_discharge_report_template_id
+    get_wialon_discharge_report_template_id, local_to_utc_time
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
@@ -71,11 +70,7 @@ class DischargeView(BaseReportView):
                 except APIProcessError as e:
                     raise ReportException(str(e))
 
-                dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
-                dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
-
-                dt_from = int(time.mktime(dt_from.timetuple()))
-                dt_to = int(time.mktime(dt_to.timetuple()))
+                dt_from, dt_to = self.get_period(user, form)
 
                 extra_device_standards = {}
                 for unit in units_list:
@@ -249,7 +244,7 @@ class DischargeView(BaseReportView):
 
         kwargs.update(
             report_data=report_data,
-            today=date.today(),
+            today=datetime.date.today(),
             discharge_total=discharge_total,
             overspanding_count=overspanding_count,
             overspanding_total=overspanding_total

@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-from datetime import date, timedelta
+import datetime
 import json
 import time
 
 from django.conf import settings
-from django.utils.timezone import utc
 
 import requests
 
@@ -13,7 +12,7 @@ from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_driving_style_report_template_id, get_wialon_report_resource_id, \
-    get_wialon_report_object_id
+    get_wialon_report_object_id, local_to_utc_time
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
@@ -60,7 +59,7 @@ class DrivingStyleView(BaseReportView):
 
     @staticmethod
     def parse_time_delta(value):
-        delta = timedelta(seconds=0)
+        delta = datetime.timedelta(seconds=0)
         parts = value.split(' ')
         digits = 0
 
@@ -72,19 +71,19 @@ class DrivingStyleView(BaseReportView):
 
             if ':' in part:
                 hours, minutes, seconds = [int(x) for x in part.split(':')]
-                delta += timedelta(seconds=((hours * 3600) + (minutes * 60) + seconds))
+                delta += datetime.timedelta(seconds=((hours * 3600) + (minutes * 60) + seconds))
 
             elif 'day' in part:
-                delta += timedelta(days=digits)
+                delta += datetime.timedelta(days=digits)
 
             elif 'week' in part:
-                delta += timedelta(days=digits * 7)
+                delta += datetime.timedelta(days=digits * 7)
 
             elif 'month' in part:
-                delta += timedelta(days=digits * 30)
+                delta += datetime.timedelta(days=digits * 30)
 
             elif 'year' in part:
-                delta += timedelta(days=digits * 365)
+                delta += datetime.timedelta(days=digits * 365)
 
         return delta
 
@@ -92,7 +91,7 @@ class DrivingStyleView(BaseReportView):
         kwargs = super(DrivingStyleView, self).get_context_data(**kwargs)
         report_data = None
         form = kwargs['form']
-        kwargs['today'] = date.today()
+        kwargs['today'] = datetime.date.today()
 
         if self.request.POST:
             report_data = OrderedDict()
@@ -111,11 +110,7 @@ class DrivingStyleView(BaseReportView):
                 except APIProcessError as e:
                     raise ReportException(str(e))
 
-                dt_from = form.cleaned_data['dt_from'].replace(tzinfo=utc)
-                dt_to = form.cleaned_data['dt_to'].replace(tzinfo=utc)
-
-                dt_from = int(time.mktime(dt_from.timetuple()))
-                dt_to = int(time.mktime(dt_to.timetuple()))
+                dt_from, dt_to = self.get_period(user, form)
 
                 requests.post(
                     settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {

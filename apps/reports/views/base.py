@@ -29,14 +29,16 @@ class BaseReportView(BaseTemplateView):
             'None': None,
             'report_data': None,
             'report_name': self.report_name,
-            'messages': get_messages(self.request) or []
+            'messages': get_messages(self.request) or [],
+            'sid': self.request.GET.get('sid', ''),
+            'user': self.request.GET.get('user', '')
         }
 
         data = self.request.POST if self.request.method == 'POST' else {
             'dt_from': utcnow().replace(hour=0, minute=0, second=0),
             'dt_to': utcnow().replace(hour=23, minute=59, second=59),
-            'sid': self.request.GET.get('sid', ''),
-            'user': self.request.GET.get('user', '')
+            'sid': context['sid'],
+            'user': context['user']
         }
         form = self.form(data)
 

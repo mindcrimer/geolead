@@ -76,8 +76,8 @@ class URAEchoResource(URAResource):
 class URAJobsResource(URAResource):
     model_mapping = {
         'name': ('jobName', str),
-        'unit_id':  ('idUnit', int),
-        'route_id': ('idRoute', int),
+        'unit_id':  ('idUnit', str),
+        'route_id': ('idRoute', str),
         'driver_id': ('idDriver', str),
         'driver_fio': ('driverFio', str),
         'date_begin': ('dateBegin', parse_datetime),

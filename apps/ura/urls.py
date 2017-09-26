@@ -20,11 +20,11 @@ urlpatterns = (
         views.URAJobsResource.as_view(),
         name='ura_jobs'
     ),
-    url(
-        r'^jobs/test/$',
-        views.URAJobsTestDataView.as_view(),
-        name='ura_jobs_testdata'
-    ),
+    # url(
+    #     r'^jobs/test/$',
+    #     views.URAJobsTestDataView.as_view(),
+    #     name='ura_jobs_testdata'
+    # ),
     url(
         r'^orgs/$',
         views.URAOrgsResource.as_view(),

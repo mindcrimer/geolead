@@ -41,7 +41,11 @@ class UserAdmin(UserAdmin):
         }),
         (_('Wialon'), {
             'classes': ('suit-tab', 'suit-tab-wialon'),
-            'fields': ('wialon_token', 'organization_name', 'supervisor', 'wialon_tz')
+            'fields': (
+                'wialon_token', 'organization_name', 'supervisor', 'wialon_tz',
+                'wialon_report_object_id', 'wialon_report_resource_id',
+                'wialon_discharge_report_template_id', 'wialon_driving_style_report_template_id'
+            )
         }),
         (_('УРА'), {
             'classes': ('suit-tab', 'suit-tab-ura'),

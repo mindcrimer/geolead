@@ -49,7 +49,9 @@ class UserAdmin(UserAdmin):
         })
     )
     form = UserAdminForm
-    list_display = ('username', 'get_full_name', 'is_active', 'is_staff', 'is_superuser')
+    list_display = (
+        'username', 'get_full_name', 'organization_name', 'is_active', 'is_staff', 'is_superuser'
+    )
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     readonly_fields = ('last_login', 'date_joined', 'created', 'updated', 'full_name')
     search_fields = ('=id', 'username', 'full_name', 'email', 'wialon_token', 'organization_name')

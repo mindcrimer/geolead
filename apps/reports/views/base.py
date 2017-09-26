@@ -69,7 +69,16 @@ class BaseReportView(BaseTemplateView):
         kwargs.update(self.get_default_context_data(**kwargs))
 
         if not kwargs['form'].is_valid():
-            raise ReportException(WIALON_FORM_ERRORS + ' ' + kwargs['form'].errors)
+            errors = str(kwargs['form'].errors)
+            if 'sid' in errors:
+                raise ReportException(
+                    WIALON_FORM_ERRORS + '. Возможно, вы совершили вход не через Wialon.'
+                )
+
+            if 'user' in errors:
+                raise ReportException(
+                    WIALON_FORM_ERRORS + '. Возможно, имя пользователя из Wialon не совпадает.'
+                )
 
         kwargs['sess_id'] = self.request.GET.get('sid', '')
         kwargs['username'] = self.request.GET.get('user', '')

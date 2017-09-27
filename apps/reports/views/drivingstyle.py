@@ -22,7 +22,7 @@ from ura.wialon.api import get_units_list
 class DrivingStyleView(BaseReportView):
     """Стиль вождения"""
     form = forms.DrivingStyleForm
-    template_name = 'reports/discharge.html'
+    template_name = 'reports/driving_style.html'
     report_name = 'Отчет нарушений ПДД и инструкции по эксплуатации техники'
 
     @staticmethod

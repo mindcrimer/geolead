@@ -244,7 +244,7 @@ class DrivingStyleView(BaseReportView):
                                         # detail_data[viol_key]['count'] = 1
                                         detail_data[viol_key]['seconds'] = delta
                                         detail_data['dt'] = parse_wialon_report_datetime(
-                                            subject['c'][9]['t'], user.wialon_tz
+                                            subject['c'][9]['t']
                                         )
 
                                         report_row['details'].append(detail_data)

@@ -56,10 +56,9 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to):
     return ''
 
 
-def parse_wialon_report_datetime(str_date, timezone):
+def parse_wialon_report_datetime(str_date):
     pattern = '%Y-%m-%d %H:%M:%S' if str_date.count(':') >= 2 else '%Y-%m-%d %H:%M'
-    local_dt = datetime.datetime.strptime(str_date, pattern) + \
-        timezone.utcoffset(datetime.datetime.now())
+    local_dt = datetime.datetime.strptime(str_date, pattern)
     return local_dt
 
 

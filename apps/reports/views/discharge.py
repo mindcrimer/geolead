@@ -2,7 +2,6 @@
 from collections import OrderedDict
 import datetime
 import json
-import time
 
 from django.conf import settings
 
@@ -11,7 +10,7 @@ import requests
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_report_object_id, get_wialon_report_resource_id, \
-    get_wialon_discharge_report_template_id, local_to_utc_time
+    get_wialon_discharge_report_template_id
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
@@ -183,7 +182,7 @@ class DischargeView(BaseReportView):
                                 if data[1] and isinstance(data[1], dict) else ''
 
                             report_row['discharge']['dt'] = parse_wialon_report_datetime(
-                                data[2]['t'], user.wialon_tz
+                                data[2]['t']
                             ) if data[2] and isinstance(data[2], dict) else ''
 
                             try:
@@ -213,7 +212,7 @@ class DischargeView(BaseReportView):
                                         if detail_data[1] and isinstance(detail_data[1], dict)
                                         else '',
                                         'dt': parse_wialon_report_datetime(
-                                            detail_data[2]['t'], user.wialon_tz
+                                            detail_data[2]['t']
                                         ) if detail_data[2] and isinstance(detail_data[2], dict)
                                         else '',
                                         'volume': detail_volume

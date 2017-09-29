@@ -169,7 +169,8 @@ class DischargeView(BaseReportView):
                                 units_list,
                                 key,
                                 report_data[key]['plan_worktime'][0],
-                                report_data[key]['plan_worktime'][1]
+                                report_data[key]['plan_worktime'][1],
+                                user.ura_tz
                             ) or ''
 
                         report_row = report_data[key]

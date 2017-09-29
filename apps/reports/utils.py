@@ -2,7 +2,7 @@
 import datetime
 
 from django.conf import settings
-from django.utils.timezone import get_current_timezone
+from django.utils.timezone import utc
 
 from ura.models import UraJob
 
@@ -32,14 +32,12 @@ def parse_timedelta(delta_string):
 DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 
 
-def get_drivers_fio(units_list, unit_key, dt_from, dt_to):
-    tz = get_current_timezone()
-
+def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
     if isinstance(dt_from, str):
-        dt_from = tz.localize(datetime.datetime.strptime(dt_from, DATETIME_FORMAT))
+        dt_from = local_to_utc_time(parse_wialon_report_datetime(dt_from), timezone)
 
     if isinstance(dt_to, str):
-        dt_to = tz.localize(datetime.datetime.strptime(dt_to, DATETIME_FORMAT))
+        dt_to = local_to_utc_time(parse_wialon_report_datetime(dt_to), timezone)
 
     unit_ids = tuple(filter(lambda x: x['name'] == unit_key, units_list))
     if not unit_ids:
@@ -63,11 +61,17 @@ def parse_wialon_report_datetime(str_date):
 
 
 def utc_to_local_time(dt, timezone):
-    return dt + timezone.utcoffset(datetime.datetime.now())
+    local_dt = dt + timezone.utcoffset(datetime.datetime.now())
+    if local_dt.tzinfo is None:
+        local_dt = local_dt.replace(tzinfo=timezone)
+    return local_dt
 
 
 def local_to_utc_time(dt, timezone):
-    return dt - timezone.utcoffset(datetime.datetime.now())
+    utc_dt = dt - timezone.utcoffset(datetime.datetime.now())
+    if utc_dt.tzinfo is None:
+        utc_dt = utc_dt.replace(tzinfo=utc)
+    return utc_dt
 
 
 def get_wialon_report_object_id(user):

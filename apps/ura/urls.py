@@ -16,15 +16,15 @@ urlpatterns = (
         name='ura_echo'
     ),
     url(
-        r'^jobs/$',
-        views.URAJobsResource.as_view(),
-        name='ura_jobs'
+        r'^jobs/set/$',
+        views.URAJobsSetResource.as_view(),
+        name='ura_jobs_set'
     ),
-    # url(
-    #     r'^jobs/test/$',
-    #     views.URAJobsTestDataView.as_view(),
-    #     name='ura_jobs_testdata'
-    # ),
+    url(
+        r'^jobs/break/$',
+        views.URAJobsBreakResource.as_view(),
+        name='ura_jobs_break'
+    ),
     url(
         r'^orgs/$',
         views.URAOrgsResource.as_view(),

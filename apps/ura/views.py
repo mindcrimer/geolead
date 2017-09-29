@@ -73,7 +73,7 @@ class URAEchoResource(URAResource):
         })
 
 
-class URAJobsResource(URAResource):
+class URAJobsSetResource(URAResource):
     model_mapping = {
         'name': ('jobName', str),
         'unit_id':  ('idUnit', str),
@@ -96,7 +96,10 @@ class URAJobsResource(URAResource):
             for j in jobs_els:
                 data = {}
                 for k, v in self.model_mapping.items():
-                    data[k] = v[1](j.get(v[0]))
+                    if v[1] == parse_datetime:
+                        data[k] = v[1](j.get(v[0]), request.user.ura_tz)
+                    else:
+                        data[k] = v[1](j.get(v[0]))
 
                 name = data.pop('name')
                 if not name:
@@ -263,3 +266,43 @@ class URAJobsTestDataView(URAResource):
                 )
 
         return HttpResponse('OK')
+
+
+class URAJobsBreakResource(URAResource):
+    model_mapping = {
+        'date_begin': ('dateBegin', parse_datetime),
+        'date_end': ('dateEnd', parse_datetime),
+        'return_time': ('returnTime', parse_datetime),
+        'leave_time': ('leaveTime', parse_datetime)
+    }
+    model = models.UraJob
+
+    def post(self, request, *args, **kwargs):
+        jobs = []
+        jobs_els = request.data.xpath('/breakJobs/job')
+
+        if jobs_els:
+
+            for j in jobs_els:
+                data = {}
+                for k, v in self.model_mapping.items():
+                    if v[1] == parse_datetime:
+                        data[k] = v[1](j.get(v[0]), request.user.ura_tz)
+                    else:
+                        data[k] = v[1](j.get(v[0]))
+
+                name = data.pop('name')
+                if not name:
+                    return error_response('Не указан параметр jobName', code='jobName_not_found')
+
+                if data['date_end'] <= data['date_begin']:
+                    self.model.objects.filter(name=name).delete()
+                else:
+                    job = self.model.objects.filter(name=name).update(**data)
+                    jobs.append(job)
+
+        result = {
+            'now': utcnow(),
+            'breakJobs': jobs
+        }
+        return XMLResponse('ura/ackBreakJobs.xml', result)

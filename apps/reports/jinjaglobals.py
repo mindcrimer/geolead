@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils import formats
 from django.utils.timezone import template_localtime
 from django.utils.dateformat import format as date_format
+from reports.utils import utc_to_local_time
 
 from snippets.template_backends.jinja2 import jinjafilter
 
@@ -71,3 +72,8 @@ def render_background(value):
         return '#FFFF00'
 
     return '#FF4500'
+
+
+@jinjafilter
+def utc_to_local(utc_dt, timezone):
+    return utc_to_local_time(utc_dt, timezone)

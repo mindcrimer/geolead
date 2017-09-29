@@ -26,6 +26,16 @@ urlpatterns = (
         name='ura_jobs_break'
     ),
     url(
+        r'^races/$',
+        views.URARacesResource.as_view(),
+        name='ura_races'
+    ),
+    url(
+        r'^moving/$',
+        views.URAMovingResource.as_view(),
+        name='ura_moving'
+    ),
+    url(
         r'^orgs/$',
         views.URAOrgsResource.as_view(),
         name='ura_orgs'

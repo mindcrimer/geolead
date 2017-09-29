@@ -306,3 +306,47 @@ class URAJobsBreakResource(URAResource):
             'breakJobs': jobs
         }
         return XMLResponse('ura/ackBreakJobs.xml', result)
+
+
+class URARacesResource(URAResource):
+    def post(self, request, *args, **kwargs):
+        jobs = []
+        jobs_els = request.data.xpath('/getRaces/job')
+
+        if jobs_els:
+
+            for j in jobs_els:
+                data = {}
+                for k, v in self.model_mapping.items():
+                    if v[1] == parse_datetime:
+                        data[k] = v[1](j.get(v[0]), request.user.ura_tz)
+                    else:
+                        data[k] = v[1](j.get(v[0]))
+
+                name = data.pop('name')
+                if not name:
+                    return error_response('Не указан параметр jobName', code='jobName_not_found')
+
+                job = self.model.objects.update_or_create(name=name, defaults=data)[0]
+                jobs.append(job)
+
+        result = {
+            'now': utcnow(),
+            'units': jobs
+        }
+        return XMLResponse('ura/races.xml', result)
+
+
+class URAMovingResource(URAResource):
+    def post(self, request, *args, **kwargs):
+        units = []
+        units_els = request.data.xpath('/getMoving/unit')
+
+        if units_els:
+            pass
+
+        result = {
+            'now': utcnow(),
+            'units': units
+        }
+        return XMLResponse('ura/moving.xml', result)

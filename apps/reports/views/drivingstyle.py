@@ -72,16 +72,16 @@ class DrivingStyleView(BaseReportView):
                 hours, minutes, seconds = [int(x) for x in part.split(':')]
                 delta += datetime.timedelta(seconds=((hours * 3600) + (minutes * 60) + seconds))
 
-            elif 'day' in part:
+            elif 'day' in part or 'дн' in part or 'ден' in part:
                 delta += datetime.timedelta(days=digits)
 
-            elif 'week' in part:
+            elif 'week' in part or 'недел' in part:
                 delta += datetime.timedelta(days=digits * 7)
 
-            elif 'month' in part:
+            elif 'month' in part or 'месяц' in part:
                 delta += datetime.timedelta(days=digits * 30)
 
-            elif 'year' in part:
+            elif 'year' in part or 'год' in part or 'лет' in part:
                 delta += datetime.timedelta(days=digits * 365)
 
         return delta
@@ -245,6 +245,8 @@ class DrivingStyleView(BaseReportView):
                                         detail_data[viol_key]['seconds'] = delta
                                         detail_data['dt'] = parse_wialon_report_datetime(
                                             subject['c'][9]['t']
+                                            if isinstance(subject['c'][9], dict)
+                                            else subject['c'][9]
                                         )
 
                                         report_row['details'].append(detail_data)

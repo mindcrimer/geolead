@@ -241,11 +241,10 @@ class DischargeView(BaseReportView):
                                 extra_standard *= motohours
 
                                 report_row['consumption']['standard_extra_device'] = extra_standard
-
-                                fact += extra_standard
+                                standard += extra_standard
 
                             if standard and fact / standard > (1.0 + self.OVERSPANDING_COEFF):
-                                report_row['overspanding'] = ((fact / standard) - 1.0) * 100.0
+                                report_row['overspanding'] = (fact / standard) * 100.0
                                 overspanding_total += fact - standard
 
         kwargs.update(

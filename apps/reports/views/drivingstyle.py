@@ -11,7 +11,7 @@ from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_driving_style_report_template_id, get_wialon_report_resource_id, \
-    get_wialon_report_object_id
+    get_wialon_report_object_id, get_period
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
@@ -109,7 +109,11 @@ class DrivingStyleView(BaseReportView):
                 except APIProcessError as e:
                     raise ReportException(str(e))
 
-                dt_from, dt_to = self.get_period(user, form)
+                dt_from, dt_to = get_period(
+                    form.cleaned_data['dt_from'],
+                    form.cleaned_data['dt_to'],
+                    user.wialon_tz
+                )
 
                 requests.post(
                     settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {

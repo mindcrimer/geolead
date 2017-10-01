@@ -40,6 +40,9 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_driving_style_report_template_id = models.BigIntegerField(
         _('ID отчета "Стиль вождения" в Wialon'), blank=True, null=True
     )
+    wialon_geozones_report_template_id = models.BigIntegerField(
+        _('ID отчета "Геозоны" в Wialon'), blank=True, null=True
+    )
 
     supervisor = models.ForeignKey(
         'self', blank=True, null=True, verbose_name=_('Супервайзер'),

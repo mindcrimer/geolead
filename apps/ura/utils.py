@@ -27,3 +27,23 @@ def get_organization_user(request, org_id):
         raise APIProcessError('Нет доступа к данной организации', code='org_forbidden')
 
     return user
+
+
+def parse_input_data(request, mapping, element):
+    data = {}
+    for k, v in mapping.items():
+        try:
+            if v[1] == parse_datetime:
+                data[k] = v[1](element.get(v[0]), request.user.ura_tz)
+            else:
+                data[k] = v[1](element.get(v[0]))
+        except (ValueError, TypeError):
+            raise APIProcessError(
+                'Ошибка при извлечении данных. Параметр %s, значение %s' % (
+                    v[0], element.get(v[0])
+                ),
+                http_status=400,
+                code='input_data_invalid'
+            )
+
+    return data

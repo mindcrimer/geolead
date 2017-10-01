@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import time
 
 from django.conf import settings
 from django.utils.timezone import utc
@@ -72,6 +73,16 @@ def local_to_utc_time(dt, timezone):
     if utc_dt.tzinfo is None:
         utc_dt = utc_dt.replace(tzinfo=utc)
     return utc_dt
+
+
+def get_period(dt_from, dt_to, timezone):
+    dt_from = local_to_utc_time(dt_from, timezone)
+    dt_to = local_to_utc_time(dt_to, timezone)
+
+    dt_from = int(time.mktime(dt_from.timetuple()))
+    dt_to = int(time.mktime(dt_to.timetuple()))
+
+    return dt_from, dt_to
 
 
 def get_wialon_report_object_id(user):

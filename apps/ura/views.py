@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.db.models import Q
 from django.http import HttpResponse
+from reports.utils import get_period
 
 from snippets.utils.datetime import utcnow
 from snippets.utils.passwords import generate_random_string
@@ -12,7 +13,7 @@ from ura.lib.exceptions import APIProcessError
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
-from ura.utils import parse_datetime, get_organization_user
+from ura.utils import parse_datetime, get_organization_user, parse_input_data
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 from users.models import User
 
@@ -71,48 +72,6 @@ class URAEchoResource(URAResource):
             'doc_id': doc_id,
             'create_date': utcnow()
         })
-
-
-class URAJobsSetResource(URAResource):
-    model_mapping = {
-        'name': ('jobName', str),
-        'unit_id':  ('idUnit', str),
-        'route_id': ('idRoute', str),
-        'driver_id': ('idDriver', str),
-        'driver_fio': ('driverFio', str),
-        'date_begin': ('dateBegin', parse_datetime),
-        'date_end': ('dateEnd', parse_datetime),
-        'return_time': ('returnTime', parse_datetime),
-        'leave_time': ('leaveTime', parse_datetime)
-    }
-    model = models.UraJob
-
-    def post(self, request, *args, **kwargs):
-        jobs = []
-        jobs_els = request.data.xpath('/setJobs/job')
-
-        if jobs_els:
-
-            for j in jobs_els:
-                data = {}
-                for k, v in self.model_mapping.items():
-                    if v[1] == parse_datetime:
-                        data[k] = v[1](j.get(v[0]), request.user.ura_tz)
-                    else:
-                        data[k] = v[1](j.get(v[0]))
-
-                name = data.pop('name')
-                if not name:
-                    return error_response('Не указан параметр jobName', code='jobName_not_found')
-
-                job = self.model.objects.update_or_create(name=name, defaults=data)[0]
-                jobs.append(job)
-
-        result = {
-            'now': utcnow(),
-            'acceptedJobs': jobs
-        }
-        return XMLResponse('ura/ackjobs.xml', result)
 
 
 class URAOrgsResource(URAResource):
@@ -268,7 +227,44 @@ class URAJobsTestDataView(URAResource):
         return HttpResponse('OK')
 
 
-class URAJobsBreakResource(URAResource):
+class URASetJobsResource(URAResource):
+    model_mapping = {
+        'name': ('jobName', str),
+        'unit_id':  ('idUnit', str),
+        'route_id': ('idRoute', str),
+        'driver_id': ('idDriver', str),
+        'driver_fio': ('driverFio', str),
+        'date_begin': ('dateBegin', parse_datetime),
+        'date_end': ('dateEnd', parse_datetime),
+        'return_time': ('returnTime', parse_datetime),
+        'leave_time': ('leaveTime', parse_datetime)
+    }
+    model = models.UraJob
+
+    def post(self, request, *args, **kwargs):
+        jobs = []
+        jobs_els = request.data.xpath('/setJobs/job')
+
+        if jobs_els:
+
+            for j in jobs_els:
+                data = parse_input_data(request, self.model_mapping, j)
+
+                name = data.pop('name')
+                if not name:
+                    return error_response('Не указан параметр jobName', code='jobName_not_found')
+
+                job = self.model.objects.update_or_create(name=name, defaults=data)[0]
+                jobs.append(job)
+
+        result = {
+            'now': utcnow(),
+            'acceptedJobs': jobs
+        }
+        return XMLResponse('ura/ackjobs.xml', result)
+
+
+class URABreakJobsResource(URAResource):
     model_mapping = {
         'date_begin': ('dateBegin', parse_datetime),
         'date_end': ('dateEnd', parse_datetime),
@@ -284,12 +280,7 @@ class URAJobsBreakResource(URAResource):
         if jobs_els:
 
             for j in jobs_els:
-                data = {}
-                for k, v in self.model_mapping.items():
-                    if v[1] == parse_datetime:
-                        data[k] = v[1](j.get(v[0]), request.user.ura_tz)
-                    else:
-                        data[k] = v[1](j.get(v[0]))
+                data = parse_input_data(request, self.model_mapping, j)
 
                 name = data.pop('name')
                 if not name:
@@ -309,44 +300,71 @@ class URAJobsBreakResource(URAResource):
 
 
 class URARacesResource(URAResource):
+    model_mapping = {
+        'date_begin': ('dateBegin', parse_datetime),
+        'date_end': ('dateEnd', parse_datetime),
+        'return_time': ('returnTime', parse_datetime),
+        'leave_time': ('leaveTime', parse_datetime),
+        'job_id': ('idJob', int),
+        'unit_id': ('idUnit', str),
+        'route_id': ('idRoute', str),
+    }
+
     def post(self, request, *args, **kwargs):
         jobs = []
-        jobs_els = request.data.xpath('/getRaces/job')
-
-        if jobs_els:
-
-            for j in jobs_els:
-                data = {}
-                for k, v in self.model_mapping.items():
-                    if v[1] == parse_datetime:
-                        data[k] = v[1](j.get(v[0]), request.user.ura_tz)
-                    else:
-                        data[k] = v[1](j.get(v[0]))
-
-                name = data.pop('name')
-                if not name:
-                    return error_response('Не указан параметр jobName', code='jobName_not_found')
-
-                job = self.model.objects.update_or_create(name=name, defaults=data)[0]
-                jobs.append(job)
 
         result = {
             'now': utcnow(),
             'units': jobs
         }
+
+        jobs_els = request.data.xpath('/getRaces/job')
+
+        if not jobs_els:
+            return error_response('Не указаны объекты типа job', code='jobs_not_found')
+
+        for j in jobs_els:
+            data = parse_input_data(request, self.model_mapping, j)
+
+            try:
+                job = data['job'] = models.UraJob.objects.get(pk=data['jon_id'])
+            except models.UraJob.DoesNotExist:
+                return error_response('Заявка не найдена', code='job_not_found')
+
+            dt_from, dt_to = get_period(
+                data['date_begin'],
+                data['date_end'],
+                request.user.ura_tz
+            )
+
         return XMLResponse('ura/races.xml', result)
 
 
 class URAMovingResource(URAResource):
     def post(self, request, *args, **kwargs):
         units = []
-        units_els = request.data.xpath('/getMoving/unit')
-
-        if units_els:
-            pass
 
         result = {
             'now': utcnow(),
             'units': units
         }
+
+        units_els = request.data.xpath('/getMoving/unit')
+
+        if not units_els:
+            return error_response(
+                'Не указаны объекты типа unit',
+                code='units_not_found'
+            )
+
+        template_id = request.user.wialon_geozones_report_template_id
+        if template_id is None:
+            return error_response(
+                'Не указан ID шаблона отчета по геозонам у текущего пользователя',
+                code='geozones_report_not_found'
+            )
+
+        for u in units_els:
+            pass
+
         return XMLResponse('ura/moving.xml', result)

@@ -17,12 +17,12 @@ urlpatterns = (
     ),
     url(
         r'^jobs/set/$',
-        views.URAJobsSetResource.as_view(),
+        views.URASetJobsResource.as_view(),
         name='ura_jobs_set'
     ),
     url(
         r'^jobs/break/$',
-        views.URAJobsBreakResource.as_view(),
+        views.URABreakJobsResource.as_view(),
         name='ura_jobs_break'
     ),
     url(

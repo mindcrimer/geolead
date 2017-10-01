@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import datetime
-import time
+
 
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.utils.timezone import utc
 
-from reports.utils import local_to_utc_time
 from snippets.views import BaseTemplateView
 
 
@@ -96,13 +95,3 @@ class BaseReportView(BaseTemplateView):
             raise ReportException(WIALON_USER_NOT_FOUND)
 
         return kwargs
-
-    @staticmethod
-    def get_period(user, form):
-        dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
-        dt_to = local_to_utc_time(form.cleaned_data['dt_to'], user.wialon_tz)
-
-        dt_from = int(time.mktime(dt_from.timetuple()))
-        dt_to = int(time.mktime(dt_to.timetuple()))
-
-        return dt_from, dt_to

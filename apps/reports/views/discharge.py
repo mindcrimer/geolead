@@ -10,7 +10,7 @@ import requests
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_report_object_id, get_wialon_report_resource_id, \
-    get_wialon_discharge_report_template_id
+    get_wialon_discharge_report_template_id, get_period
 from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.lib.exceptions import APIProcessError
@@ -69,7 +69,11 @@ class DischargeView(BaseReportView):
                 except APIProcessError as e:
                     raise ReportException(str(e))
 
-                dt_from, dt_to = self.get_period(user, form)
+                dt_from, dt_to = get_period(
+                    form.cleaned_data['dt_from'],
+                    form.cleaned_data['dt_to'],
+                    user.wialon_tz
+                )
 
                 extra_device_standards = {}
                 for unit in units_list:
@@ -236,7 +240,7 @@ class DischargeView(BaseReportView):
                                 report_row['consumption']['standard_extra_device'] = extra_standard
 
                             fact = report_row['consumption']['fact'] = \
-                                (float(data[3].split(' ')[0]) if data[3] else 0.0) + extra_standard
+                                (float(data[3].split(' ')[0]) if data[3] else 0.0)
 
                             if standard and fact / standard > (1.0 + self.OVERSPANDING_COEFF):
                                 report_row['overspanding'] = ((fact / standard) - 1.0) * 100.0

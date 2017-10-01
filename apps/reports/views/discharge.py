@@ -232,6 +232,9 @@ class DischargeView(BaseReportView):
                                 standard = report_row['consumption']['standard_mileage'] = \
                                     report_row['consumption']['standard_worktime'] = 0
 
+                            fact = report_row['consumption']['fact'] = \
+                                (float(data[3].split(' ')[0]) if data[3] else 0.0)
+
                             extra_standard = extra_device_standards.get(key, 0.0)
                             if extra_standard:
                                 motohours = parse_timedelta(data[2]).seconds / (60.0 * 60.0)
@@ -239,8 +242,7 @@ class DischargeView(BaseReportView):
 
                                 report_row['consumption']['standard_extra_device'] = extra_standard
 
-                            fact = report_row['consumption']['fact'] = \
-                                (float(data[3].split(' ')[0]) if data[3] else 0.0)
+                                fact += extra_standard
 
                             if standard and fact / standard > (1.0 + self.OVERSPANDING_COEFF):
                                 report_row['overspanding'] = ((fact / standard) - 1.0) * 100.0

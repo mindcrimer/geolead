@@ -44,7 +44,8 @@ class UserAdmin(UserAdmin):
             'fields': (
                 'wialon_token', 'organization_name', 'supervisor', 'wialon_tz',
                 'wialon_report_object_id', 'wialon_report_resource_id',
-                'wialon_discharge_report_template_id', 'wialon_driving_style_report_template_id'
+                'wialon_discharge_report_template_id', 'wialon_driving_style_report_template_id',
+                'wialon_geozones_report_template_id'
             )
         }),
         (_('УРА'), {

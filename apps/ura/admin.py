@@ -6,7 +6,7 @@ from ura import models
 
 @admin.register(models.UraJob)
 class UraJobAdmin(admin.ModelAdmin):
-    """Предложение новой категории"""
+    """Заявки"""
     date_hierarchy = 'created'
     fields = models.UraJob().collect_fields() + ['created', 'updated']
     list_display = ('id', 'name', 'driver_fio', 'date_begin', 'date_end')

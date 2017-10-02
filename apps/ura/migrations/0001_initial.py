@@ -29,8 +29,8 @@ class Migration(migrations.Migration):
                 ('leave_time', models.DateTimeField(verbose_name='Дата/время leave')),
             ],
             options={
-                'verbose_name_plural': 'Путевые листы',
-                'verbose_name': 'Путевой лист',
+                'verbose_name_plural': 'Заявки',
+                'verbose_name': 'Заявка',
             },
         ),
     ]

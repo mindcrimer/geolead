@@ -111,3 +111,9 @@ def get_wialon_driving_style_report_template_id(user):
     return user.wialon_driving_style_report_template_id \
         if user.wialon_driving_style_report_template_id \
         else settings.WIALON_DEFAULT_DRIVING_STYLE_REPORT_TEMPLATE_ID
+
+
+def get_wialon_geozones_report_template_id(user):
+    return user.wialon_geozones_report_template_id \
+        if user.wialon_geozones_report_template_id \
+        else settings.WIALON_DEFAULT_GEOZONES_REPORT_TEMPLATE_ID

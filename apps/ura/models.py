@@ -19,5 +19,5 @@ class UraJob(BasicModel, LastModMixin):
     leave_time = models.DateTimeField(_('Дата/время leave'), blank=True, null=True)
 
     class Meta:
-        verbose_name = _('Путевой лист')
-        verbose_name_plural = _('Путевые листы')
+        verbose_name = _('Заявка')
+        verbose_name_plural = _('Заявки')

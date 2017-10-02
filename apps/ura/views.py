@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+import json
 import random
 from datetime import timedelta
 
+import requests
+from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
-from reports.utils import get_period
+from reports.utils import get_period, get_wialon_geozones_report_template_id, \
+    get_wialon_report_resource_id
 
 from snippets.utils.datetime import utcnow
 from snippets.utils.passwords import generate_random_string
@@ -15,6 +19,7 @@ from ura.lib.response import XMLResponse, error_response
 from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
 from ura.utils import parse_datetime, get_organization_user, parse_input_data
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
+from ura.wialon.auth import authenticate_at_wialon
 from users.models import User
 
 
@@ -318,6 +323,10 @@ class URARacesResource(URAResource):
             'units': jobs
         }
 
+        sess_id = authenticate_at_wialon(request.user.wialon_token)
+        units_list = get_units_list(sess_id=sess_id, extra_fields=True)
+        units_dict = {x['id']: x for x in units_list}
+
         jobs_els = request.data.xpath('/getRaces/job')
 
         if not jobs_els:
@@ -327,15 +336,94 @@ class URARacesResource(URAResource):
             data = parse_input_data(request, self.model_mapping, j)
 
             try:
-                job = data['job'] = models.UraJob.objects.get(pk=data['jon_id'])
+                job = data['job'] = models.UraJob.objects.get(pk=data['job_id'])
             except models.UraJob.DoesNotExist:
                 return error_response('Заявка не найдена', code='job_not_found')
+
+            unit_id = data.get('unit_id', job.unit_id)
 
             dt_from, dt_to = get_period(
                 data['date_begin'],
                 data['date_end'],
                 request.user.ura_tz
             )
+
+            requests.post(
+                settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
+                    'params': json.dumps({
+                        'params': [
+                            {
+                                'svc': 'report/cleanup_result',
+                                'params': {}
+                            },
+                            {
+                                'svc': 'report/get_report_data',
+                                'params': {
+                                    'itemId': unit_id,
+                                    'col': [
+                                        str(get_wialon_geozones_report_template_id(request.user))
+                                    ],
+                                    'flags': 0
+                                }
+                            }
+                        ],
+                        'flags': 0
+                    }),
+                    'sid': sess_id
+                }
+            )
+
+            res = requests.post(
+                settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
+                    'params': json.dumps({
+                        'reportResourceId': get_wialon_report_resource_id(request.user),
+                        'reportTemplateId': get_wialon_geozones_report_template_id(request.user),
+                        'reportTemplate': None,
+                        'reportObjectId': unit_id,
+                        'reportObjectSecId': 0,
+                        'interval': {
+                            'flags': 0,
+                            'from': dt_from,
+                            'to': dt_to
+                        }
+                    }),
+                    'sid': sess_id
+                }
+            )
+
+            r = res.json()
+
+            if 'error' in r:
+                raise APIProcessError(
+                    'Не удалось получить отчет о поездках', code='wialon_geozones_report_error'
+                )
+
+            for index, table in enumerate(r['reportResult']['tables']):
+                rows = requests.post(
+                    settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
+                    sess_id, {
+                        'params': json.dumps({
+                            'tableIndex': index,
+                            'config': {
+                                'type': 'range',
+                                'data': {
+                                    'from': 0,
+                                    'to': table['rows'] - 1,
+                                    'level': 0
+                                }
+                            }
+                        }),
+                        'sid': sess_id
+                    }
+                ).json()
+
+                if 'error' in rows:
+                    raise APIProcessError(
+                        'Не удалось извлечь данные о поездке', code='wialon_geozones_rows_error'
+                    )
+
+                if table['name'] == 'report':
+                    a = 1
 
         return XMLResponse('ura/races.xml', result)
 

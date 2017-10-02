@@ -34,11 +34,15 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 
 
 def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
-    if isinstance(dt_from, str):
-        dt_from = local_to_utc_time(parse_wialon_report_datetime(dt_from), timezone)
+    from reports.views.base import ReportException
+    try:
+        if isinstance(dt_from, str):
+            dt_from = local_to_utc_time(parse_wialon_report_datetime(dt_from), timezone)
 
-    if isinstance(dt_to, str):
-        dt_to = local_to_utc_time(parse_wialon_report_datetime(dt_to), timezone)
+        if isinstance(dt_to, str):
+            dt_to = local_to_utc_time(parse_wialon_report_datetime(dt_to), timezone)
+    except ValueError:
+        raise ReportException('Ошибка получения данных. Повторите запрос.')
 
     unit_ids = tuple(filter(lambda x: x['name'] == unit_key, units_list))
     if not unit_ids:

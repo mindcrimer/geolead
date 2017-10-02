@@ -1,23 +1,20 @@
 # -*- coding: utf-8 -*-
-import json
+import datetime
 import random
-from datetime import timedelta
 
-import requests
-from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
-from reports.utils import get_period, get_wialon_geozones_report_template_id, \
-    get_wialon_report_resource_id
 
+from base.exceptions import APIProcessError, ReportException
+from reports.utils import get_period, get_wialon_geozones_report_template_id, \
+    cleanup_and_request_report, exec_report, get_report_rows
 from snippets.utils.datetime import utcnow
 from snippets.utils.passwords import generate_random_string
 from ura import models
-from ura.lib.exceptions import APIProcessError
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
-from ura.utils import parse_datetime, get_organization_user, parse_input_data
+from ura.utils import parse_datetime, get_organization_user, parse_xml_input_data
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 from ura.wialon.auth import authenticate_at_wialon
 from users.models import User
@@ -25,8 +22,7 @@ from users.models import User
 
 class URADriversResource(URAResource):
     """Список водителей"""
-    @staticmethod
-    def post(request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
 
         doc = request.data.xpath('/driversRequest')
         if len(doc) < 1:
@@ -51,18 +47,20 @@ class URADriversResource(URAResource):
         except APIProcessError as e:
             return error_response(str(e))
 
-        return XMLResponse('ura/drivers.xml', {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'doc_id': doc_id,
             'create_date': utcnow(),
             'drivers': drivers,
             'org_id': org_id
         })
 
+        return XMLResponse('ura/drivers.xml', context)
+
 
 class URAEchoResource(URAResource):
     """Тест работоспособности сервиса"""
-    @staticmethod
-    def post(request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
 
         doc = request.data.xpath('/echoRequest')
         if len(doc) < 1:
@@ -73,16 +71,17 @@ class URAEchoResource(URAResource):
         if not doc_id:
             return error_response('Не указан параметр idDoc', code='idDoc_not_found')
 
-        return XMLResponse('ura/echo.xml', {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'doc_id': doc_id,
             'create_date': utcnow()
         })
+        return XMLResponse('ura/echo.xml', context)
 
 
 class URAOrgsResource(URAResource):
     """Получение списка организаций"""
-    @staticmethod
-    def post(request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
 
         doc = request.data.xpath('/orgRequest')
         if len(doc) < 1:
@@ -97,17 +96,19 @@ class URAOrgsResource(URAResource):
             .filter(Q(pk=request.user.pk) | Q(supervisor=request.user))\
             .filter(wialon_token__isnull=False, is_active=True)
 
-        return XMLResponse('ura/orgs.xml', {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'doc_id': doc_id,
             'orgs': orgs,
             'create_date': utcnow()
         })
 
+        return XMLResponse('ura/orgs.xml', context)
+
 
 class URARoutesResource(URAResource):
     """Список маршрутов"""
-    @staticmethod
-    def post(request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
 
         doc = request.data.xpath('/routesRequest')
         if len(doc) < 1:
@@ -130,18 +131,20 @@ class URARoutesResource(URAResource):
         except APIProcessError as e:
             return error_response(str(e))
 
-        return XMLResponse('ura/routes.xml', {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'doc_id': doc_id,
             'create_date': utcnow(),
             'routes': routes,
             'org_id': org_id
         })
 
+        return XMLResponse('ura/routes.xml', context)
+
 
 class URAUnitsResource(URAResource):
     """Список элементов"""
-    @staticmethod
-    def post(request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
 
         doc = request.data.xpath('/unitsRequest')
         if len(doc) < 1:
@@ -164,72 +167,75 @@ class URAUnitsResource(URAResource):
         except APIProcessError as e:
             return error_response(str(e))
 
-        return XMLResponse('ura/units.xml', {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'doc_id': doc_id,
             'create_date': utcnow(),
             'units': units,
             'org_id': org_id
         })
 
+        return XMLResponse('ura/units.xml', context)
 
-class URAJobsTestDataView(URAResource):
-    @staticmethod
-    def generate_fio():
-        last_name = random.choice(SURNAMES_CHOICES)
-        first_name = random.choice(NAMES_CHOICES).upper()
-        middle_name = random.choice(NAMES_CHOICES).upper()
-        return '%s %s.%s' % (last_name, first_name, middle_name)
 
-    @classmethod
-    def post(cls, request, *args, **kwargs):
-        try:
-            units = get_units_list(request.user)
-        except APIProcessError as e:
-            return error_response(str(e))
-
-        try:
-            routes = get_routes_list(request.user)
-        except APIProcessError as e:
-            return error_response(str(e))
-
-        if not routes:
-            routes = [{
-                'id': 1,
-                'name': 'test route'
-            }]
-        now = utcnow().replace(hour=0, minute=0, second=0)
-        dt = utcnow() - timedelta(days=30)
-        delta = timedelta(seconds=60 * 60 * 8)
-
-        drivers = [cls.generate_fio() for _ in range(50)]
-
-        periods = []
-        while dt < now:
-            dt += delta
-            periods.append(dt)
-
-        for dt in periods:
-            to_dt = dt + delta
-            print(dt, to_dt)
-
-            for unit in units:
-                fio = random.choice(drivers)
-                print(fio)
-                route = random.choice(routes)
-
-                models.UraJob.objects.create(
-                    name=generate_random_string(),
-                    unit_id=unit['id'],
-                    route_id=route['id'],
-                    driver_id=random.randint(1, 1000000),
-                    driver_fio=fio,
-                    date_begin=dt,
-                    date_end=to_dt,
-                    return_time=to_dt,
-                    leave_time=dt
-                )
-
-        return HttpResponse('OK')
+# class URAJobsTestDataView(URAResource):
+#     @staticmethod
+#     def generate_fio():
+#         last_name = random.choice(SURNAMES_CHOICES)
+#         first_name = random.choice(NAMES_CHOICES).upper()
+#         middle_name = random.choice(NAMES_CHOICES).upper()
+#         return '%s %s.%s' % (last_name, first_name, middle_name)
+#
+#     @classmethod
+#     def post(cls, request, *args, **kwargs):
+#         try:
+#             units = get_units_list(request.user)
+#         except APIProcessError as e:
+#             return error_response(str(e))
+#
+#         try:
+#             routes = get_routes_list(request.user)
+#         except APIProcessError as e:
+#             return error_response(str(e))
+#
+#         if not routes:
+#             routes = [{
+#                 'id': 1,
+#                 'name': 'test route'
+#             }]
+#         now = utcnow().replace(hour=0, minute=0, second=0)
+#         dt = utcnow() - datetime.timedelta(days=30)
+#         delta = datetime.timedelta(seconds=60 * 60 * 8)
+#
+#         drivers = [cls.generate_fio() for _ in range(50)]
+#
+#         periods = []
+#         while dt < now:
+#             dt += delta
+#             periods.append(dt)
+#
+#         for dt in periods:
+#             to_dt = dt + delta
+#             print(dt, to_dt)
+#
+#             for unit in units:
+#                 fio = random.choice(drivers)
+#                 print(fio)
+#                 route = random.choice(routes)
+#
+#                 models.UraJob.objects.create(
+#                     name=generate_random_string(),
+#                     unit_id=unit['id'],
+#                     route_id=route['id'],
+#                     driver_id=random.randint(1, 1000000),
+#                     driver_fio=fio,
+#                     date_begin=dt,
+#                     date_end=to_dt,
+#                     return_time=to_dt,
+#                     leave_time=dt
+#                 )
+#
+#         return HttpResponse('OK')
 
 
 class URASetJobsResource(URAResource):
@@ -253,7 +259,7 @@ class URASetJobsResource(URAResource):
         if jobs_els:
 
             for j in jobs_els:
-                data = parse_input_data(request, self.model_mapping, j)
+                data = parse_xml_input_data(request, self.model_mapping, j)
 
                 name = data.pop('name')
                 if not name:
@@ -262,11 +268,13 @@ class URASetJobsResource(URAResource):
                 job = self.model.objects.update_or_create(name=name, defaults=data)[0]
                 jobs.append(job)
 
-        result = {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'now': utcnow(),
             'acceptedJobs': jobs
-        }
-        return XMLResponse('ura/ackjobs.xml', result)
+        })
+
+        return XMLResponse('ura/ackjobs.xml', context)
 
 
 class URABreakJobsResource(URAResource):
@@ -285,7 +293,7 @@ class URABreakJobsResource(URAResource):
         if jobs_els:
 
             for j in jobs_els:
-                data = parse_input_data(request, self.model_mapping, j)
+                data = parse_xml_input_data(request, self.model_mapping, j)
 
                 name = data.pop('name')
                 if not name:
@@ -297,11 +305,13 @@ class URABreakJobsResource(URAResource):
                     job = self.model.objects.filter(name=name).update(**data)
                     jobs.append(job)
 
-        result = {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'now': utcnow(),
             'breakJobs': jobs
-        }
-        return XMLResponse('ura/ackBreakJobs.xml', result)
+        })
+
+        return XMLResponse('ura/ackBreakJobs.xml', context)
 
 
 class URARacesResource(URAResource):
@@ -318,14 +328,15 @@ class URARacesResource(URAResource):
     def post(self, request, *args, **kwargs):
         jobs = []
 
-        result = {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'now': utcnow(),
-            'units': jobs
-        }
+            'jobs': jobs
+        })
 
         sess_id = authenticate_at_wialon(request.user.wialon_token)
-        units_list = get_units_list(sess_id=sess_id, extra_fields=True)
-        units_dict = {x['id']: x for x in units_list}
+        # units_list = get_units_list(sess_id=sess_id, extra_fields=True)
+        # units_dict = {x['id']: x for x in units_list}
 
         jobs_els = request.data.xpath('/getRaces/job')
 
@@ -333,7 +344,7 @@ class URARacesResource(URAResource):
             return error_response('Не указаны объекты типа job', code='jobs_not_found')
 
         for j in jobs_els:
-            data = parse_input_data(request, self.model_mapping, j)
+            data = parse_xml_input_data(request, self.model_mapping, j)
 
             try:
                 job = data['job'] = models.UraJob.objects.get(pk=data['job_id'])
@@ -348,94 +359,54 @@ class URARacesResource(URAResource):
                 request.user.ura_tz
             )
 
-            requests.post(
-                settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
-                    'params': json.dumps({
-                        'params': [
-                            {
-                                'svc': 'report/cleanup_result',
-                                'params': {}
-                            },
-                            {
-                                'svc': 'report/get_report_data',
-                                'params': {
-                                    'itemId': unit_id,
-                                    'col': [
-                                        str(get_wialon_geozones_report_template_id(request.user))
-                                    ],
-                                    'flags': 0
-                                }
-                            }
-                        ],
-                        'flags': 0
-                    }),
-                    'sid': sess_id
-                }
+            cleanup_and_request_report(
+                request.user,
+                get_wialon_geozones_report_template_id(request.user),
+                item_id=unit_id,
+                sess_id=sess_id,
             )
 
-            res = requests.post(
-                settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
-                    'params': json.dumps({
-                        'reportResourceId': get_wialon_report_resource_id(request.user),
-                        'reportTemplateId': get_wialon_geozones_report_template_id(request.user),
-                        'reportTemplate': None,
-                        'reportObjectId': unit_id,
-                        'reportObjectSecId': 0,
-                        'interval': {
-                            'flags': 0,
-                            'from': dt_from,
-                            'to': dt_to
-                        }
-                    }),
-                    'sid': sess_id
-                }
-            )
-
-            r = res.json()
-
-            if 'error' in r:
+            try:
+                r = exec_report(
+                    request.user,
+                    get_wialon_geozones_report_template_id(request.user),
+                    dt_from,
+                    dt_to,
+                    object_id=unit_id,
+                    sess_id=sess_id
+                )
+            except ReportException:
                 raise APIProcessError(
                     'Не удалось получить отчет о поездках', code='wialon_geozones_report_error'
                 )
 
-            for index, table in enumerate(r['reportResult']['tables']):
-                rows = requests.post(
-                    settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
-                    sess_id, {
-                        'params': json.dumps({
-                            'tableIndex': index,
-                            'config': {
-                                'type': 'range',
-                                'data': {
-                                    'from': 0,
-                                    'to': table['rows'] - 1,
-                                    'level': 0
-                                }
-                            }
-                        }),
-                        'sid': sess_id
-                    }
-                ).json()
-
-                if 'error' in rows:
+            for table_index, table_info in enumerate(r['reportResult']['tables']):
+                try:
+                    pass
+                    rows = get_report_rows(
+                        request.user,
+                        table_index,
+                        table_info,
+                        level=1,
+                        sess_id=sess_id
+                    )
+                except ReportException:
                     raise APIProcessError(
                         'Не удалось извлечь данные о поездке', code='wialon_geozones_rows_error'
                     )
 
-                if table['name'] == 'report':
-                    a = 1
-
-        return XMLResponse('ura/races.xml', result)
+        return XMLResponse('ura/races.xml', context)
 
 
 class URAMovingResource(URAResource):
     def post(self, request, *args, **kwargs):
         units = []
 
-        result = {
+        context = self.get_context_data(**kwargs)
+        context.update({
             'now': utcnow(),
             'units': units
-        }
+        })
 
         units_els = request.data.xpath('/getMoving/unit')
 
@@ -452,7 +423,7 @@ class URAMovingResource(URAResource):
                 code='geozones_report_not_found'
             )
 
-        for u in units_els:
-            pass
+        # for unit_el in units_els:
+        #     pass
 
-        return XMLResponse('ura/moving.xml', result)
+        return XMLResponse('ura/moving.xml', context)

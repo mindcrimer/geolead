@@ -2,10 +2,9 @@
 import json
 
 import requests
+from base.exceptions import APIProcessError
 from django.conf import settings
-from ura.lib.exceptions import APIProcessError
 from ura.wialon import WIALON_SESSION_ERROR
-
 from ura.wialon.auth import authenticate_at_wialon
 
 

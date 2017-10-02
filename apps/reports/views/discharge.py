@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
 import datetime
-import json
 
-from django.conf import settings
-
-import requests
-
+from base.exceptions import APIProcessError, ReportException
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
-    get_wialon_report_object_id, get_wialon_report_resource_id, \
-    get_wialon_discharge_report_template_id, get_period
-from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
-    WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.lib.exceptions import APIProcessError
+    get_wialon_discharge_report_template_id, get_period, cleanup_and_request_report, exec_report, \
+    get_report_rows
+from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.wialon.api import get_units_list
 
 
@@ -87,76 +81,27 @@ class DischargeView(BaseReportView):
                         except ValueError:
                             pass
 
-                requests.post(
-                    settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
-                        'params': json.dumps({
-                            'params': [
-                                {
-                                    'svc': 'report/cleanup_result',
-                                    'params': {}
-                                },
-                                {
-                                    'svc': 'report/get_report_data',
-                                    'params': {
-                                        'itemId': get_wialon_report_resource_id(user),
-                                        'col': [
-                                            str(get_wialon_discharge_report_template_id(user))
-                                        ],
-                                        'flags': 0
-                                    }
-                                }
-                            ],
-                            'flags': 0
-                        }),
-                        'sid': sess_id
-                    }
+                cleanup_and_request_report(
+                    user, get_wialon_discharge_report_template_id(user), sess_id=sess_id
                 )
 
-                res = requests.post(
-                    settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
-                        'params': json.dumps({
-                            'reportResourceId': get_wialon_report_resource_id(user),
-                            'reportTemplateId': get_wialon_discharge_report_template_id(user),
-                            'reportTemplate': None,
-                            'reportObjectId': get_wialon_report_object_id(user),
-                            'reportObjectSecId': 0,
-                            'interval': {
-                                'flags': 0,
-                                'from': dt_from,
-                                'to': dt_to
-                            }
-                        }),
-                        'sid': sess_id
-                    }
+                r = exec_report(
+                    user,
+                    get_wialon_discharge_report_template_id(user),
+                    dt_from,
+                    dt_to,
+                    sess_id=sess_id
                 )
 
-                r = res.json()
+                for table_index, table_info in enumerate(r['reportResult']['tables']):
 
-                if 'error' in r:
-                    raise ReportException(WIALON_INTERNAL_EXCEPTION)
-
-                for index, table in enumerate(r['reportResult']['tables']):
-
-                    rows = requests.post(
-                        settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
-                        sess_id, {
-                            'params': json.dumps({
-                                'tableIndex': index,
-                                'config': {
-                                    'type': 'range',
-                                    'data': {
-                                        'from': 0,
-                                        'to': table['rows'] - 1,
-                                        'level': 2 if table['name'] == 'unit_group_thefts' else 1
-                                    }
-                                }
-                            }),
-                            'sid': sess_id
-                        }
-                    ).json()
-
-                    if 'error' in rows:
-                        raise ReportException(WIALON_INTERNAL_EXCEPTION)
+                    rows = get_report_rows(
+                        user,
+                        table_index,
+                        table_info,
+                        level=2 if table_info['name'] == 'unit_group_thefts' else 1,
+                        sess_id=sess_id
+                    )
 
                     for row in rows:
                         data = row['c']
@@ -179,10 +124,10 @@ class DischargeView(BaseReportView):
 
                         report_row = report_data[key]
 
-                        if table['name'] == 'unit_group_trips' and data[4]:
+                        if table_info['name'] == 'unit_group_trips' and data[4]:
                             report_row['driver_name'] = data[4]
 
-                        elif table['name'] == 'unit_group_thefts':
+                        elif table_info['name'] == 'unit_group_thefts':
                             report_row['discharge']['place'] = data[1]['t'] \
                                 if data[1] and isinstance(data[1], dict) else ''
 
@@ -223,7 +168,7 @@ class DischargeView(BaseReportView):
                                         'volume': detail_volume
                                     })
 
-                        elif table['name'] == 'unit_group_generic':
+                        elif table_info['name'] == 'unit_group_generic':
                             try:
                                 standard = report_row['consumption']['standard_mileage'] = \
                                     report_row['consumption']['standard_worktime'] = \

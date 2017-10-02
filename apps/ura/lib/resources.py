@@ -9,8 +9,8 @@ from lxml import etree
 from lxml.etree import ParseError
 from six import BytesIO
 
-from ura.lib.exceptions import APIParseError, AuthenticationFailed, AuthenticationExpired, \
-    AuthenticationLoginRequired, APIValidationError, APIProcessError
+from base.exceptions import APIParseError, AuthenticationFailed, APIValidationError, \
+    APIProcessError
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
 
@@ -51,18 +51,6 @@ class URAResource(TemplateView):
                 # обновлять токен не имеет смысла, он неправильный. Просим войти заново.
                 return error_response(str(e), status=403, code=getattr(e, 'code', None))
 
-            except AuthenticationExpired as e:
-                # токен устарел, можно обновить токен
-                return error_response(str(e), status=401, code=getattr(e, 'code', None))
-
-            except AuthenticationLoginRequired as e:
-                # токен окончательно устарел, долго не пользовались. Требуется войти заново.
-                return error_response(
-                    str(e),
-                    status=403,
-                    code='token_expired'
-                )
-
         try:
             return handler(request, *args, **kwargs)
 
@@ -99,3 +87,8 @@ class URAResource(TemplateView):
             raise APIParseError(
                 _('Отправлены неправильные данные'), code='invalid_request_body_received'
             )
+
+    def get_context_data(self, **kwargs):
+        context = super(URAResource, self).get_context_data(**kwargs)
+        context['request'] = self.request
+        return context

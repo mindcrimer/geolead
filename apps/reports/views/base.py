@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.utils.timezone import utc
 
+from base.exceptions import ReportException
 from snippets.views import BaseTemplateView
 
 
@@ -16,10 +16,6 @@ WIALON_INTERNAL_EXCEPTION = \
 WIALON_NOT_LOGINED = 'Вы не выполнили вход через Wialon'
 WIALON_USER_NOT_FOUND = 'Не передан идентификатор пользователя'
 WIALON_FORM_ERRORS = 'Обнаружены ошибки формы'
-
-
-class ReportException(Exception):
-    pass
 
 
 class BaseReportView(BaseTemplateView):

@@ -33,11 +33,5 @@ class AuthenticationFailed(BaseAPIError):
     pass
 
 
-class AuthenticationExpired(BaseAPIError):
-    """Требуется обновление токена"""
-    pass
-
-
-class AuthenticationLoginRequired(BaseAPIError):
-    """Токен устарел, требуется вход"""
+class ReportException(Exception):
     pass

@@ -1,11 +1,47 @@
 # -*- coding: utf-8 -*-
 import datetime
+import json
 import time
 
 from django.conf import settings
 from django.utils.timezone import utc
 
+import requests
+
+from base.exceptions import ReportException
+from reports.views.base import WIALON_INTERNAL_EXCEPTION
 from ura.models import UraJob
+from ura.wialon.auth import authenticate_at_wialon
+
+
+def get_wialon_report_object_id(user):
+    return user.wialon_report_object_id \
+        if user.wialon_report_object_id \
+        else settings.WIALON_REPORTS_DEFAULT_OBJECT_ID
+
+
+def get_wialon_report_resource_id(user):
+    return user.wialon_report_resource_id \
+        if user.wialon_report_resource_id \
+        else settings.WIALON_DEFAULT_REPORT_RESOURCE_ID
+
+
+def get_wialon_discharge_report_template_id(user):
+    return user.wialon_discharge_report_template_id \
+        if user.wialon_discharge_report_template_id \
+        else settings.WIALON_DEFAULT_DISCHARGE_REPORT_TEMPLATE_ID
+
+
+def get_wialon_driving_style_report_template_id(user):
+    return user.wialon_driving_style_report_template_id \
+        if user.wialon_driving_style_report_template_id \
+        else settings.WIALON_DEFAULT_DRIVING_STYLE_REPORT_TEMPLATE_ID
+
+
+def get_wialon_geozones_report_template_id(user):
+    return user.wialon_geozones_report_template_id \
+        if user.wialon_geozones_report_template_id \
+        else settings.WIALON_DEFAULT_GEOZONES_REPORT_TEMPLATE_ID
 
 
 def parse_timedelta(delta_string):
@@ -34,7 +70,6 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 
 
 def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
-    from reports.views.base import ReportException
     try:
         if isinstance(dt_from, str):
             dt_from = local_to_utc_time(parse_wialon_report_datetime(dt_from), timezone)
@@ -89,31 +124,97 @@ def get_period(dt_from, dt_to, timezone):
     return dt_from, dt_to
 
 
-def get_wialon_report_object_id(user):
-    return user.wialon_report_object_id \
-        if user.wialon_report_object_id \
-        else settings.WIALON_REPORTS_DEFAULT_OBJECT_ID
+def cleanup_and_request_report(user, template_id, item_id=None, sess_id=None):
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
+
+    if item_id is None:
+        item_id = get_wialon_report_resource_id(user)
+
+    requests.post(
+        settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
+            'params': json.dumps({
+                'params': [
+                    {
+                        'svc': 'report/cleanup_result',
+                        'params': {}
+                    },
+                    {
+                        'svc': 'report/get_report_data',
+                        'params': {
+                            'itemId': item_id,
+                            'col': [str(template_id)],
+                            'flags': 0
+                        }
+                    }
+                ],
+                'flags': 0
+            }),
+            'sid': sess_id
+        }
+    )
 
 
-def get_wialon_report_resource_id(user):
-    return user.wialon_report_resource_id \
-        if user.wialon_report_resource_id \
-        else settings.WIALON_DEFAULT_REPORT_RESOURCE_ID
+def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, object_id=None,
+                sess_id=None):
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
+
+    if report_resource_id is None:
+        report_resource_id = get_wialon_report_resource_id(user)
+
+    if object_id is None:
+        object_id = get_wialon_report_object_id(user)
+
+    r = requests.post(
+        settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
+            'params': json.dumps({
+                'reportResourceId': report_resource_id,
+                'reportTemplateId': template_id,
+                'reportTemplate': None,
+                'reportObjectId': object_id,
+                'reportObjectSecId': 0,
+                'interval': {
+                    'flags': 0,
+                    'from': dt_from,
+                    'to': dt_to
+                }
+            }),
+            'sid': sess_id
+        }
+    )
+
+    result = r.json()
+
+    if 'error' in result:
+        raise ReportException(WIALON_INTERNAL_EXCEPTION)
+
+    return result
 
 
-def get_wialon_discharge_report_template_id(user):
-    return user.wialon_discharge_report_template_id \
-        if user.wialon_discharge_report_template_id \
-        else settings.WIALON_DEFAULT_DISCHARGE_REPORT_TEMPLATE_ID
+def get_report_rows(user, table_index, table_info, level=0, sess_id=None):
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
 
+    rows = requests.post(
+        settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
+        sess_id, {
+            'params': json.dumps({
+                'tableIndex': table_index,
+                'config': {
+                    'type': 'range',
+                    'data': {
+                        'from': 0,
+                        'to': table_info['rows'] - 1,
+                        'level': level
+                    }
+                }
+            }),
+            'sid': sess_id
+        }
+    ).json()
 
-def get_wialon_driving_style_report_template_id(user):
-    return user.wialon_driving_style_report_template_id \
-        if user.wialon_driving_style_report_template_id \
-        else settings.WIALON_DEFAULT_DRIVING_STYLE_REPORT_TEMPLATE_ID
+    if 'error' in rows:
+        raise ReportException(WIALON_INTERNAL_EXCEPTION)
 
-
-def get_wialon_geozones_report_template_id(user):
-    return user.wialon_geozones_report_template_id \
-        if user.wialon_geozones_report_template_id \
-        else settings.WIALON_DEFAULT_GEOZONES_REPORT_TEMPLATE_ID
+    return rows

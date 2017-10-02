@@ -148,7 +148,6 @@ INSTALLED_APPS = (
     'base',
     # приложения проекта
     'core',
-    'dicts',
     'reports',
     'ura',
     'users'
@@ -201,7 +200,6 @@ SUIT_CONFIG = {
     'MENU_OPEN_FIRST_CHILD': True,
     'MENU': [
         'core',
-        'dicts',
         'reports',
         'ura',
         'users'

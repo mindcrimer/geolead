@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-from django.utils.timezone import get_current_timezone
-
+from base.exceptions import APIProcessError
 from reports.utils import local_to_utc_time
-from ura.lib.exceptions import APIProcessError
 from users.models import User
 
 
 def parse_datetime(str_date, timezone):
-    tz = get_current_timezone()
-    local_dt = tz.localize(datetime.strptime(str_date, '%d.%m.%Y %H:%M:%S'))
+    local_dt = datetime.strptime(str_date, '%d.%m.%Y %H:%M:%S')
     return local_to_utc_time(local_dt, timezone)
 
 
@@ -29,7 +26,7 @@ def get_organization_user(request, org_id):
     return user
 
 
-def parse_input_data(request, mapping, element):
+def parse_xml_input_data(request, mapping, element):
     data = {}
     for k, v in mapping.items():
         try:

@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
 import datetime
-import json
 
-from django.conf import settings
-
-import requests
-
+from base.exceptions import APIProcessError, ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
-    get_wialon_driving_style_report_template_id, get_wialon_report_resource_id, \
-    get_wialon_report_object_id, get_period
-from reports.views.base import BaseReportView, ReportException, WIALON_INTERNAL_EXCEPTION, \
+    get_wialon_driving_style_report_template_id, get_period, cleanup_and_request_report, \
+    exec_report, get_report_rows
+from reports.views.base import BaseReportView, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.lib.exceptions import APIProcessError
 from ura.wialon.api import get_units_list
 
 
@@ -115,145 +110,103 @@ class DrivingStyleView(BaseReportView):
                     user.wialon_tz
                 )
 
-                requests.post(
-                    settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
-                        'params': json.dumps({
-                            'params': [
-                                {
-                                    'svc': 'report/cleanup_result',
-                                    'params': {}
+                cleanup_and_request_report(
+                    user, get_wialon_driving_style_report_template_id(user), sess_id=sess_id
+                )
+
+                r = exec_report(
+                    user,
+                    get_wialon_driving_style_report_template_id(user),
+                    dt_from,
+                    dt_to,
+                    sess_id=sess_id
+                )
+
+                for table_index, table_info in enumerate(r['reportResult']['tables']):
+
+                    if table_info['name'] != 'unit_group_ecodriving':
+                        continue
+
+                    rows = get_report_rows(
+                        user,
+                        table_index,
+                        table_info,
+                        level=2,
+                        sess_id=sess_id
+                    )
+
+                    if 'error' in rows:
+                        raise ReportException(WIALON_INTERNAL_EXCEPTION)
+
+                    for row in rows:
+                        data = row['c']
+
+                        if not data[1]:
+                            data[1] = get_drivers_fio(
+                                units_list,
+                                data[0],
+                                form.cleaned_data['dt_from'],
+                                form.cleaned_data['dt_to'],
+                                user.ura_tz
+                            ) or ''
+                        key = (data[0], data[1])
+
+                        if key not in report_data:
+                            report_data[key] = self.get_new_grouping()
+
+                        report_row = report_data[key]
+                        report_row['total_time'] = \
+                            self.parse_time_delta(data[5]).seconds \
+                            + (self.parse_time_delta(data[5]).days * 3600 * 24)
+
+                        details = row['r']
+
+                        for subject in details:
+
+                            detail_data = {
+                                'speed': {
+                                    'count': 0,
+                                    'seconds': .0
                                 },
-                                {
-                                    'svc': 'report/get_report_data',
-                                    'params': {
-                                        'itemId': get_wialon_report_resource_id(user),
-                                        'col': [
-                                            str(get_wialon_driving_style_report_template_id(user))
-                                        ],
-                                        'flags': 0
-                                    }
-                                }
-                            ],
-                            'flags': 0
-                        }),
-                        'sid': sess_id
-                    }
-                )
-
-                res = requests.post(
-                    settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {
-                        'params': json.dumps({
-                            'reportResourceId': get_wialon_report_resource_id(user),
-                            'reportTemplateId': get_wialon_driving_style_report_template_id(user),
-                            'reportTemplate': None,
-                            'reportObjectId': get_wialon_report_object_id(user),
-                            'reportObjectSecId': 0,
-                            'interval': {
-                                'flags': 0,
-                                'from': dt_from,
-                                'to': dt_to
+                                'lights': {
+                                    'count': 0,
+                                    'seconds': .0
+                                },
+                                'belt': {
+                                    'count': 0,
+                                    'seconds': .0
+                                },
+                                'devices': {
+                                    'count': 0,
+                                    'seconds': .0
+                                },
+                                'dt': ''
                             }
-                        }),
-                        'sid': sess_id
-                    }
-                )
+                            violation = subject['c'][3].lower() if subject['c'][3] else ''
+                            if 'свет' in violation or 'фар' in violation:
+                                viol_key = 'lights'
+                            elif 'скорост' in violation or 'превышен' in violation:
+                                viol_key = 'speed'
+                            elif 'ремн' in violation or 'ремен' in violation:
+                                viol_key = 'belt'
+                            else:
+                                viol_key = ''
 
-                r = res.json()
-                if 'error' in r:
-                    raise ReportException(WIALON_INTERNAL_EXCEPTION)
+                            if viol_key:
+                                delta = subject['t2'] - subject['t1']
+                                report_row['facts'][viol_key]['count'] += 1
+                                report_row['facts'][viol_key]['seconds'] += delta
 
-                for index, table in enumerate(r['reportResult']['tables']):
-                    if table['name'] == 'unit_group_ecodriving':
-                        rows = requests.post(
-                            settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
-                            sess_id, {
-                                'params': json.dumps({
-                                    'tableIndex': index,
-                                    'config': {
-                                        'type': 'range',
-                                        'data': {
-                                            'from': 0,
-                                            'to': table['rows'] - 1,
-                                            'level': 2
-                                        }
-                                    }
-                                }),
-                                'sid': sess_id
-                            }
-                        ).json()
+                                if detail_data:
+                                    # detail_data[viol_key]['count'] = 1
+                                    detail_data[viol_key]['seconds'] = delta
+                                    detail_data['dt'] = parse_wialon_report_datetime(
+                                        subject['c'][9]['t']
+                                        if isinstance(subject['c'][9], dict)
+                                        else subject['c'][9]
+                                    )
 
-                        if 'error' in rows:
-                            raise ReportException(WIALON_INTERNAL_EXCEPTION)
-
-                        for row in rows:
-                            data = row['c']
-
-                            if not data[1]:
-                                data[1] = get_drivers_fio(
-                                    units_list,
-                                    data[0],
-                                    form.cleaned_data['dt_from'],
-                                    form.cleaned_data['dt_to'],
-                                    user.ura_tz
-                                ) or ''
-                            key = (data[0], data[1])
-
-                            if key not in report_data:
-                                report_data[key] = self.get_new_grouping()
-
-                            report_row = report_data[key]
-                            report_row['total_time'] = \
-                                self.parse_time_delta(data[5]).seconds \
-                                + (self.parse_time_delta(data[5]).days * 3600 * 24)
-
-                            details = row['r']
-
-                            for subject in details:
-
-                                detail_data = {
-                                    'speed': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'lights': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'belt': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'devices': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'dt': ''
-                                }
-                                violation = subject['c'][3].lower() if subject['c'][3] else ''
-                                if 'свет' in violation or 'фар' in violation:
-                                    viol_key = 'lights'
-                                elif 'скорост' in violation or 'превышен' in violation:
-                                    viol_key = 'speed'
-                                elif 'ремн' in violation or 'ремен' in violation:
-                                    viol_key = 'belt'
-                                else:
-                                    viol_key = ''
-
-                                if viol_key:
-                                    delta = subject['t2'] - subject['t1']
-                                    report_row['facts'][viol_key]['count'] += 1
-                                    report_row['facts'][viol_key]['seconds'] += delta
-
-                                    if detail_data:
-                                        # detail_data[viol_key]['count'] = 1
-                                        detail_data[viol_key]['seconds'] = delta
-                                        detail_data['dt'] = parse_wialon_report_datetime(
-                                            subject['c'][9]['t']
-                                            if isinstance(subject['c'][9], dict)
-                                            else subject['c'][9]
-                                        )
-
-                                        report_row['details'].append(detail_data)
+                                    report_row['details'].append(detail_data)
 
             for data in report_data.values():
                 for viol_key in ('speed', 'lights', 'belt', 'devices'):

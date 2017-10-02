@@ -7,7 +7,7 @@ from django.core.cache import cache
 
 import requests
 
-from ura.lib.exceptions import APIProcessError
+from base.exceptions import APIProcessError
 
 
 def authenticate_at_wialon(token):

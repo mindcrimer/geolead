@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-import datetime
-import random
-
 from django.db.models import Q
-from django.http import HttpResponse
 
+from base.utils import parse_float
 from base.exceptions import APIProcessError, ReportException
 from reports.utils import get_period, get_wialon_geozones_report_template_id, \
-    cleanup_and_request_report, exec_report, get_report_rows
+    cleanup_and_request_report, exec_report, get_report_rows, parse_wialon_report_datetime, \
+    parse_timedelta, format_timedelta
 from snippets.utils.datetime import utcnow
-from snippets.utils.passwords import generate_random_string
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
-from ura.test_data import SURNAMES_CHOICES, NAMES_CHOICES
 from ura.utils import parse_datetime, get_organization_user, parse_xml_input_data
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 from ura.wialon.auth import authenticate_at_wialon
@@ -318,12 +314,37 @@ class URARacesResource(URAResource):
     model_mapping = {
         'date_begin': ('dateBegin', parse_datetime),
         'date_end': ('dateEnd', parse_datetime),
-        'return_time': ('returnTime', parse_datetime),
-        'leave_time': ('leaveTime', parse_datetime),
         'job_id': ('idJob', int),
-        'unit_id': ('idUnit', str),
-        'route_id': ('idRoute', str),
+        'unit_id': ('idUnit', int),
+        'route_id': ('idRoute', int)
     }
+
+    RIDES_GEOZONE_FROM_COL = 1
+    RIDES_DATE_FROM_COL = 3
+    RIDES_DATE_TO_COL = 4
+    RIDES_DISTANCE_END_COL = 5
+    RIDES_TIME_TOTAL_COL = 6
+    RIDES_TIME_PARKING_COL = 7
+    RIDES_FUEL_LEVEL_START_COL = 8
+    RIDES_FUEL_LEVEL_TO_COL = 9
+    RIDES_ODOMETER_START_COL = 10
+    RIDES_ODOMETER_TO_COL = 11
+
+    @staticmethod
+    def get_next_point(points, points_iterator=None):
+        new_loop = False
+
+        if points_iterator is None:
+            points_iterator = iter(points)
+
+        try:
+            current_point = next(points_iterator)
+        except StopIteration:
+            points_iterator = iter(points)
+            current_point = next(points_iterator)
+            new_loop = True
+
+        return current_point, points_iterator, new_loop
 
     def post(self, request, *args, **kwargs):
         jobs = []
@@ -335,8 +356,8 @@ class URARacesResource(URAResource):
         })
 
         sess_id = authenticate_at_wialon(request.user.wialon_token)
-        # units_list = get_units_list(sess_id=sess_id, extra_fields=True)
-        # units_dict = {x['id']: x for x in units_list}
+        routes_list = get_routes_list(sess_id=sess_id, get_points=True)
+        routes_dict = {x['id']: x for x in routes_list}
 
         jobs_els = request.data.xpath('/getRaces/job')
 
@@ -349,9 +370,16 @@ class URARacesResource(URAResource):
             try:
                 job = data['job'] = models.UraJob.objects.get(pk=data['job_id'])
             except models.UraJob.DoesNotExist:
-                return error_response('Заявка не найдена', code='job_not_found')
+                return error_response(
+                    'Заявка c ID=%s не найдена' % data['job_id'], code='job_not_found'
+                )
 
-            unit_id = data.get('unit_id', job.unit_id)
+            unit_id = int(data.get('unit_id', job.unit_id))
+            route_id = int(data.get('route_id', job.route_id))
+            if route_id not in routes_dict:
+                return error_response(
+                    'Маршрут с ID=%s не найден' % route_id, code='routes_not_found'
+                )
 
             dt_from, dt_to = get_period(
                 data['date_begin'],
@@ -380,9 +408,14 @@ class URARacesResource(URAResource):
                     'Не удалось получить отчет о поездках', code='wialon_geozones_report_error'
                 )
 
+            report_data = {
+                'unit_fillings': [],
+                'unit_engine_hours': [],
+                'unit_rides': [],
+                'unit_thefts': []
+            }
             for table_index, table_info in enumerate(r['reportResult']['tables']):
                 try:
-                    pass
                     rows = get_report_rows(
                         request.user,
                         table_index,
@@ -390,10 +423,103 @@ class URARacesResource(URAResource):
                         level=1,
                         sess_id=sess_id
                     )
+
+                    report_data[table_info['name']] = rows
+
                 except ReportException:
                     raise APIProcessError(
                         'Не удалось извлечь данные о поездке', code='wialon_geozones_rows_error'
                     )
+
+            races = []
+            job_info = {
+                'obj': job,
+                'races': races
+            }
+
+            points = routes_dict[route_id]['points']
+            if len(points) < 2:
+                return error_response(
+                    'В маршруте %s менее 2 контрольных точек' % routes_dict[route_id]['name'],
+                    code='route_no_points'
+                )
+
+            current_point, points_iterator, new_loop = self.get_next_point(points)
+            start_point, end_point = points[0], points[-1]
+            race = {
+                'date_start': None,
+                'date_end': None,
+                'points': []
+            }
+
+            for row in report_data['unit_rides']:
+                row_data = row['c']
+                row_point_name = row_data[self.RIDES_GEOZONE_FROM_COL].strip()
+
+                if row_point_name == current_point:
+                    time_in = parse_wialon_report_datetime(row_data[self.RIDES_DATE_FROM_COL]['t'])
+                    time_out = parse_wialon_report_datetime(row_data[self.RIDES_DATE_TO_COL]['t'])
+
+                    if race['date_start'] is None:
+                        race['date_start'] = time_in
+
+                    point_info = {
+                        'time_in': time_in,
+                        'time_out': time_out,
+                        'params': {}
+                    }
+
+                    if row_point_name == start_point:
+                        point_info['type'] = 'start_point'
+                        point_info['params']['fuelLevel'] = parse_float(
+                            row_data[self.RIDES_FUEL_LEVEL_START_COL]
+                        )
+                        point_info['params']['distance'] = parse_float(
+                            row_data[self.RIDES_DISTANCE_END_COL]
+                        )
+
+                    elif row_point_name == end_point:
+                        point_info['type'] = 'end_point'
+                        point_info['params']['fuelLevel'] = parse_float(
+                            row_data[self.RIDES_FUEL_LEVEL_TO_COL]
+                        )
+                        point_info['params']['distance'] = parse_float(
+                            row_data[self.RIDES_DISTANCE_END_COL]
+                        )
+
+                    else:
+                        point_info['type'] = 'check_point'
+                        point_info['params']['fuelLevelIn'] = parse_float(
+                            row_data[self.RIDES_FUEL_LEVEL_START_COL]
+                        )
+                        point_info['params']['distanceIn'] = parse_float(
+                            row_data[self.RIDES_DISTANCE_END_COL]
+                        )
+
+                        time_total = parse_timedelta(row_data[self.RIDES_TIME_TOTAL_COL])
+                        time_parking = parse_timedelta(row_data[self.RIDES_TIME_PARKING_COL])
+                        point_info['params']['moveTime'] = format_timedelta(
+                            max(0, time_total - time_parking)
+                        )
+
+                    race['points'].append(point_info)
+
+                    current_point, points_iterator, new_loop = self.get_next_point(
+                        points, points_iterator
+                    )
+
+                    if new_loop:
+                        if race['date_end'] is None:
+                            race['date_end'] = time_out
+
+                        races.append(race)
+                        race = {
+                            'date_start': None,
+                            'date_end': None,
+                            'points': []
+                        }
+
+            jobs.append(job_info)
 
         return XMLResponse('ura/races.xml', context)
 

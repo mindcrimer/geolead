@@ -46,7 +46,7 @@ def get_drivers_list(user=None, sess_id=None):
     return drivers
 
 
-def get_routes_list(user=None, sess_id=None):
+def get_routes_list(user=None, sess_id=None, get_points=False):
     """Получает список маршрутов"""
     assert user or sess_id
 
@@ -62,7 +62,7 @@ def get_routes_list(user=None, sess_id=None):
             'propType': 'property'
         },
         'force': 1,
-        'flags': 1,
+        'flags': 1 if not get_points else 1 + 512,
         'from': 0,
         'to': 0
     })
@@ -76,7 +76,17 @@ def get_routes_list(user=None, sess_id=None):
     if 'error' in res:
         raise APIProcessError(WIALON_SESSION_ERROR)
 
-    routes = [{'id': r['id'], 'name': r['nm']} for r in res['items']]
+    routes = []
+    for r in res['items']:
+        route = {
+            'id': r['id'],
+            'name': r['nm'].strip()
+        }
+        if get_points:
+            route['points'] = [x['n'].strip() for x in r.get('rpts', [])]
+
+        routes.append(route)
+
     return routes
 
 

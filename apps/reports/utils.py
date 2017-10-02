@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import math
 import time
 
 from django.conf import settings
@@ -64,6 +65,16 @@ def parse_timedelta(delta_string):
             delta += datetime.timedelta(seconds=part)
 
     return delta
+
+
+def format_timedelta(seconds):
+    hours = math.floor(seconds / 3600)
+    rest = seconds - (3600 * hours)
+
+    minutes = math.floor(rest / 60)
+    secs = rest - (60 * minutes)
+
+    return '%s:%s:%s' % tuple(str(x).rjust(2, '0') for x in (hours, minutes, secs))
 
 
 DATETIME_FORMAT = '%Y-%m-%d %H:%M'

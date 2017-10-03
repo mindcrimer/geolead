@@ -379,7 +379,7 @@ class URARacesResource(URAResource):
                 job = data['job'] = models.UraJob.objects.get(pk=data['job_id'])
             except models.UraJob.DoesNotExist:
                 return error_response(
-                    'Заявка c ID=%s не найдена' % data['job_id'], code='job_not_found'
+                    'Задача c ID=%s не найдена' % data['job_id'], code='job_not_found'
                 )
 
             races = []
@@ -591,8 +591,8 @@ class URAMovingResource(URAResource):
 
             unit_info = {
                 'id': unit_id,
-                'date_begin': None,
-                'date_end': None,
+                'date_begin': utc_to_local_time(data.get('date_begin'), request.user.ura_tz),
+                'date_end': utc_to_local_time(data.get('date_end'), request.user.ura_tz),
                 'points': []
             }
 

@@ -538,6 +538,13 @@ class URARacesResource(URAResource):
                             'points': []
                         }
 
+            # пост-фильтрация незаконченных маршрутов
+            job_info['races'] = filter(
+                lambda rc: len(
+                    tuple(filter(lambda p: p['type'] == 'endPoint', rc['points']))
+                ) > 0,
+                job_info['races']
+            )
             jobs.append(job_info)
 
         return XMLResponse('ura/races.xml', context)

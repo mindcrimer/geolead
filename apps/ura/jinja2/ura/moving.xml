@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Moving scriptVersion="0.1.0" dateCreate="{{ now|date('d.m.Y H:i:s') }}">
     {%- for unit in units %}
-	<MovingUnit idUnit="{{ unit['id'] }}" dateBegin="" dateEnd="">
-
-	</MovingUnit>
+    <MovingUnit idUnit="{{ unit['id'] }}" dateBegin="{{ unit['date_begin']|date('d.m.Y H:i:s') }}" dateEnd="{{ unit['date_end']|date('d.m.Y H:i:s') }}">
+        {%- for point in unit['points'] %}
+        <point namePoint="{{ point['name'] }}" timeIn="{{ point['time_in']|date('d.m.Y H:i:s') }}" timeOut="{{ point['time_out']|date('d.m.Y H:i:s') }}" type="0">
+            {%- for param, value in point['params'].items() %}
+            <param name="{{ param }}" value="{{ value }}"/>
+			{%- endfor %}
+        </point>
+        {%- endfor %}
+    </MovingUnit>
     {%- endfor %}
 </Moving>

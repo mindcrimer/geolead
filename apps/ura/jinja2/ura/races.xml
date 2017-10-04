@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <jobExecution scriptVersion="0.1.1" dateCreate="{{ now|date('d.m.Y H:i:s') }}">
     {%- for job in jobs %}
-	<job idJob="{{ job.pk }}" idUnit="{{ job.unit_id }}">
+	<job idJob="{{ job['obj'].pk }}" idUnit="{{ job['obj'].unit_id }}">
         {%- for race in job['races'] %}
         <race dateStart="{% if race['date_start'] %}{{ race['date_start']|date('d.m.Y H:i:s') }}{% endif %}" dateEnd="{% if race['date_end'] %}{{ race['date_end']|date('d.m.Y H:i:s') }}{% endif %}">
             {%- for point in race['points'] %}

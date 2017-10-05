@@ -606,7 +606,7 @@ class URAMovingResource(URAResource):
                 request.user,
                 get_wialon_geozones_report_template_id(request.user),
                 item_id=unit_id,
-                sess_id=sess_id,
+                sess_id=sess_id
             )
 
             try:
@@ -647,8 +647,6 @@ class URAMovingResource(URAResource):
                         'Не удалось извлечь данные о поездке', code='wialon_geozones_rows_error'
                     )
 
-            time_out = None
-
             for row in report_data['unit_rides']:
                 row_data = row['c']
                 time_in = utc_to_local_time(
@@ -659,9 +657,6 @@ class URAMovingResource(URAResource):
                     parse_wialon_report_datetime(row_data[RIDES_DATE_TO_COL]['t']),
                     request.user.ura_tz
                 )
-
-                if unit_info['date_begin'] is None:
-                    unit_info['date_begin'] = time_in
 
                 time_total = parse_timedelta(row_data[RIDES_TIME_TOTAL_COL]).seconds
                 time_parking = parse_timedelta(row_data[RIDES_TIME_PARKING_COL]).seconds
@@ -688,9 +683,6 @@ class URAMovingResource(URAResource):
                 }
 
                 unit_info['points'].append(point_info)
-
-            if time_out is not None:
-                unit_info['date_end'] = time_out
 
             units.append(unit_info)
 

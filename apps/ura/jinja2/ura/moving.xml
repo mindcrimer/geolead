@@ -5,7 +5,13 @@
         {%- for point in unit['points'] %}
         <point namePoint="{{ point['name'] }}" timeIn="{{ point['time_in']|date('d.m.Y H:i:s') }}" timeOut="{{ point['time_out']|date('d.m.Y H:i:s') }}" type="0">
             {%- for param, value in point['params'].items() %}
-            <param name="{{ param }}" value="{{ value }}"/>
+            <param name="{{ param }}" value="
+                {%- if param in ('stopMinutes', 'moveMinutes', 'motoHours') -%}
+                {{- value|format_timedelta -}}
+                {%- else -%}
+                {{- value -}}
+                {%- endif -%}
+            "/>
 			{%- endfor %}
         </point>
         {%- endfor %}

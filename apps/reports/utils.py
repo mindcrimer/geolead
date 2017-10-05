@@ -114,7 +114,7 @@ def parse_wialon_report_datetime(str_date):
 def utc_to_local_time(dt, timezone):
     local_dt = dt + timezone.utcoffset(datetime.datetime.now())
     if local_dt.tzinfo is None:
-        local_dt = local_dt.replace(tzinfo=timezone)
+        local_dt = timezone.localize(local_dt)
     return local_dt
 
 

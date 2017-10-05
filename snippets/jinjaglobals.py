@@ -194,7 +194,7 @@ def cropped_thumbnail(instance, field_name, width=None, height=None, scale=None,
 
 
 @jinjafilter
-def date(value, arg, use_l10n=True):
+def date(value, arg, use_l10n=False):
     value = template_localtime(value)
     if value in (None, ''):
         return ''

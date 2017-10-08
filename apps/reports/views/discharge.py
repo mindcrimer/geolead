@@ -9,6 +9,7 @@ from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_
     get_report_rows
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.wialon.api import get_units_list
+from ura.wialon.exceptions import WialonException
 
 
 class DischargeView(BaseReportView):
@@ -60,7 +61,7 @@ class DischargeView(BaseReportView):
 
                 try:
                     units_list = get_units_list(sess_id=sess_id, extra_fields=True)
-                except APIProcessError as e:
+                except WialonException as e:
                     raise ReportException(str(e))
 
                 dt_from, dt_to = get_period(

@@ -20,6 +20,11 @@ class APIValidationError(ValidationError, BaseAPIError):
     pass
 
 
+class APISourceEndError(ValidationError, BaseAPIError):
+    """Ошибка при выполнении запросов получения данных из источника данных"""
+    pass
+
+
 class APIProcessError(BaseAPIError):
     """Ошибка выполнения функций API"""
     def __init__(self, message, *args, **kwargs):

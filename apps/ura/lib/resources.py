@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from time import sleep
+
 from django.contrib.auth.models import AnonymousUser
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -13,6 +15,7 @@ from base.exceptions import APIParseError, AuthenticationFailed, APIValidationEr
     APIProcessError
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
+from ura.wialon.exceptions import WialonException
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -51,18 +54,32 @@ class URAResource(TemplateView):
                 # обновлять токен не имеет смысла, он неправильный. Просим войти заново.
                 return error_response(str(e), status=403, code=getattr(e, 'code', None))
 
-        try:
-            return handler(request, *args, **kwargs)
+        attempts = 0
+        attempts_limit = 20
+        while attempts < attempts_limit:
+            try:
+                return handler(request, *args, **kwargs)
 
-        except APIValidationError as e:
-            return validation_error_response(e.messages)
+            except APIValidationError as e:
+                return validation_error_response(e.messages)
 
-        except APIProcessError as e:
-            return error_response(
-                str(e),
-                status=e.http_status if e.http_status else None,
-                code=e.code
-            )
+            except APIProcessError as e:
+                return error_response(
+                    str(e),
+                    status=e.http_status if e.http_status else None,
+                    code=e.code
+                )
+
+            except WialonException:
+                attempts += 1
+                # после каждого падения Виалона ждет 5 секунд и повторяем попытку
+                sleep(5)
+
+        return error_response(
+            'Лимит попыток обращения к источнику данных (%s попыток) закончился' % attempts_limit,
+            status=400,
+            code='attempts_limit'
+        )
 
     @staticmethod
     def authenticate(request):

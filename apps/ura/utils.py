@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
+from django.template.defaultfilters import floatformat
+
 from base.exceptions import APIProcessError
 from reports.utils import local_to_utc_time
 from users.models import User
+
+
+def float_format(value, arg=0):
+    return floatformat(value, arg).replace(',', '.')
 
 
 def parse_datetime(str_date, timezone):

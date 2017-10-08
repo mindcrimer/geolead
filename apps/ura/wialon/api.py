@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
 
-import requests
-from base.exceptions import APIProcessError
 from django.conf import settings
-from ura.wialon import WIALON_SESSION_ERROR
+
+import requests
+
+from ura.wialon import WIALON_ENTIRE_ERROR
 from ura.wialon.auth import authenticate_at_wialon
+from ura.wialon.exceptions import WialonException
 
 
 def get_drivers_list(user=None, sess_id=None):
@@ -36,7 +38,7 @@ def get_drivers_list(user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res:
-        raise APIProcessError(WIALON_SESSION_ERROR)
+        raise WialonException(WIALON_ENTIRE_ERROR)
 
     drivers = []
     for item in res['items']:
@@ -74,7 +76,7 @@ def get_routes_list(user=None, sess_id=None, get_points=False):
     res = r.json()
 
     if 'error' in res:
-        raise APIProcessError(WIALON_SESSION_ERROR)
+        raise WialonException(WIALON_ENTIRE_ERROR)
 
     routes = []
     for r in res['items']:
@@ -118,7 +120,7 @@ def get_units_list(user=None, sess_id=None, extra_fields=False):
     res = r.json()
 
     if 'error' in res:
-        raise APIProcessError(WIALON_SESSION_ERROR)
+        raise WialonException(WIALON_ENTIRE_ERROR)
 
     units = []
     for item in res['items']:

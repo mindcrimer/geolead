@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-
+from copy import deepcopy
 import datetime
 
-from copy import deepcopy
-
 from django.db.models import Q
-from django.template.defaultfilters import floatformat
 
 from base.utils import parse_float
 from base.exceptions import APIProcessError, ReportException
@@ -17,14 +14,10 @@ from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
-from ura.utils import parse_datetime, get_organization_user, parse_xml_input_data
+from ura.utils import parse_datetime, get_organization_user, parse_xml_input_data, float_format
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
 from ura.wialon.auth import authenticate_at_wialon
 from users.models import User
-
-
-def float_format(value, arg=0):
-    return floatformat(value, arg).replace(',', '.')
 
 
 class URADriversResource(URAResource):

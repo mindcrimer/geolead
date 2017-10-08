@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pointsAnswer idOrg="{{ org_id }}" idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
+    {%- for point in points %}
+	<Point name="{{ point['name']|e }}" idPoint="{{ point['id'] }}"/>
+    {%- endfor %}
+</pointsAnswer>

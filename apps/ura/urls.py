@@ -41,6 +41,11 @@ urlpatterns = (
         name='ura_orgs'
     ),
     url(
+        r'^points/$',
+        views.URAPointsResource.as_view(),
+        name='ura_points'
+    ),
+    url(
         r'^routes/$',
         views.URARoutesResource.as_view(),
         name='ura_routes'

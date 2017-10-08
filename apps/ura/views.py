@@ -15,7 +15,7 @@ from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime, get_organization_user, parse_xml_input_data, float_format
-from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list
+from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list, get_points_list
 from ura.wialon.auth import authenticate_at_wialon
 from users.models import User
 
@@ -77,6 +77,44 @@ class URAEchoResource(URAResource):
             'create_date': utcnow()
         })
         return XMLResponse('ura/echo.xml', context)
+
+
+class URAPointsResource(URAResource):
+    """Список геозон (точек)"""
+    def post(self, request, *args, **kwargs):
+
+        doc = request.data.xpath('/pointsRequest')
+        if len(doc) < 1:
+            return error_response(
+                'Не найден объект pointsRequest', code='pointsRequest_not_found'
+            )
+
+        doc = doc[0]
+        doc_id = doc.get('idDoc', '')
+        if not doc_id:
+            return error_response('Не указан параметр idDoc', code='idDoc_not_found')
+
+        try:
+            org_id = int(doc.get('idOrg', ''))
+        except ValueError:
+            org_id = 0
+
+        user = get_organization_user(request, org_id)
+
+        try:
+            points = get_points_list(user)
+        except APIProcessError as e:
+            return error_response(str(e))
+
+        context = self.get_context_data(**kwargs)
+        context.update({
+            'doc_id': doc_id,
+            'create_date': utcnow(),
+            'points': points,
+            'org_id': org_id
+        })
+
+        return XMLResponse('ura/points.xml', context)
 
 
 class URAOrgsResource(URAResource):
@@ -364,6 +402,9 @@ class URARacesResource(URAResource):
         routes_list = get_routes_list(sess_id=sess_id, get_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
+        points_list = get_points_list(sess_id=sess_id)
+        points_dict_by_name = {x['name']: x['id'] for x in points_list}
+
         jobs_els = request.data.xpath('/getRaces/job')
 
         if not jobs_els:
@@ -476,9 +517,12 @@ class URARacesResource(URAResource):
                     if race['date_start'] is None:
                         race['date_start'] = time_in
 
+                    point_id = points_dict_by_name.get(row_point_name, 'NOT_FOUND')
+
                     point_info = {
                         'time_in': time_in,
                         'time_out': time_out,
+                        'id': point_id,
                         'params': OrderedDict()
                     }
 

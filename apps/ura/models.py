@@ -7,7 +7,7 @@ from snippets.models import LastModMixin, BasicModel
 
 class UraJob(BasicModel, LastModMixin):
     """Путевые листы"""
-    name = models.CharField(_('Название'), max_length=255, db_index=True, unique=True)
+    name = models.CharField(_('Название'), max_length=255)
     unit_id = models.CharField(_('idUnit'), max_length=255)
     route_id = models.CharField(_('idRoute'), max_length=255)
     driver_id = models.CharField(_('idDriver'), max_length=255, blank=True, null=True)

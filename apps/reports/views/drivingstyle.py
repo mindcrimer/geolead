@@ -2,7 +2,7 @@
 from collections import OrderedDict
 import datetime
 
-from base.exceptions import APIProcessError, ReportException
+from base.exceptions import ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \

@@ -57,6 +57,40 @@ def get_drivers_list(user=None, sess_id=None):
     return drivers
 
 
+def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
+    """Получение сообщений"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
+
+    requests.get(
+        settings.WIALON_BASE_URL + (
+            '?svc=messages/unload&params={}&sid=%s' % sess_id
+        )
+    )
+
+    request_params = json.dumps({
+        'itemId': item_id,
+        'timeFrom': time_from,
+        'timeTo': time_to,
+        'flags': 0,
+        'flagsMask': 65280,
+        'loadCount': 4294967295
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+            '?svc=messages/load_interval&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    res = r.json()
+
+    if 'error' in res:
+        raise WialonException(WIALON_ENTIRE_ERROR)
+
+    return res
+
+
 def get_points_list(user=None, sess_id=None):
     """Получает список геозон (точек)"""
     assert user or sess_id

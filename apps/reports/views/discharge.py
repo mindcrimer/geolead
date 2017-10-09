@@ -2,7 +2,7 @@
 from collections import OrderedDict
 import datetime
 
-from base.exceptions import APIProcessError, ReportException
+from base.exceptions import ReportException
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_discharge_report_template_id, get_period, cleanup_and_request_report, exec_report, \

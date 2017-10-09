@@ -167,7 +167,7 @@ def get_units_list(user=None, sess_id=None, extra_fields=False):
     cache_key = 'units:%s' % sess_id
     units_list = cache.get(cache_key)
 
-    if units_list:
+    if not units_list:
         request_params = json.dumps({
             'spec': {
                 'itemsType': 'avl_unit',

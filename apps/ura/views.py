@@ -17,6 +17,7 @@ from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime, get_organization_user, parse_xml_input_data, float_format
 from ura.wialon.api import get_drivers_list, get_routes_list, get_units_list, get_points_list
 from ura.wialon.auth import authenticate_at_wialon
+from ura.wialon.exceptions import WialonException
 from users.models import User
 
 
@@ -466,9 +467,7 @@ class URARacesResource(URAResource):
                     sess_id=sess_id
                 )
             except ReportException:
-                raise APIProcessError(
-                    'Не удалось получить отчет о поездках', code='wialon_geozones_report_error'
-                )
+                raise WialonException('Не удалось получить отчет о поездках')
 
             report_data = {
                 'unit_fillings': [],
@@ -489,9 +488,7 @@ class URARacesResource(URAResource):
                     report_data[table_info['name']] = rows
 
                 except ReportException:
-                    raise APIProcessError(
-                        'Не удалось извлечь данные о поездке', code='wialon_geozones_rows_error'
-                    )
+                    raise WialonException('Не удалось извлечь данные о поездке')
 
             points = routes_dict[route_id]['points']
             if len(points) < 2:
@@ -681,9 +678,7 @@ class URAMovingResource(URAResource):
                     sess_id=sess_id
                 )
             except ReportException:
-                raise APIProcessError(
-                    'Не удалось получить отчет о поездках', code='wialon_geozones_report_error'
-                )
+                raise WialonException('Не удалось получить отчет о поездках')
 
             report_data = {
                 'unit_fillings': [],
@@ -705,9 +700,7 @@ class URAMovingResource(URAResource):
                     report_data[table_info['name']] = rows
 
                 except ReportException:
-                    raise APIProcessError(
-                        'Не удалось извлечь данные о поездке', code='wialon_geozones_rows_error'
-                    )
+                    raise WialonException('Не удалось извлечь данные о поездке')
 
             for row in report_data['unit_rides']:
                 row_data = row['c']

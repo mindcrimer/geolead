@@ -299,11 +299,11 @@ class URASetJobsResource(URAResource):
             for j in jobs_els:
                 data = parse_xml_input_data(request, self.model_mapping, j)
 
-                name = data.pop('name')
+                name = data.get('name')
                 if not name:
                     return error_response('Не указан параметр jobName', code='jobName_not_found')
 
-                job = self.model.objects.update_or_create(name=name, defaults=data)[0]
+                job = self.model.objects.create(**data)[0]
                 jobs.append(job)
 
         context = self.get_context_data(**kwargs)

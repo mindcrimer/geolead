@@ -303,7 +303,7 @@ class URASetJobsResource(URAResource):
                 if not name:
                     return error_response('Не указан параметр jobName', code='jobName_not_found')
 
-                job = self.model.objects.create(**data)[0]
+                job = self.model.objects.create(**data)
                 jobs.append(job)
 
         context = self.get_context_data(**kwargs)
@@ -319,6 +319,7 @@ class URABreakJobsResource(URAResource):
     model_mapping = {
         'date_begin': ('dateBegin', parse_datetime),
         'date_end': ('dateEnd', parse_datetime),
+        'job_id': ('idJob', int),
         'return_time': ('returnTime', parse_datetime),
         'leave_time': ('leaveTime', parse_datetime)
     }
@@ -333,14 +334,23 @@ class URABreakJobsResource(URAResource):
             for j in jobs_els:
                 data = parse_xml_input_data(request, self.model_mapping, j)
 
-                name = data.pop('name')
-                if not name:
-                    return error_response('Не указан параметр jobName', code='jobName_not_found')
+                job_id = data.pop('job_id')
+                if not job_id:
+                    return error_response('Не указан параметр idJob', code='idJob_not_found')
 
                 if data['date_end'] <= data['date_begin']:
-                    self.model.objects.filter(name=name).delete()
+                    self.model.objects.filter(id=job_id).delete()
                 else:
-                    job = self.model.objects.filter(name=name).update(**data)
+                    try:
+                        job = self.model.objects.get(id=job_id)
+                    except self.model.DoesNotExist:
+                        return error_response(
+                            'Задание с ID=%s не найдено' % job.pk, code='job_not_found'
+                        )
+
+                    for k, v in data.iems():
+                        setattr(job, k, v)
+                        job.save()
                     jobs.append(job)
 
         context = self.get_context_data(**kwargs)

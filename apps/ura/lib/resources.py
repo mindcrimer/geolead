@@ -75,6 +75,15 @@ class URAResource(TemplateView):
                 # после каждого падения Виалона ждет 5 секунд и повторяем попытку
                 sleep(5)
 
+            except (ValueError, IndexError, KeyError, AttributeError):
+                return error_response(
+                    'Ошибка входящих данных из источника данных. '
+                    'Попробуйте повторить запрос позже',
+                    status=400,
+                    code='source_data_invalid'
+                )
+
+
         return error_response(
             'Лимит попыток обращения к источнику данных (%s попыток) закончился' % attempts_limit,
             status=400,

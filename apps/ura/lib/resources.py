@@ -13,6 +13,7 @@ from six import BytesIO
 
 from base.exceptions import APIParseError, AuthenticationFailed, APIValidationError, \
     APIProcessError
+from snippets.utils.email import send_trigger_email
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
 from ura.wialon.exceptions import WialonException
@@ -76,13 +77,18 @@ class URAResource(TemplateView):
                 sleep(5)
 
             except (ValueError, IndexError, KeyError, AttributeError):
+                send_trigger_email(
+                    'Ошибка в работе интеграции WIalon', extra_data={
+                        'POST': request.body
+                    }
+                )
+
                 return error_response(
                     'Ошибка входящих данных из источника данных. '
                     'Попробуйте повторить запрос позже',
                     status=400,
                     code='source_data_invalid'
                 )
-
 
         return error_response(
             'Лимит попыток обращения к источнику данных (%s попыток) закончился' % attempts_limit,

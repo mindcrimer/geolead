@@ -747,11 +747,11 @@ class URAMovingResource(URAResource):
                         ('endFuelLevel', parse_float(row_data[RIDES_FUEL_LEVEL_END_COL])),
                         ('fuelRefill', .0),
                         ('fuelDrain', .0),
-                        ('stopMinutes', max(0, time_parking)),
-                        ('moveMinutes', max(0, move_time)),
+                        ('stopMinutes', round(max(0, time_parking) / 60.0, 2)),
+                        ('moveMinutes', round(max(0, move_time) / 60.0, 2)),
                         ('motoHours', 0),
                         (
-                            'odometer',
+                            'odoMeter',
                             float_format(parse_float(row_data[RIDES_DISTANCE_END_COL]), -2)
                         )
                     ))
@@ -807,7 +807,7 @@ class URAMovingResource(URAResource):
                                 point_info['params']['stopMinutes']
                             previous_point['params']['moveMinutes'] += \
                                 point_info['params']['moveMinutes']
-                            previous_point['params']['odometer'] = point_info['params']['odometer']
+                            previous_point['params']['odoMeter'] = point_info['params']['odoMeter']
                             # сливы, заправки и моточасы не обновляем, они тянутся ниже
                             continue
                     except IndexError:
@@ -885,6 +885,32 @@ class URAMovingResource(URAResource):
                         continue
 
                     point['params']['motoHours'] += delta.seconds
+
+            # проверяем сходимость данных для SPACE точек
+            for i, point in enumerate(unit_info['points']):
+                if point['name'] == 'SPACE':
+                    previous_point, next_point = None, None
+                    try:
+                        previous_point = unit_info['points'][i-1]
+                    except IndexError:
+                        pass
+
+                    try:
+                        next_point = unit_info['points'][i+1]
+                    except IndexError:
+                        pass
+
+                    if previous_point:
+                        point['params']['startFuelLevel'] = \
+                            previous_point['params']['endFuelLevel']
+
+                    if next_point:
+                        point['params']['endFuelLevel'] = \
+                            next_point['params']['startFuelLevel']
+
+                    point['params']['moveMinutes'] = round((
+                        point['time_out'] - point['time_in']
+                    ).seconds / 60.0 - point['params']['stopMinutes'], 2)
 
             units.append(unit_info)
 

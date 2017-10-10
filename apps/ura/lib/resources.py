@@ -76,7 +76,7 @@ class URAResource(TemplateView):
                 # после каждого падения Виалона ждет 5 секунд и повторяем попытку
                 sleep(5)
 
-            except (ValueError, IndexError, KeyError, AttributeError):
+            except (ValueError, IndexError, KeyError, AttributeError, TypeError):
                 send_trigger_email(
                     'Ошибка в работе интеграции WIalon', extra_data={
                         'POST': request.body

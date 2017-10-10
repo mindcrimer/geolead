@@ -22,23 +22,9 @@ class XMLResponse(SimpleTemplateResponse):
 
 def error_response(message=None, status=400, code=None):
     result = {
-        'status': 'error',
-        'detail': {}
+        'message': message,
+        'code': code if code else 'error'
     }
-
-    if message is not None:
-        if isinstance(message, six.string_types):
-            detail = {
-                'errors': [{
-                    'code': code,
-                    'message': message,
-                    'name': '__all__'
-                }]
-            }
-        else:
-            detail = message
-
-        result['detail'] = detail
 
     return XMLResponse(context=result, status=status)
 
@@ -67,4 +53,4 @@ def validation_error_response(errors, status=400, code=None):
             for e in v.data
         ])
 
-    return error_response(message={'errors': errors_list}, status=status, code=code)
+    return error_response(', '.join(errors_list), status=status, code=code)

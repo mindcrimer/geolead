@@ -46,7 +46,7 @@ class URADriversResource(URAResource):
         try:
             drivers = get_drivers_list(user)
         except APIProcessError as e:
-            return error_response(str(e))
+            return error_response(str(e), code=e.code)
 
         context = self.get_context_data(**kwargs)
         context.update({
@@ -105,7 +105,7 @@ class URAPointsResource(URAResource):
         try:
             points = get_points_list(user)
         except APIProcessError as e:
-            return error_response(str(e))
+            return error_response(str(e), code=e.code)
 
         context = self.get_context_data(**kwargs)
         context.update({
@@ -168,7 +168,7 @@ class URARoutesResource(URAResource):
         try:
             routes = get_routes_list(user)
         except APIProcessError as e:
-            return error_response(str(e))
+            return error_response(str(e), code=e.code)
 
         context = self.get_context_data(**kwargs)
         context.update({
@@ -204,7 +204,7 @@ class URAUnitsResource(URAResource):
         try:
             units = get_units_list(user)
         except APIProcessError as e:
-            return error_response(str(e))
+            return error_response(str(e), code=e.code)
 
         context = self.get_context_data(**kwargs)
         context.update({
@@ -230,12 +230,12 @@ class URAUnitsResource(URAResource):
 #         try:
 #             units = get_units_list(request.user)
 #         except APIProcessError as e:
-#             return error_response(str(e))
+#             return error_response(str(e), code=e.code)
 #
 #         try:
 #             routes = get_routes_list(request.user)
 #         except APIProcessError as e:
-#             return error_response(str(e))
+#             return error_response(str(e), code=e.code)
 #
 #         if not routes:
 #             routes = [{
@@ -346,7 +346,7 @@ class URABreakJobsResource(URAResource):
                         job = self.model.objects.get(id=job_id)
                     except self.model.DoesNotExist:
                         return error_response(
-                            'Задание с ID=%s не найдено' % job.pk, code='job_not_found'
+                            'Задание с ID=%s не найдено' % job_id, code='job_not_found'
                         )
 
                     for k, v in data.iems():

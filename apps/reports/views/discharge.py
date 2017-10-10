@@ -128,12 +128,21 @@ class DischargeView(BaseReportView):
                             report_row['driver_name'] = data[4]
 
                         elif table_info['name'] == 'unit_group_thefts':
-                            report_row['discharge']['place'] = data[1]['t'] \
-                                if data[1] and isinstance(data[1], dict) else ''
+                            report_row['discharge']['place'] = ''
+                            if data[1]:
+                                if isinstance(data[1], dict):
+                                    report_row['discharge']['place'] = data[1]['t']
+                                else:
+                                    report_row['discharge']['place'] = data[1]
 
-                            report_row['discharge']['dt'] = parse_wialon_report_datetime(
-                                data[2]['t']
-                            ) if data[2] and isinstance(data[2], dict) else ''
+                            discharge_dt = ''
+                            if data[2]:
+                                if isinstance(data[2], dict):
+                                    discharge_dt = parse_wialon_report_datetime(data[2]['t'])
+                                else:
+                                    discharge_dt = parse_wialon_report_datetime(data[2])
+
+                            report_row['discharge']['dt'] = discharge_dt
 
                             try:
                                 report_row['discharge']['volume'] = float(data[3].split(' ')[0]) \
@@ -157,14 +166,25 @@ class DischargeView(BaseReportView):
                                     except ValueError:
                                         detail_volume = 0.0
 
+                                    detail_place = ''
+                                    if detail_data[1]:
+                                        if isinstance(detail_data[1], dict):
+                                            detail_place = detail_data[1]['t']
+                                        else:
+                                            detail_place = detail_data[1]
+
+                                    detail_dt = ''
+                                    if detail_data[2]:
+                                        if isinstance(detail_data[2], dict):
+                                            detail_dt = detail_data[2]['t']
+                                        else:
+                                            detail_dt = detail_data[2]
+
+                                        detail_dt = parse_wialon_report_datetime(detail_dt)
+
                                     report_row['details'].append({
-                                        'place': detail_data[1]['t']
-                                        if detail_data[1] and isinstance(detail_data[1], dict)
-                                        else '',
-                                        'dt': parse_wialon_report_datetime(
-                                            detail_data[2]['t']
-                                        ) if detail_data[2] and isinstance(detail_data[2], dict)
-                                        else '',
+                                        'place': detail_place,
+                                        'dt':  detail_dt,
                                         'volume': detail_volume
                                     })
 

@@ -511,12 +511,21 @@ class URARacesResource(URAResource):
                 row_point_name = row_data[RIDES_GEOZONE_FROM_COL].strip()
 
                 if row_point_name == current_point:
+                    time_in = row_data[RIDES_DATE_FROM_COL]['t'] \
+                        if isinstance(row_data[RIDES_DATE_FROM_COL],  dict) \
+                        else row_data[RIDES_DATE_FROM_COL]
+
                     time_in = utc_to_local_time(
-                        parse_wialon_report_datetime(row_data[RIDES_DATE_FROM_COL]['t']),
+                        parse_wialon_report_datetime(time_in),
                         request.user.ura_tz
                     )
+
+                    time_out = row_data[RIDES_DATE_TO_COL]['t'] \
+                        if isinstance(row_data[RIDES_DATE_TO_COL], dict) \
+                        else row_data[RIDES_DATE_TO_COL]
+
                     time_out = utc_to_local_time(
-                        parse_wialon_report_datetime(row_data[RIDES_DATE_TO_COL]['t']),
+                        parse_wialon_report_datetime(time_out),
                         request.user.ura_tz
                     )
 
@@ -702,12 +711,22 @@ class URAMovingResource(URAResource):
 
             for row in report_data['unit_rides']:
                 row_data = row['c']
+
+                time_in = row_data[RIDES_DATE_FROM_COL]['t'] \
+                    if isinstance(row_data[RIDES_DATE_FROM_COL], dict) \
+                    else row_data[RIDES_DATE_FROM_COL]
+
                 time_in = utc_to_local_time(
-                    parse_wialon_report_datetime(row_data[RIDES_DATE_FROM_COL]['t']),
+                    parse_wialon_report_datetime(time_in),
                     request.user.ura_tz
                 )
+
+                time_out = row_data[RIDES_DATE_TO_COL]['t'] \
+                    if isinstance(row_data[RIDES_DATE_TO_COL], dict) \
+                    else row_data[RIDES_DATE_TO_COL]
+
                 time_out = utc_to_local_time(
-                    parse_wialon_report_datetime(row_data[RIDES_DATE_TO_COL]['t']),
+                    parse_wialon_report_datetime(time_out),
                     request.user.ura_tz
                 )
 
@@ -799,9 +818,13 @@ class URAMovingResource(URAResource):
             for row in report_data['unit_thefts']:
                 volume = parse_float(row['c'][2])
 
-                if volume > .0:
+                if volume > .0 and row['c'][1]:
                     dt = utc_to_local_time(
-                        parse_wialon_report_datetime(row['c'][1]['t']),
+                        parse_wialon_report_datetime(
+                            row['c'][1]['t']
+                            if isinstance(row['c'][1], dict)
+                            else row['c'][1]
+                        ),
                         request.user.ura_tz
                     )
 
@@ -815,7 +838,11 @@ class URAMovingResource(URAResource):
 
                 if volume > .0:
                     dt = utc_to_local_time(
-                        parse_wialon_report_datetime(row['c'][0]['t']),
+                        parse_wialon_report_datetime(
+                            row['c'][0]['t']
+                            if isinstance(row['c'][0], dict)
+                            else row['c'][0]
+                        ),
                         request.user.ura_tz
                     )
 
@@ -827,11 +854,19 @@ class URAMovingResource(URAResource):
             # рассчитываем моточасы пропорционально интервалам
             for row in report_data['unit_engine_hours']:
                 time_from = utc_to_local_time(
-                    parse_wialon_report_datetime(row['c'][0]['t']),
+                    parse_wialon_report_datetime(
+                        row['c'][0]['t']
+                        if isinstance(row['c'][0], dict)
+                        else row['c'][0]
+                    ),
                     request.user.ura_tz
                 )
                 time_until = utc_to_local_time(
-                    parse_wialon_report_datetime(row['c'][1]['t']),
+                    parse_wialon_report_datetime(
+                        row['c'][1]['t']
+                        if isinstance(row['c'][1], dict)
+                        else row['c'][1]
+                    ),
                     request.user.ura_tz
                 )
 

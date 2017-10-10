@@ -25,7 +25,9 @@ class UserAdmin(UserAdmin):
     fieldsets = (
         (None, {
             'classes': ('suit-tab', 'suit-tab-general'),
-            'fields': ('is_active', 'username', 'password', 'created', 'updated')
+            'fields': (
+                'is_active', 'username', 'password', 'user_permissions', 'created', 'updated'
+            )
         }),
         (_('Персональная информация'), {
             'classes': ('suit-tab', 'suit-tab-general'),

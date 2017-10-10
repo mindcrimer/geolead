@@ -42,8 +42,7 @@ class MalfunctionsView(BaseReportView):
 
                 dt_from, dt_to = get_period(
                     form.cleaned_data['dt_from'],
-                    form.cleaned_data['dt_to'],
-                    user.wialon_tz
+                    form.cleaned_data['dt_to']
                 )
 
                 try:

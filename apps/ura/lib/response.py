@@ -44,13 +44,6 @@ def success_response(message=None, status=200):
 def validation_error_response(errors, status=400, code=None):
     errors_list = []
     for name, v in errors.items():
-        errors_list.extend([
-            {
-                'code': e.code,
-                'message': str('; '.join(e.messages)),
-                'name': name
-            }
-            for e in v.data
-        ])
+        errors_list.extend([str('; '.join(e.messages)) for e in v.data])
 
     return error_response(', '.join(errors_list), status=status, code=code)

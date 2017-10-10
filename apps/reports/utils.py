@@ -125,7 +125,7 @@ def local_to_utc_time(dt, timezone):
     return utc_dt
 
 
-def get_period(dt_from, dt_to, timezone):
+def get_period(dt_from, dt_to, timezone=utc):
     dt_from = local_to_utc_time(dt_from, timezone)
     dt_to = local_to_utc_time(dt_to, timezone)
 

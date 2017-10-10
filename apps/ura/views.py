@@ -658,7 +658,6 @@ class URAMovingResource(URAResource):
             dt_from, dt_to = get_period(
                 data['date_begin'],
                 data['date_end'],
-                request.user.ura_tz
             )
 
             cleanup_and_request_report(

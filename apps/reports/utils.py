@@ -106,12 +106,18 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
 
 
 def parse_wialon_report_datetime(str_date):
+    if '-----' in str_date:
+        return None
+
     pattern = '%Y-%m-%d %H:%M:%S' if str_date.count(':') >= 2 else '%Y-%m-%d %H:%M'
     local_dt = datetime.datetime.strptime(str_date, pattern)
     return local_dt
 
 
 def utc_to_local_time(dt, timezone):
+    if dt is None:
+        return None
+
     local_dt = dt + timezone.utcoffset(datetime.datetime.now())
     if local_dt.tzinfo is None:
         local_dt = timezone.localize(local_dt)
@@ -119,6 +125,9 @@ def utc_to_local_time(dt, timezone):
 
 
 def local_to_utc_time(dt, timezone):
+    if dt is None:
+        return None
+
     utc_dt = dt - timezone.utcoffset(datetime.datetime.now())
     if utc_dt.tzinfo is None:
         utc_dt = utc_dt.replace(tzinfo=utc)

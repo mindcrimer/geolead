@@ -747,8 +747,8 @@ class URAMovingResource(URAResource):
                         ('endFuelLevel', parse_float(row_data[RIDES_FUEL_LEVEL_END_COL])),
                         ('fuelRefill', .0),
                         ('fuelDrain', .0),
-                        ('stopMinutes', round(max(0, time_parking) / 60.0, 2)),
-                        ('moveMinutes', round(max(0, move_time) / 60.0, 2)),
+                        ('stopMinutes', max(0, time_parking)),
+                        ('moveMinutes', max(0, move_time)),
                         ('motoHours', 0),
                         (
                             'odoMeter',
@@ -909,9 +909,13 @@ class URAMovingResource(URAResource):
                         point['params']['endFuelLevel'] = \
                             next_point['params']['startFuelLevel']
 
-                    point['params']['moveMinutes'] = round((
+                    point['params']['moveMinutes'] = (
                         point['time_out'] - point['time_in']
-                    ).seconds / 60.0 - point['params']['stopMinutes'], 2)
+                    ).seconds - point['params']['stopMinutes']
+
+                point['params']['moveMinutes'] = round(point['params']['moveMinutes'] / 60.0, 2)
+                point['params']['stopMinutes'] = round(point['params']['stopMinutes'] / 60.0, 2)
+                point['params']['motoHours'] = round(point['params']['motoHours'] / 3600.0, 2)
 
             units.append(unit_info)
 

@@ -890,10 +890,11 @@ class URAMovingResource(URAResource):
             for i, point in enumerate(unit_info['points']):
                 if point['name'] == 'SPACE':
                     previous_point, next_point = None, None
-                    try:
-                        previous_point = unit_info['points'][i-1]
-                    except IndexError:
-                        pass
+                    if i > 0:
+                        try:
+                            previous_point = unit_info['points'][i-1]
+                        except IndexError:
+                            pass
 
                     try:
                         next_point = unit_info['points'][i+1]

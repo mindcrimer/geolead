@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import datetime
 
 from base.exceptions import ReportException
+from base.utils import parse_float
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_discharge_report_template_id, get_period, cleanup_and_request_report, exec_report, \
-    get_report_rows
+    get_report_rows, get_wialon_kmu_report_template_id
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.wialon.api import get_units_list
 from ura.wialon.exceptions import WialonException
@@ -17,7 +18,6 @@ class DischargeView(BaseReportView):
     form = forms.FuelDischargeForm
     template_name = 'reports/discharge.html'
     report_name = 'Отчет по перерасходу топлива'
-    OVERSPANDING_COEFF = 0.05
 
     @staticmethod
     def get_new_grouping():
@@ -30,12 +30,14 @@ class DischargeView(BaseReportView):
                 'volume': ''
             },
             'consumption': {
-                'standard_mileage': '',
-                'standard_worktime': '',
-                'standard_extra_device': '',
-                'fact': ''
+                'standard_mileage': .0,
+                'standard_worktime': .0,
+                'standard_extra_device': .0,
+                'fact_dut': .0
             },
-            'overspanding': '',
+            'overspanding': .0,
+            'moto_hours': 0,
+            'move_hours': 0,
             'details': []
         }
 
@@ -69,17 +71,54 @@ class DischargeView(BaseReportView):
                     form.cleaned_data['dt_to']
                 )
 
-                extra_device_standards = {}
+                device_fields = defaultdict(lambda: {'extras': .0, 'idle': .0, 'kmu': 0})
                 for unit in units_list:
-                    extra_standard = [
+                    # норматив потребления доп.оборудования, л / час
+                    extras_values = [
                         x['v'] for x in unit.get('fields', []) if x.get('n') == 'механизм'
                     ]
+                    # норматив потребления на холостом ходу, л / час
+                    idle_values = [
+                        x['v'] for x in unit.get('fields', []) if x.get('n') == 'хх'
+                    ]
 
-                    if extra_standard:
+                    if extras_values:
                         try:
-                            extra_device_standards[unit['name']] = float(extra_standard[0])
+                            device_fields[unit['name']]['extras'] = float(extras_values[0])
                         except ValueError:
                             pass
+
+                    if idle_values:
+                        try:
+                            device_fields[unit['name']]['idle'] = float(idle_values[0])
+                        except ValueError:
+                            pass
+
+                    # если есть нормативы холостого хожда и КМУ, узнаем время работы КМУ
+                    if device_fields[unit['name']]['idle'] \
+                            and device_fields[unit['name']]['extras']:
+
+                        cleanup_and_request_report(
+                            user, get_wialon_kmu_report_template_id(user), sess_id=sess_id
+                        )
+
+                        r = exec_report(
+                            user,
+                            get_wialon_kmu_report_template_id(user),
+                            dt_from,
+                            dt_to,
+                            object_id=unit['id'],
+                            sess_id=sess_id
+                        )
+
+                        if r['reportResult']['tables']:
+                            rows = get_report_rows(
+                                user, table_index=0, rows=1, level=0, sess_id=sess_id
+                            )
+                            if rows and 'c' in rows[0] and len(rows[0]['c']) > 3:
+                                device_fields[unit['name']]['kmu'] = parse_timedelta(
+                                    rows[0]['c'][4]
+                                ).seconds / 3600.0
 
                 cleanup_and_request_report(
                     user, get_wialon_discharge_report_template_id(user), sess_id=sess_id
@@ -94,11 +133,10 @@ class DischargeView(BaseReportView):
                 )
 
                 for table_index, table_info in enumerate(r['reportResult']['tables']):
-
                     rows = get_report_rows(
                         user,
                         table_index,
-                        table_info,
+                        table_info['rows'],
                         level=2 if table_info['name'] == 'unit_group_thefts' else 1,
                         sess_id=sess_id
                     )
@@ -114,20 +152,9 @@ class DischargeView(BaseReportView):
                                 r['reportResult']['stats'][1][1]
                             )
 
-                            report_data[key]['driver_name'] = get_drivers_fio(
-                                units_list,
-                                key,
-                                report_data[key]['plan_worktime'][0],
-                                report_data[key]['plan_worktime'][1],
-                                user.ura_tz
-                            ) or ''
-
                         report_row = report_data[key]
 
-                        if table_info['name'] == 'unit_group_trips' and data[4]:
-                            report_row['driver_name'] = data[4]
-
-                        elif table_info['name'] == 'unit_group_thefts':
+                        if table_info['name'] == 'unit_group_thefts':
                             report_row['discharge']['place'] = ''
                             if data[1]:
                                 if isinstance(data[1], dict):
@@ -148,7 +175,7 @@ class DischargeView(BaseReportView):
                                 report_row['discharge']['volume'] = float(data[3].split(' ')[0]) \
                                     if data[3] else ''
                             except ValueError:
-                                report_row['discharge']['volume'] = 0.0
+                                report_row['discharge']['volume'] = .0
 
                             if len(data[3].replace('-', '')) > 0:
                                 discharge_total += float(data[3].split(' ')[0])
@@ -164,7 +191,7 @@ class DischargeView(BaseReportView):
                                         detail_volume = float(detail_data[3].split(' ')[0])\
                                             if detail_data[3] else ''
                                     except ValueError:
-                                        detail_volume = 0.0
+                                        detail_volume = .0
 
                                     detail_place = ''
                                     if detail_data[1]:
@@ -188,29 +215,66 @@ class DischargeView(BaseReportView):
                                         'volume': detail_volume
                                     })
 
+                        elif table_info['name'] == 'unit_group_trips':
+                            if len(data) > 4 and data[4]:
+                                report_row['driver_name'] = data[4]
+                            else:
+                                report_row['driver_name'] = get_drivers_fio(
+                                    units_list,
+                                    key,
+                                    report_data[key]['plan_worktime'][0],
+                                    report_data[key]['plan_worktime'][1],
+                                    user.ura_tz
+                                ) or ''
+
                         elif table_info['name'] == 'unit_group_generic':
-                            try:
-                                standard = report_row['consumption']['standard_mileage'] = \
-                                    report_row['consumption']['standard_worktime'] = \
-                                    float(data[4].split(' ')[0]) if data[4] else 0.0
-                            except ValueError:
-                                standard = report_row['consumption']['standard_mileage'] = \
-                                    report_row['consumption']['standard_worktime'] = 0
+                            if len(data) > 2 and data[2]:
+                                report_row['moto_hours'] = parse_timedelta(
+                                    data[2]
+                                ).seconds / 3600.0
 
-                            fact = report_row['consumption']['fact'] = \
-                                (float(data[3].split(' ')[0]) if data[3] else 0.0)
+                            if len(data) > 3 and data[3]:
+                                try:
+                                    report_row['consumption']['fact_dut'] = \
+                                        float(parse_float(data[3])) if data[3] else .0
 
-                            extra_standard = extra_device_standards.get(key, 0.0)
-                            if extra_standard:
-                                motohours = parse_timedelta(data[2]).seconds / (60.0 * 60.0)
-                                extra_standard *= motohours
+                                except ValueError:
+                                    pass
 
-                                report_row['consumption']['standard_extra_device'] = extra_standard
-                                standard += extra_standard
+                            if len(data) > 4 and data[4]:
+                                try:
+                                    report_row['consumption']['standard_mileage'] = \
+                                        float(parse_float(data[4])) if data[4] else .0
 
-                            if standard and fact / standard > (1.0 + self.OVERSPANDING_COEFF):
-                                report_row['overspanding'] = (fact / standard) * 100.0
-                                overspanding_total += fact - standard
+                                except ValueError:
+                                    pass
+
+                            if len(data) > 5 and data[5]:
+                                report_row['move_hours'] = parse_timedelta(
+                                    data[5]
+                                ).seconds / 3600.0
+
+                            extras_value = device_fields.get(key, {}).get('extras', .0)
+                            idle_value = device_fields.get(key, {}).get('idle', .0)
+                            kmu_hours = device_fields.get(key, {}).get('kmu', .0)
+
+                            if idle_value:
+                                report_row['consumption']['standard_worktime'] = (
+                                    report_row['moto_hours'] - report_row['move_hours'] - kmu_hours
+                                ) * idle_value
+
+                            if extras_value:
+                                report_row['consumption']['standard_extra_device'] = \
+                                    kmu_hours * extras_value
+
+                            overspanding = report_row['consumption']['fact_dut'] \
+                                - report_row['consumption']['standard_extra_device'] \
+                                - report_row['consumption']['standard_worktime'] \
+                                - report_row['consumption']['standard_mileage']
+
+                            if overspanding > 0:
+                                report_row['overspanding'] = overspanding
+                                overspanding_total += overspanding
 
         kwargs.update(
             report_data=report_data,

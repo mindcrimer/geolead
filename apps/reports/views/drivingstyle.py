@@ -130,7 +130,7 @@ class DrivingStyleView(BaseReportView):
                     rows = get_report_rows(
                         user,
                         table_index,
-                        table_info,
+                        table_info['rows'],
                         level=2,
                         sess_id=sess_id
                     )

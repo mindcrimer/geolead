@@ -30,28 +30,32 @@
 <div class="table-wrap">
 	<table class="report-table">
 		<thead>
-		<tr>
-			<td rowspan="2">Время</td>
-			<td rowspan="2">Гос№ ТС</td>
-			<td rowspan="2">
-				Плановый график<br/>
-				работы водителя<br/>
-				(время с - время по)
-			</td>
-			<td rowspan="2">ФИО водителя</td>
-			<td colspan="2">Событие слив</td>
-			<td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
-			<td rowspan="2">*Перерасход,<br/>%</td>
-		</tr>
-		<tr>
-			<td style="max-width:150px;">Место/<br/>геозона</td>
-			<td>Объем</td>
-			<td>По норме<br/>от пробега**</td>
-			<td>По норме<br/>от времени<br/>работы***</td>
-			<td>По норме<br/>от работы доп.<br/>оборудования****</td>
-			<td>По факту<br/>с ДУТ</td>
-		</tr>
+
+			<tr>
+				<td rowspan="2">Время</td>
+				<td rowspan="2">Гос№ ТС</td>
+				<td rowspan="2">
+					Плановый график<br/>
+					работы водителя<br/>
+					(время с - время по)
+				</td>
+				<td rowspan="2">ФИО водителя</td>
+				<td colspan="2">Событие слив</td>
+				<td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
+				<td rowspan="2">*Перерасход,<br/>%</td>
+			</tr>
+
+			<tr>
+				<td style="max-width:150px;">Место/<br/>геозона</td>
+				<td>Объем</td>
+				<td>По норме<br/>от пробега**</td>
+				<td>По норме<br/>от времени<br/>работы на ХХ***</td>
+				<td>По норме<br/>от работы доп.<br/>оборудования****</td>
+				<td>По факту<br/>с ДУТ</td>
+			</tr>
+
 		</thead>
+
 		{%- for key, row in report_data.items() -%}
 			<tbody>
 				<tr{% if row['discharge']['volume'] and not row['details'] %} class="detailed"{% endif %}>
@@ -70,9 +74,10 @@
 					<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
 					<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
 					<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
-					<td class="tright">{{ row['consumption']['fact']|floatformat(-2) }}</td>
+					<td class="tright">{{ row['consumption']['fact_dut']|floatformat(-2) }}</td>
 					<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
 				</tr>
+
 				{%- for detail in row['details'] -%}
 					<tr class="detailed">
 						<td>{{ detail['dt']|date('Y-m-d H:i:s') }}</td>

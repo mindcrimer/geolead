@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from time import sleep
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -77,18 +78,20 @@ class URAResource(TemplateView):
                 sleep(5)
 
             except (ValueError, IndexError, KeyError, AttributeError, TypeError):
-                send_trigger_email(
-                    'Ошибка в работе интеграции WIalon', extra_data={
-                        'POST': request.body
-                    }
-                )
+                if not settings.DEBUG:
+                    send_trigger_email(
+                        'Ошибка в работе интеграции WIalon', extra_data={
+                            'POST': request.body
+                        }
+                    )
 
-                return error_response(
-                    'Ошибка входящих данных из источника данных. '
-                    'Попробуйте повторить запрос позже',
-                    status=400,
-                    code='source_data_invalid'
-                )
+                    return error_response(
+                        'Ошибка входящих данных из источника данных. '
+                        'Попробуйте повторить запрос позже',
+                        status=400,
+                        code='source_data_invalid'
+                    )
+                raise
 
         return error_response(
             'Лимит попыток обращения к источнику данных (%s попыток) закончился' % attempts_limit,

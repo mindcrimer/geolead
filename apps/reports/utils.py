@@ -45,6 +45,12 @@ def get_wialon_geozones_report_template_id(user):
         else settings.WIALON_DEFAULT_GEOZONES_REPORT_TEMPLATE_ID
 
 
+def get_wialon_kmu_report_template_id(user):
+    return user.wialon_kmu_report_template_id \
+        if user.wialon_kmu_report_template_id \
+        else settings.WIALON_DEFAULT_KMU_REPORT_TEMPLATE_ID
+
+
 def parse_timedelta(delta_string):
     parts = delta_string.split(':')
     delta = datetime.timedelta(seconds=0)
@@ -212,7 +218,7 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     return result
 
 
-def get_report_rows(user, table_index, table_info, level=0, sess_id=None):
+def get_report_rows(user, table_index, rows, level=0, sess_id=None):
     if sess_id is None:
         sess_id = authenticate_at_wialon(user.wialon_token)
 
@@ -225,7 +231,7 @@ def get_report_rows(user, table_index, table_info, level=0, sess_id=None):
                     'type': 'range',
                     'data': {
                         'from': 0,
-                        'to': table_info['rows'] - 1,
+                        'to': rows - 1,
                         'level': level
                     }
                 }

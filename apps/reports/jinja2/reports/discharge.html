@@ -70,12 +70,12 @@
 					<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
 					<td class="nowrap">{{ row['driver_name'] }}</td>
 					<td>{{ row['discharge']['place'] }}</td>
-					<td class="tright">{{ row['discharge']['volume']|floatformat(-2) }}</td>
-					<td class="tright">{{ row['consumption']['standard_mileage']|floatformat(-2) }}</td>
-					<td class="tright">{{ row['consumption']['standard_worktime']|floatformat(-2) }}</td>
-					<td class="tright">{{ row['consumption']['standard_extra_device']|floatformat(-2) }}</td>
-					<td class="tright">{{ row['consumption']['fact_dut']|floatformat(-2) }}</td>
-					<td class="tright">{{ row['overspanding']|floatformat(-2) }}</td>
+					<td class="tright">{% if row['discharge']['volume'] %}{{ row['discharge']['volume']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
+					<td class="tright">{% if row['consumption']['standard_mileage'] %}{{ row['consumption']['standard_mileage']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
+					<td class="tright">{% if row['consumption']['standard_worktime'] %}{{ row['consumption']['standard_worktime']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
+					<td class="tright">{% if row['consumption']['standard_extra_device'] %}{{ row['consumption']['standard_extra_device']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
+					<td class="tright">{% if row['consumption']['fact_dut'] %}{{ row['consumption']['fact_dut']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
+					<td class="tright">{% if row['overspanding'] %}{{ row['overspanding']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
 				</tr>
 
 				{%- for detail in row['details'] -%}

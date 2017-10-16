@@ -68,7 +68,8 @@ class DischargeView(BaseReportView):
 
                 dt_from, dt_to = get_period(
                     form.cleaned_data['dt_from'],
-                    form.cleaned_data['dt_to']
+                    form.cleaned_data['dt_to'],
+                    user.wialon_tz
                 )
 
                 device_fields = defaultdict(lambda: {'extras': .0, 'idle': .0, 'kmu': 0})
@@ -115,7 +116,7 @@ class DischargeView(BaseReportView):
                             rows = get_report_rows(
                                 user, table_index=0, rows=1, level=0, sess_id=sess_id
                             )
-                            if rows and 'c' in rows[0] and len(rows[0]['c']) > 3:
+                            if rows and 'c' in rows[0] and len(rows[0]['c']) > 4:
                                 device_fields[unit['name']]['kmu'] = parse_timedelta(
                                     rows[0]['c'][4]
                                 ).seconds / 3600.0

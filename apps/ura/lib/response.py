@@ -1,7 +1,5 @@
 from django.template.response import SimpleTemplateResponse
 
-import six
-
 
 BASIC_ERROR_TEMPLATE = 'ura/errors/error.xml'
 

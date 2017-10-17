@@ -4,11 +4,11 @@ import time
 
 from django.conf import settings
 from django.utils import formats
-# from django.utils.timezone import template_localtime
 from django.utils.dateformat import format as date_format
 from reports.utils import utc_to_local_time, format_timedelta as formattimedelta
 
 from snippets.template_backends.jinja2 import jinjafilter
+
 
 @jinjafilter
 def format_timedelta(value):
@@ -17,7 +17,6 @@ def format_timedelta(value):
 
 @jinjafilter
 def date(value, arg, use_l10n=False):
-    # value = template_localtime(value)
     if value in (None, ''):
         return ''
 

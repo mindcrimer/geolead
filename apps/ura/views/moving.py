@@ -7,30 +7,19 @@ from base.exceptions import ReportException
 from base.utils import parse_float
 from reports.utils import parse_wialon_report_datetime, utc_to_local_time, get_period, \
     cleanup_and_request_report, get_wialon_geozones_report_template_id, exec_report, \
-    get_report_rows, parse_timedelta
+    get_report_rows
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
-from ura.utils import parse_datetime, parse_xml_input_data, float_format
+from ura.utils import parse_datetime, parse_xml_input_data
+from ura.views.mixins import RidesMixin
 from ura.wialon.api import get_routes_list
 from ura.wialon.auth import authenticate_at_wialon
 from ura.wialon.exceptions import WialonException
 
 
-RIDES_GEOZONE_FROM_COL = 1
-RIDES_DATE_FROM_COL = 3
-RIDES_DATE_TO_COL = 4
-RIDES_DISTANCE_END_COL = 5
-RIDES_TIME_TOTAL_COL = 6
-RIDES_TIME_PARKING_COL = 7
-RIDES_FUEL_LEVEL_START_COL = 8
-RIDES_FUEL_LEVEL_END_COL = 9
-RIDES_ODOMETER_START_COL = 10
-RIDES_ODOMETER_END_COL = 11
-
-
-class URAMovingResource(URAResource):
+class URAMovingResource(RidesMixin, URAResource):
     model_mapping = {
         'date_begin': ('dateBegin', parse_datetime),
         'date_end': ('dateEnd', parse_datetime),
@@ -115,17 +104,21 @@ class URAMovingResource(URAResource):
 
             report_data = {
                 'unit_fillings': [],
+                'unit_thefts': [],
                 'unit_engine_hours': [],
                 'unit_rides': [],
-                'unit_thefts': []
+                'unit_chronology': []
             }
 
             for table_index, table_info in enumerate(r['reportResult']['tables']):
+                if table_info['name'] not in report_data:
+                    continue
+
                 try:
                     rows = get_report_rows(
                         request.user,
                         table_index,
-                        table_info,
+                        table_info['rows'],
                         level=1,
                         sess_id=sess_id
                     )
@@ -135,54 +128,31 @@ class URAMovingResource(URAResource):
                 except ReportException:
                     raise WialonException('Не удалось извлечь данные о поездке')
 
-            for row in report_data['unit_rides']:
-                row_data = row['c']
+            self.normalize_rides(report_data)
 
-                time_in = row_data[RIDES_DATE_FROM_COL]['t'] \
-                    if isinstance(row_data[RIDES_DATE_FROM_COL], dict) \
-                    else row_data[RIDES_DATE_FROM_COL]
-
-                time_in = utc_to_local_time(
-                    parse_wialon_report_datetime(time_in),
-                    request.user.ura_tz
-                )
-
-                time_out = row_data[RIDES_DATE_TO_COL]['t'] \
-                    if isinstance(row_data[RIDES_DATE_TO_COL], dict) \
-                    else row_data[RIDES_DATE_TO_COL]
-
-                time_out = utc_to_local_time(
-                    parse_wialon_report_datetime(time_out),
-                    request.user.ura_tz
-                )
-
-                time_total = parse_timedelta(row_data[RIDES_TIME_TOTAL_COL]).seconds
-                time_parking = parse_timedelta(row_data[RIDES_TIME_PARKING_COL]).seconds
-                move_time = time_total - time_parking
-
-                point_name = row_data[RIDES_GEOZONE_FROM_COL]
+            for row in self.normalized_rides:
+                point_name = row['point']
                 if not route or point_name not in route['points']:
                     point_name = 'SPACE'
 
                 point_info = {
                     'name': point_name,
-                    'time_in': time_in,
-                    'time_out': time_out,
+                    'time_in': row['time_in'],
+                    'time_out': row['time_out'],
                     'params': OrderedDict((
-                        ('startFuelLevel', parse_float(row_data[RIDES_FUEL_LEVEL_START_COL])),
-                        ('endFuelLevel', parse_float(row_data[RIDES_FUEL_LEVEL_END_COL])),
+                        ('startFuelLevel', row['fuel_start']),
+                        ('endFuelLevel', row['fuel_end']),
                         ('fuelRefill', .0),
                         ('fuelDrain', .0),
-                        ('stopMinutes', max(0, time_parking)),
-                        ('moveMinutes', max(0, move_time)),
+                        ('stopMinutes', .0),
+                        ('moveMinutes', .0),
                         ('motoHours', 0),
-                        (
-                            'odoMeter',
-                            float_format(parse_float(row_data[RIDES_DISTANCE_END_COL]), -2)
-                        )
+                        ('odoMeter', row['distance'])
                     ))
                 }
 
+                # вряд ли сработает, но на всякий случай проверяем на "выпадения"
+                # из маршрута по времени
                 try:
                     previous_point = unit_info['points'][-1]
                     # добавляем еще запись SPACE,
@@ -208,13 +178,6 @@ class URAMovingResource(URAResource):
                                 time_in=previous_point['time_out'],
                                 time_out=point_info['time_in']
                             )
-
-                            # но не копируем время движения и стоянки, так как они неизвестны
-                            extra_space_point['params'].update(
-                                stopMinutes=0,
-                                moveMinute=0
-                            )
-
                             unit_info['points'].append(extra_space_point)
 
                 except IndexError:
@@ -229,13 +192,11 @@ class URAMovingResource(URAResource):
                             previous_point['time_out'] = point_info['time_out']
                             previous_point['params']['endFuelLevel'] = \
                                 point_info['params']['endFuelLevel']
-                            previous_point['params']['stopMinutes'] += \
-                                point_info['params']['stopMinutes']
-                            previous_point['params']['moveMinutes'] += \
-                                point_info['params']['moveMinutes']
-                            previous_point['params']['odoMeter'] = point_info['params'][
-                                'odoMeter']
-                            # сливы, заправки и моточасы не обновляем, они тянутся ниже
+                            previous_point['params']['odoMeter'] = \
+                                previous_point['params']['odoMeter'] + \
+                                point_info['params']['odoMeter']
+                            # сливы, заправки, время движения и стоянки и моточасы не обновляем,
+                            # они тянутся ниже
                             continue
                     except IndexError:
                         pass
@@ -278,7 +239,7 @@ class URAMovingResource(URAResource):
                             point['params']['fuelRefill'] += volume
                             break
 
-                            # рассчитываем моточасы пропорционально интервалам
+            # рассчитываем моточасы пропорционально интервалам
             for row in report_data['unit_engine_hours']:
                 time_from = utc_to_local_time(
                     parse_wialon_report_datetime(
@@ -313,33 +274,46 @@ class URAMovingResource(URAResource):
 
                     point['params']['motoHours'] += delta.seconds
 
-            # проверяем сходимость данных для SPACE точек
+            for row in report_data['unit_chronology']:
+                row_data = row['c']
+                chronology_type = 'stopMinutes' \
+                    if row_data[0].lower() == 'parking' else 'moveMinutes'
+
+                time_from = utc_to_local_time(
+                    parse_wialon_report_datetime(
+                        row_data[1]['t']
+                        if isinstance(row_data[1], dict)
+                        else row_data[1]
+                    ),
+                    request.user.ura_tz
+                )
+                time_until = utc_to_local_time(
+                    parse_wialon_report_datetime(
+                        row_data[2]['t']
+                        if isinstance(row_data[2], dict)
+                        else row_data[2]
+                    ),
+                    request.user.ura_tz
+                )
+
+                for point in unit_info['points']:
+                    if point['time_in'] > time_until:
+                        # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
+                        break
+
+                    # если интервал точки меньше даты начала моточасов, значит еще не дошли
+                    if point['time_out'] < time_from:
+                        continue
+
+                    delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
+                    # не пересекаются:
+                    if delta.seconds < 0 or delta.days < 0:
+                        continue
+
+                    point['params'][chronology_type] += delta.seconds
+
+            # преобразуем секунды в минуты и часы
             for i, point in enumerate(unit_info['points']):
-                if point['name'] == 'SPACE':
-                    previous_point, next_point = None, None
-                    if i > 0:
-                        try:
-                            previous_point = unit_info['points'][i - 1]
-                        except IndexError:
-                            pass
-
-                    try:
-                        next_point = unit_info['points'][i + 1]
-                    except IndexError:
-                        pass
-
-                    if previous_point:
-                        point['params']['startFuelLevel'] = \
-                            previous_point['params']['endFuelLevel']
-
-                    if next_point:
-                        point['params']['endFuelLevel'] = \
-                            next_point['params']['startFuelLevel']
-
-                    point['params']['moveMinutes'] = (
-                        point['time_out'] - point['time_in']
-                    ).seconds - point['params']['stopMinutes']
-
                 point['params']['moveMinutes'] = round(
                     point['params']['moveMinutes'] / 60.0, 2
                 )
@@ -349,6 +323,7 @@ class URAMovingResource(URAResource):
                 point['params']['motoHours'] = round(
                     point['params']['motoHours'] / 3600.0, 2
                 )
+                point['params']['odoMeter'] = round(point['params']['odoMeter'], 2)
 
             units.append(unit_info)
 

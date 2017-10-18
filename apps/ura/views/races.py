@@ -11,24 +11,13 @@ from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
 from ura.utils import parse_datetime, parse_xml_input_data, float_format
+from ura.views.mixins import RidesMixin
 from ura.wialon.api import get_routes_list, get_points_list
 from ura.wialon.auth import authenticate_at_wialon
 from ura.wialon.exceptions import WialonException
 
 
-RIDES_GEOZONE_FROM_COL = 1
-RIDES_DATE_FROM_COL = 3
-RIDES_DATE_TO_COL = 4
-RIDES_DISTANCE_END_COL = 5
-RIDES_TIME_TOTAL_COL = 6
-RIDES_TIME_PARKING_COL = 7
-RIDES_FUEL_LEVEL_START_COL = 8
-RIDES_FUEL_LEVEL_END_COL = 9
-RIDES_ODOMETER_START_COL = 10
-RIDES_ODOMETER_END_COL = 11
-
-
-class URARacesResource(URAResource):
+class URARacesResource(RidesMixin, URAResource):
     model_mapping = {
         'date_begin': ('dateBegin', parse_datetime),
         'date_end': ('dateEnd', parse_datetime),
@@ -36,6 +25,10 @@ class URARacesResource(URAResource):
         'unit_id': ('idUnit', int),
         'route_id': ('idRoute', int)
     }
+
+    def __init__(self, **kwargs):
+        super(URARacesResource, self).__init__(**kwargs)
+        self.normalized_rides = []
 
     @staticmethod
     def get_next_point(points, points_iterator=None):
@@ -97,6 +90,13 @@ class URARacesResource(URAResource):
                     'Маршрут с ID=%s не найден' % route_id, code='routes_not_found'
                 )
 
+            points = routes_dict[route_id]['points']
+            if len(points) < 2:
+                return error_response(
+                    'В маршруте %s менее 2 контрольных точек' % routes_dict[route_id]['name'],
+                    code='route_no_points'
+                )
+
             dt_from, dt_to = get_period(
                 data['date_begin'],
                 data['date_end']
@@ -122,17 +122,19 @@ class URARacesResource(URAResource):
                 raise WialonException('Не удалось получить отчет о поездках')
 
             report_data = {
-                'unit_fillings': [],
-                'unit_engine_hours': [],
                 'unit_rides': [],
-                'unit_thefts': []
+                'unit_chronology': []
             }
+
             for table_index, table_info in enumerate(r['reportResult']['tables']):
+                if table_info['name'] not in report_data:
+                    continue
+
                 try:
                     rows = get_report_rows(
                         request.user,
                         table_index,
-                        table_info,
+                        table_info['rows'],
                         level=1,
                         sess_id=sess_id
                     )
@@ -142,12 +144,7 @@ class URARacesResource(URAResource):
                 except ReportException:
                     raise WialonException('Не удалось извлечь данные о поездке')
 
-            points = routes_dict[route_id]['points']
-            if len(points) < 2:
-                return error_response(
-                    'В маршруте %s менее 2 контрольных точек' % routes_dict[route_id]['name'],
-                    code='route_no_points'
-                )
+            self.normalize_rides(report_data)
 
             current_point, points_iterator, new_loop = self.get_next_point(points)
             start_point, end_point = points[0], points[-1]
@@ -159,73 +156,43 @@ class URARacesResource(URAResource):
 
             last_distance = .0
 
-            for row in report_data['unit_rides']:
-                row_data = row['c']
-                row_point_name = row_data[RIDES_GEOZONE_FROM_COL].strip()
+            for row in self.normalized_rides:
+                row_point_name = row['point']
 
                 if row_point_name == current_point:
-                    time_in = row_data[RIDES_DATE_FROM_COL]['t'] \
-                        if isinstance(row_data[RIDES_DATE_FROM_COL], dict) \
-                        else row_data[RIDES_DATE_FROM_COL]
-
-                    time_in = utc_to_local_time(
-                        parse_wialon_report_datetime(time_in),
-                        request.user.ura_tz
-                    )
-
-                    time_out = row_data[RIDES_DATE_TO_COL]['t'] \
-                        if isinstance(row_data[RIDES_DATE_TO_COL], dict) \
-                        else row_data[RIDES_DATE_TO_COL]
-
-                    time_out = utc_to_local_time(
-                        parse_wialon_report_datetime(time_out),
-                        request.user.ura_tz
-                    )
-
                     if race['date_start'] is None:
-                        race['date_start'] = time_in
+                        race['date_start'] = row['time_in']
 
                     point_id = points_dict_by_name.get(row_point_name, 'NOT_FOUND')
 
                     point_info = {
-                        'time_in': time_in,
-                        'time_out': time_out,
+                        'time_in': row['time_in'],
+                        'time_out': row['time_out'],
                         'id': point_id,
                         'params': OrderedDict()
                     }
 
-                    current_distance = parse_float(
-                        row_data[RIDES_DISTANCE_END_COL]
-                    )
-
-                    last_distance += current_distance
+                    last_distance += row['distance']
                     distance_delta = float_format(last_distance, -2)
 
                     if row_point_name == start_point:
                         point_info['type'] = 'startPoint'
-                        point_info['params']['fuelLevel'] = parse_float(
-                            row_data[RIDES_FUEL_LEVEL_START_COL]
-                        )
+                        point_info['params']['fuelLevel'] = row['fuel_start']
 
                         point_info['params']['distance'] = distance_delta
 
                     elif row_point_name == end_point:
                         point_info['type'] = 'endPoint'
-                        point_info['params']['fuelLevel'] = parse_float(
-                            row_data[RIDES_FUEL_LEVEL_END_COL]
-                        )
+                        point_info['params']['fuelLevel'] = row['fuel_end']
                         point_info['params']['distance'] = distance_delta
 
                     else:
                         point_info['type'] = 'checkPoint'
-                        point_info['params']['fuelLevelIn'] = parse_float(
-                            row_data[RIDES_FUEL_LEVEL_START_COL]
-                        )
+                        point_info['params']['fuelLevelIn'] = row['fuel_start']
                         point_info['params']['distanceIn'] = distance_delta
 
-                        time_total = parse_timedelta(row_data[RIDES_TIME_TOTAL_COL]).seconds
-                        time_parking = parse_timedelta(row_data[RIDES_TIME_PARKING_COL]).seconds
-                        point_info['params']['moveTime'] = max(0, time_total - time_parking)
+                    # время движения получим из хронологии
+                    point_info['params']['moveTime'] = .0
 
                     race['points'].append(point_info)
 
@@ -236,7 +203,7 @@ class URARacesResource(URAResource):
                     if new_loop:
                         last_distance = .0
                         if race['date_end'] is None:
-                            race['date_end'] = time_out
+                            race['date_end'] = row['time_out']
 
                         races.append(race)
                         race = {
@@ -244,6 +211,47 @@ class URARacesResource(URAResource):
                             'date_end': None,
                             'points': []
                         }
+
+            for row in report_data['unit_chronology']:
+                row_data = row['c']
+
+                if row_data[0].lower() == 'parking':
+                    continue
+
+                time_from = utc_to_local_time(
+                    parse_wialon_report_datetime(
+                        row_data[1]['t']
+                        if isinstance(row_data[1], dict)
+                        else row_data[1]
+                    ),
+                    request.user.ura_tz
+                )
+                time_until = utc_to_local_time(
+                    parse_wialon_report_datetime(
+                        row_data[2]['t']
+                        if isinstance(row_data[2], dict)
+                        else row_data[2]
+                    ),
+                    request.user.ura_tz
+                )
+
+                for race in job_info['races']:
+                    for point in race['points']:
+                        if point['time_in'] > time_until:
+                            # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
+                            break
+
+                        # если интервал точки меньше даты начала моточасов, значит еще не дошли
+                        if point['time_out'] < time_from:
+                            continue
+
+                        delta = min(time_until, point['time_out']) \
+                            - max(time_from, point['time_in'])
+                        # не пересекаются:
+                        if delta.seconds < 0 or delta.days < 0:
+                            continue
+
+                        point['params']['moveTime'] += delta.seconds
 
             # пост-фильтрация незаконченных маршрутов
             job_info['races'] = filter(

@@ -71,6 +71,9 @@ class URAMovingResource(RidesMixin, URAResource):
                 except ValueError:
                     pass
 
+            all_points = set()
+            [all_points.update(r['points']) for r in routes_dict.values()]
+
             unit_info = {
                 'id': unit_id,
                 'date_begin': utc_to_local_time(data.get('date_begin'), request.user.ura_tz),
@@ -106,7 +109,7 @@ class URAMovingResource(RidesMixin, URAResource):
                 'unit_fillings': [],
                 'unit_thefts': [],
                 'unit_engine_hours': [],
-                'unit_rides': [],
+                'unit_trips': [],
                 'unit_chronology': []
             }
 
@@ -132,6 +135,9 @@ class URAMovingResource(RidesMixin, URAResource):
 
             for row in self.normalized_rides:
                 point_name = row['point']
+                # if point_name not in all_points:
+                #     pass
+
                 if not route or point_name not in route['points']:
                     point_name = 'SPACE'
 
@@ -276,8 +282,8 @@ class URAMovingResource(RidesMixin, URAResource):
 
             for row in report_data['unit_chronology']:
                 row_data = row['c']
-                chronology_type = 'stopMinutes' \
-                    if row_data[0].lower() == 'parking' else 'moveMinutes'
+                if row_data[0].lower() not in ('parking', 'стоянка', 'остановка'):
+                    continue
 
                 time_from = utc_to_local_time(
                     parse_wialon_report_datetime(
@@ -301,7 +307,7 @@ class URAMovingResource(RidesMixin, URAResource):
                         # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
                         break
 
-                    # если интервал точки меньше даты начала моточасов, значит еще не дошли
+                    # если интервал точки меньше даты начала хронологии, значит еще не дошли
                     if point['time_out'] < time_from:
                         continue
 
@@ -310,12 +316,15 @@ class URAMovingResource(RidesMixin, URAResource):
                     if delta.seconds < 0 or delta.days < 0:
                         continue
 
-                    point['params'][chronology_type] += delta.seconds
+                    point['params']['stopMinutes'] += delta.seconds
 
             # преобразуем секунды в минуты и часы
             for i, point in enumerate(unit_info['points']):
                 point['params']['moveMinutes'] = round(
-                    point['params']['moveMinutes'] / 60.0, 2
+                    (
+                        (point['time_out'] - point['time_in']).seconds
+                        - point['params']['stopMinutes']
+                    ) / 60.0, 2
                 )
                 point['params']['stopMinutes'] = round(
                     point['params']['stopMinutes'] / 60.0, 2

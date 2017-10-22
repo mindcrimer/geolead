@@ -122,7 +122,7 @@ class URARacesResource(RidesMixin, URAResource):
                 raise WialonException('Не удалось получить отчет о поездках')
 
             report_data = {
-                'unit_rides': [],
+                'unit_trips': [],
                 'unit_chronology': []
             }
 

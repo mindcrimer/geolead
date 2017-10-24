@@ -91,6 +91,8 @@ class URARacesResource(RidesMixin, URAResource):
                 )
 
             points = routes_dict[route_id]['points']
+            fixed_route = 'фикс' in routes_dict[route_id]['name'].lower()
+
             if len(points) < 2:
                 return error_response(
                     'В маршруте %s менее 2 контрольных точек' % routes_dict[route_id]['name'],

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
+
 from base.utils import parse_float
 from reports.utils import utc_to_local_time, parse_wialon_report_datetime
 
@@ -20,8 +22,16 @@ class RidesMixin(object):
         super(RidesMixin, self).__init__()
         self.normalized_rides = []
 
+    @staticmethod
+    def get_point_name(row_data, col_index):
+        return (
+            row_data[col_index]['t']
+            if isinstance(row_data[col_index], dict)
+            else row_data[col_index]
+        ).strip()
+
     def normalize_rides(self, report_data):
-        from_row, to_row = None, None
+        current_row, prev_row = None, None
 
         for i, row in enumerate(report_data['unit_trips']):
             row_data = row['c']
@@ -44,7 +54,8 @@ class RidesMixin(object):
                 self.request.user.ura_tz
             )
 
-            row = {
+            current_row = {
+                'point': self.get_point_name(row_data, self.RIDES_GEOZONE_TO_COL),
                 'time_in': time_in,
                 'time_out': time_out,
                 'distance': parse_float(row_data[self.RIDES_DISTANCE_END_COL]),
@@ -54,36 +65,46 @@ class RidesMixin(object):
                 'odometer_to': parse_float(row_data[self.RIDES_ODOMETER_END_COL])
             }
 
-            from_row = row.copy()
-            from_row['point'] = (
-                row_data[self.RIDES_GEOZONE_FROM_COL]['t']
-                if isinstance(row_data[self.RIDES_GEOZONE_FROM_COL], dict)
-                else row_data[self.RIDES_GEOZONE_FROM_COL]
-            ).strip()
+            from_point_name = self.get_point_name(row_data, self.RIDES_GEOZONE_FROM_COL)
+            if 'маршрут' in from_point_name.lower():
+                current_row['point'] = from_point_name
 
-            if to_row is not None:
-                to_row = to_row.copy()
+            # если строка не первая, тащим диапазон между строк
+            if prev_row is not None:
+                to_row = prev_row.copy()
+                to_row['point'] = self.get_point_name(row_data, self.RIDES_GEOZONE_FROM_COL)
                 to_row['time_in'] = to_row['time_out']
-                to_row['time_out'] = from_row['time_in']
+                to_row['time_out'] = current_row['time_in']
 
                 to_row['fuel_start'] = to_row['fuel_end']
-                to_row['fuel_end'] = from_row['fuel_start']
+                to_row['fuel_end'] = current_row['fuel_start']
 
-                to_row['distance'] = from_row['odometer_from'] - to_row['odometer_to']
+                to_row['distance'] = current_row['odometer_from'] - to_row['odometer_to']
 
                 to_row['odometer_from'] = to_row['odometer_to']
-                to_row['odometer_to'] = from_row['odometer_from']
+                to_row['odometer_to'] = current_row['odometer_from']
 
                 self.append_to_normilized_rides(to_row)
 
-            self.append_to_normilized_rides(from_row)
+            # в первой строке тащим точку слева, с начальными показателями на выходе
+            else:
+                current_row['point'] = self.get_point_name(row_data, self.RIDES_GEOZONE_TO_COL)
+                self.append_to_normilized_rides(dict(
+                    point=self.get_point_name(row_data, self.RIDES_GEOZONE_FROM_COL),
+                    time_in=time_in,
+                    time_out=time_in,
+                    distance=0,
+                    fuel_start=current_row['fuel_start'],
+                    fuel_end=current_row['fuel_start'],
+                    odometer_from=current_row['odometer_from'],
+                    odometer_to=current_row['odometer_from']
+                ))
 
-            to_row = row.copy()
-            to_row['point'] = (
-                row_data[self.RIDES_GEOZONE_TO_COL]['t']
-                if isinstance(row_data[self.RIDES_GEOZONE_TO_COL], dict)
-                else row_data[self.RIDES_GEOZONE_TO_COL]
-            ).strip()
+            # в строке точкой маршрута является точка справа
+            to_row = current_row.copy()
+            self.append_to_normilized_rides(to_row)
+
+            prev_row = deepcopy(current_row)
 
     def append_to_normilized_rides(self, candidate_point):
         if self.normalized_rides:

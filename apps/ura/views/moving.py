@@ -334,6 +334,26 @@ class URAMovingResource(RidesMixin, URAResource):
                 )
                 point['params']['odoMeter'] = round(point['params']['odoMeter'], 2)
 
+            # если маршрут начался позже начала смены
+            if unit_info['points'] and unit_info['date_begin'] < unit_info['points'][0]['time_in']:
+                first_point = unit_info['points'][0]
+                first_space_point = dict(
+                    name='SPACE',
+                    time_in=unit_info['date_begin'],
+                    time_out=first_point['time_in'],
+                    params=OrderedDict((
+                        ('startFuelLevel', first_point['params']['startFuelLevel']),
+                        ('endFuelLevel', first_point['params']['startFuelLevel']),
+                        ('fuelRefill', .0),
+                        ('fuelDrain', .0),
+                        ('stopMinutes', .0),
+                        ('moveMinutes', .0),
+                        ('motoHours', 0),
+                        ('odoMeter', 0)
+                    )))
+
+                unit_info['points'].insert(0, first_space_point)
+
             units.append(unit_info)
 
         return XMLResponse('ura/moving.xml', context)

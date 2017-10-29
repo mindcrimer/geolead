@@ -55,7 +55,7 @@ class URARacesResource(RidesMixin, URAResource):
         })
 
         sess_id = authenticate_at_wialon(request.user.wialon_token)
-        routes_list = get_routes(sess_id=sess_id, get_points=True)
+        routes_list = get_routes(sess_id=sess_id, with_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
         points_list = get_points(sess_id=sess_id)
@@ -90,7 +90,6 @@ class URARacesResource(RidesMixin, URAResource):
                 )
 
             points = routes_dict[route_id]['points']
-            fixed_route = 'фикс' in routes_dict[route_id]['name'].lower()
 
             if len(points) < 2:
                 return error_response(
@@ -145,7 +144,9 @@ class URARacesResource(RidesMixin, URAResource):
                 except ReportException:
                     raise WialonException('Не удалось извлечь данные о поездке')
 
-            self.normalize_rides(report_data)
+            self.normalize_rides(
+                report_data, utc_to_local_time(data.get('date_end'), request.user.ura_tz)
+            )
 
             current_point, points_iterator, new_loop = self.get_next_point(points)
             start_point, end_point = points[0], points[-1]

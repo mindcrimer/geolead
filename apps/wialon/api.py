@@ -60,14 +60,19 @@ def get_drivers(user=None, sess_id=None):
     return drivers
 
 
-def get_intersected_geozones(sess_id, lon, lat, zones=None):
+def get_intersected_geozones(lon, lat, user=None, sess_id=None, zones=None):
     """Получает геозоны, пересекаемые c указанной координатой"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
+
     if zones is None:
-        pass
+        zones = {x['id']: [] for x in get_resources(user, sess_id)}
 
     request_params = json.dumps({
         'spec': {
-            'zoneId': {15947710: []},
+            'zoneId': zones,
             'lat': lat,
             'lon': lon
         }
@@ -237,10 +242,11 @@ def get_resources(user=None, sess_id=None):
             'propType': 'property'
         },
         'force': 1,
-        'flags': 1 + 256,
+        'flags': 1,
         'from': 0,
         'to': 0
     })
+
     r = requests.get(
         settings.WIALON_BASE_URL + (
             '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
@@ -255,7 +261,7 @@ def get_resources(user=None, sess_id=None):
     for item in res['items']:
         resources.append({
             'id': item['id'],
-            'name': item['n']
+            'name': item['nm']
         })
 
     if DEFAULT_CACHE_TIMEOUT:
@@ -264,7 +270,7 @@ def get_resources(user=None, sess_id=None):
     return resources
 
 
-def get_routes(user=None, sess_id=None, get_points=False):
+def get_routes(user=None, sess_id=None, with_points=False):
     """Получает список маршрутов"""
     assert user or sess_id
 
@@ -276,6 +282,10 @@ def get_routes(user=None, sess_id=None, get_points=False):
 
     if routes_list:
         return json.loads(routes_list)
+
+    points_dict_by_name = {}
+    if with_points:
+        points_dict_by_name = {x['name']: x for x in get_points(user=user, sess_id=sess_id)}
 
     request_params = json.dumps({
         'spec': {
@@ -307,9 +317,12 @@ def get_routes(user=None, sess_id=None, get_points=False):
             'name': r['nm'].strip()
         }
         if get_points:
-            route['points'] = [{
-                'id': '%s-%s' % (route['id'], x['id']), 'name': x['n'].strip()
-            } for x in r.get('rpts', [])]
+            point_names = [x['n'] for x in r.get('rpts', [])]
+            route['points'] = [
+                points_dict_by_name[n]
+                for n in point_names
+                if n in points_dict_by_name
+            ]
 
         routes.append(route)
 

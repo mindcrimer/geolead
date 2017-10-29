@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
 
+import six
+
 from base.utils import parse_float
 from reports.utils import utc_to_local_time, parse_wialon_report_datetime
 
@@ -30,8 +32,19 @@ class RidesMixin(object):
             else row_data[col_index]
         ).strip()
 
-    def normalize_rides(self, report_data):
+    @staticmethod
+    def get_point_coords(row_data, col_index):
+        if len(row_data) > col_index and isinstance(row_data[col_index], dict):
+            return {
+                'lon': row_data[col_index]['x'],
+                'lat': row_data[col_index]['y']
+            }
+
+        return None
+
+    def normalize_rides(self, report_data, date_end):
         current_row, prev_row = None, None
+        rides_size = len(report_data['unit_trips'])
 
         for i, row in enumerate(report_data['unit_trips']):
             row_data = row['c']
@@ -45,17 +58,23 @@ class RidesMixin(object):
                 self.request.user.ura_tz
             )
 
-            time_out = row_data[self.RIDES_DATE_TO_COL]['t'] \
-                if isinstance(row_data[self.RIDES_DATE_TO_COL], dict) \
-                else row_data[self.RIDES_DATE_TO_COL]
+            if isinstance(row_data[self.RIDES_DATE_TO_COL], six.string_types)\
+                    and row_data[self.RIDES_DATE_TO_COL].lower() == 'unknown':
+                time_out = date_end
 
-            time_out = utc_to_local_time(
-                parse_wialon_report_datetime(time_out),
-                self.request.user.ura_tz
-            )
+            else:
+                time_out = row_data[self.RIDES_DATE_TO_COL]['t'] \
+                    if isinstance(row_data[self.RIDES_DATE_TO_COL], dict) \
+                    else row_data[self.RIDES_DATE_TO_COL]
+
+                time_out = utc_to_local_time(
+                    parse_wialon_report_datetime(time_out),
+                    self.request.user.ura_tz
+                )
 
             current_row = {
                 'point': self.get_point_name(row_data, self.RIDES_GEOZONE_TO_COL),
+                'coords': self.get_point_coords(row_data, self.RIDES_GEOZONE_TO_COL),
                 'time_in': time_in,
                 'time_out': time_out,
                 'distance': parse_float(row_data[self.RIDES_DISTANCE_END_COL]),
@@ -66,13 +85,20 @@ class RidesMixin(object):
             }
 
             from_point_name = self.get_point_name(row_data, self.RIDES_GEOZONE_FROM_COL)
+
             if 'маршрут' in from_point_name.lower():
                 current_row['point'] = from_point_name
+                current_row['coords'] = self.get_point_coords(
+                    row_data, self.RIDES_GEOZONE_FROM_COL
+                )
 
             # если строка не первая, тащим диапазон между строк
             if prev_row is not None:
                 to_row = prev_row.copy()
                 to_row['point'] = self.get_point_name(row_data, self.RIDES_GEOZONE_FROM_COL)
+                to_row['coords'] = self.get_point_coords(
+                    row_data, self.RIDES_GEOZONE_FROM_COL
+                )
                 to_row['time_in'] = to_row['time_out']
                 to_row['time_out'] = current_row['time_in']
 
@@ -89,8 +115,13 @@ class RidesMixin(object):
             # в первой строке тащим точку слева, с начальными показателями на выходе
             else:
                 current_row['point'] = self.get_point_name(row_data, self.RIDES_GEOZONE_TO_COL)
+                current_row['coords'] = self.get_point_coords(
+                    row_data, self.RIDES_GEOZONE_TO_COL
+                )
+
                 self.append_to_normilized_rides(dict(
                     point=self.get_point_name(row_data, self.RIDES_GEOZONE_FROM_COL),
+                    coords=self.get_point_coords(row_data, self.RIDES_GEOZONE_FROM_COL),
                     time_in=time_in,
                     time_out=time_in,
                     distance=0,
@@ -105,6 +136,20 @@ class RidesMixin(object):
             self.append_to_normilized_rides(to_row)
 
             prev_row = deepcopy(current_row)
+
+            # в последней записи, если она завершена, тащим точку справ
+            if rides_size - i == 1 and time_out < date_end:
+                self.append_to_normilized_rides(dict(
+                    point=self.get_point_name(row_data, self.RIDES_GEOZONE_TO_COL),
+                    coords=self.get_point_coords(row_data, self.RIDES_GEOZONE_TO_COL),
+                    time_in=time_out,
+                    time_out=date_end,
+                    distance=0,
+                    fuel_start=current_row['fuel_end'],
+                    fuel_end=current_row['fuel_end'],
+                    odometer_from=current_row['odometer_to'],
+                    odometer_to=current_row['odometer_to']
+                ))
 
     def append_to_normilized_rides(self, candidate_point):
         if self.normalized_rides:

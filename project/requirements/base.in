@@ -20,6 +20,7 @@ Pillow
 pytz
 psycopg2
 redis
+six
 ujson
 uWSGI
 uwsgitop

@@ -14,7 +14,7 @@ from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime, parse_xml_input_data
 from ura.views.mixins import RidesMixin
-from wialon.api import get_routes
+from wialon.api import get_routes, get_intersected_geozones, get_resources
 from wialon.auth import authenticate_at_wialon
 from wialon.exceptions import WialonException
 
@@ -36,7 +36,7 @@ class URAMovingResource(RidesMixin, URAResource):
         })
 
         sess_id = authenticate_at_wialon(request.user.wialon_token)
-        routes_list = get_routes(sess_id=sess_id, get_points=True)
+        routes_list = get_routes(sess_id=sess_id, with_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
         units_els = request.data.xpath('/getMoving/unit')
@@ -71,8 +71,16 @@ class URAMovingResource(RidesMixin, URAResource):
                 except ValueError:
                     pass
 
-            all_points = set()
-            [all_points.update(r['points']) for r in routes_dict.values()]
+            route_point_names = [x['name'] for x in route['points']]
+
+            all_points_names = set()
+            all_points = {}
+
+            for r in routes_dict.values():
+                all_points_names.update([x['name'] for x in r['points']])
+                all_points.update({x['id']: x for x in r['points']})
+
+            resources_cache = None
 
             unit_info = {
                 'id': unit_id,
@@ -83,7 +91,7 @@ class URAMovingResource(RidesMixin, URAResource):
 
             dt_from, dt_to = get_period(
                 data['date_begin'],
-                data['date_end'],
+                data['date_end']
             )
 
             cleanup_and_request_report(
@@ -131,15 +139,54 @@ class URAMovingResource(RidesMixin, URAResource):
                 except ReportException:
                     raise WialonException('Не удалось извлечь данные о поездке')
 
-            self.normalize_rides(report_data)
+            self.normalize_rides(report_data, unit_info['date_end'])
 
+            previous_point_name = None
             for row in self.normalized_rides:
                 point_name = row['point']
-                # if point_name not in all_points:
-                #     pass
 
-                if not route or point_name not in route['points']:
+                # если маршрут или название точки вообще неизвестны, пишем SPACE
+                if not route or point_name not in all_points_names:
                     point_name = 'SPACE'
+
+                # если же точка известна, но не входит в маршрут, то
+                # скорее всего она пересекается с другой геозоной из маршрута
+                elif point_name not in route_point_names:
+                    point_name = 'SPACE'
+
+                    if row['coords']:
+                        if resources_cache is None:
+                            resources_cache = {x['id']: [] for x in get_resources(sess_id=sess_id)}
+
+                        intersected_geozones = get_intersected_geozones(
+                            row['coords']['lon'],
+                            row['coords']['lat'],
+                            sess_id=sess_id,
+                            zones=resources_cache
+                        )
+
+                        intersected_geozones_ids = set()
+                        [
+                            intersected_geozones_ids.update([
+                                '%s-%s' % (resource_id, g) for g in geozones
+                            ]) for resource_id, geozones in intersected_geozones.items()
+                        ]
+                        intersected_geozones_names = list(filter(
+                            lambda p: p in route_point_names, [
+                                all_points[x]['name'] for x in intersected_geozones_ids
+                                if x in all_points
+                            ]
+                        ))
+
+                        if intersected_geozones_names:
+                            # если пересекаемых точек, известных маршруту более 1, то пробуем
+                            # удалить из списка предыдущую точку
+                            if len(intersected_geozones_names) > 1 and previous_point_name:
+                                intersected_geozones_names = filter(
+                                    lambda p: p != previous_point_name,
+                                    intersected_geozones_names
+                                )
+                            point_name = intersected_geozones_names[0]
 
                 point_info = {
                     'name': point_name,
@@ -208,6 +255,7 @@ class URAMovingResource(RidesMixin, URAResource):
                         pass
 
                 unit_info['points'].append(point_info)
+                previous_point_name = point_name
 
             for row in report_data['unit_thefts']:
                 volume = parse_float(row['c'][2])

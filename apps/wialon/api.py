@@ -165,6 +165,56 @@ def get_points(user=None, sess_id=None):
     return points
 
 
+def get_report_templates(user=None, sess_id=None):
+    """Получает список шаблонов отчетов"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
+
+    cache_key = 'report_templates:%s' % sess_id
+    report_templates_list = cache.get(cache_key)
+
+    if report_templates_list:
+        return json.loads(report_templates_list)
+
+    request_params = json.dumps({
+        'spec': {
+            'itemsType': 'avl_resource',
+            'propName': 'reporttemplates',
+            'propValueMask': '*',
+            'sortType': 'reporttemplates',
+            'propType': 'propitemname'
+        },
+        'force': 1,
+        'flags': 1 + 8192,
+        'from': 0,
+        'to': 0
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    res = r.json()
+
+    if 'error' in res:
+        raise WialonException(WIALON_ENTIRE_ERROR)
+
+    report_templates = []
+    for item in res['items']:
+        if item and item['rep']:
+            report_templates.extend([{
+                'id': '%s-%s' % (item['id'], x['id']),
+                'name': x['n']
+            } for x in item['rep'].values()])
+
+    if DEFAULT_CACHE_TIMEOUT:
+        cache.set(cache_key, json.dumps(report_templates), DEFAULT_CACHE_TIMEOUT)
+
+    return report_templates
+
+
 def get_resources(user=None, sess_id=None):
     """Получает список ресурсов (организаций в рамках Виалона)"""
     assert user or sess_id
@@ -181,10 +231,10 @@ def get_resources(user=None, sess_id=None):
     request_params = json.dumps({
         'spec': {
             'itemsType': 'avl_resource',
-            'propName': 'drivers',
+            'propName': 'sys_name',
             'propValueMask': '*',
-            'sortType': 'drivers',
-            'propType': 'propitemname'
+            'sortType': 'sys_name',
+            'propType': 'property'
         },
         'force': 1,
         'flags': 1 + 256,
@@ -203,11 +253,10 @@ def get_resources(user=None, sess_id=None):
 
     resources = []
     for item in res['items']:
-        if item and item['drvrs']:
-            resources.extend([{
-                'id': '%s-%s' % (item['id'], x['id']),
-                'name': x['n']
-            } for x in item['drvrs'].values()])
+        resources.append({
+            'id': item['id'],
+            'name': item['n']
+        })
 
     if DEFAULT_CACHE_TIMEOUT:
         cache.set(cache_key, json.dumps(resources), DEFAULT_CACHE_TIMEOUT)

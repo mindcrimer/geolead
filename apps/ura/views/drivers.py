@@ -4,7 +4,7 @@ from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import get_organization_user
-from ura.wialon.api import get_drivers_list
+from wialon.api import get_drivers
 
 
 class URADriversResource(URAResource):
@@ -30,7 +30,7 @@ class URADriversResource(URAResource):
         user = get_organization_user(request, org_id)
 
         try:
-            drivers = get_drivers_list(user)
+            drivers = get_drivers(user)
         except APIProcessError as e:
             return error_response(str(e), code=e.code)
 

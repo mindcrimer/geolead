@@ -10,8 +10,8 @@ from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
     exec_report, get_report_rows
 from reports.views.base import BaseReportView, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.wialon.api import get_units_list
-from ura.wialon.exceptions import WialonException
+from wialon.api import get_units
+from wialon.exceptions import WialonException
 
 
 class DrivingStyleView(BaseReportView):
@@ -101,7 +101,7 @@ class DrivingStyleView(BaseReportView):
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 try:
-                    units_list = get_units_list(sess_id=sess_id, extra_fields=True)
+                    units_list = get_units(sess_id=sess_id, extra_fields=True)
                 except WialonException as e:
                     raise ReportException(str(e))
 

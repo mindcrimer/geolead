@@ -17,7 +17,7 @@ from base.exceptions import APIParseError, AuthenticationFailed, APIValidationEr
 from snippets.utils.email import send_trigger_email
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
-from ura.wialon.exceptions import WialonException
+from wialon.exceptions import WialonException
 
 
 @method_decorator(csrf_exempt, name='dispatch')

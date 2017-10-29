@@ -2,19 +2,18 @@
 from collections import OrderedDict
 
 from base.exceptions import ReportException
-from base.utils import parse_float
 from reports.utils import cleanup_and_request_report, get_period, \
     get_wialon_geozones_report_template_id, exec_report, get_report_rows, utc_to_local_time, \
-    parse_wialon_report_datetime, parse_timedelta
+    parse_wialon_report_datetime
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
 from ura.utils import parse_datetime, parse_xml_input_data, float_format
 from ura.views.mixins import RidesMixin
-from ura.wialon.api import get_routes_list, get_points_list
-from ura.wialon.auth import authenticate_at_wialon
-from ura.wialon.exceptions import WialonException
+from wialon.api import get_routes, get_points
+from wialon.auth import authenticate_at_wialon
+from wialon.exceptions import WialonException
 
 
 class URARacesResource(RidesMixin, URAResource):
@@ -56,10 +55,10 @@ class URARacesResource(RidesMixin, URAResource):
         })
 
         sess_id = authenticate_at_wialon(request.user.wialon_token)
-        routes_list = get_routes_list(sess_id=sess_id, get_points=True)
+        routes_list = get_routes(sess_id=sess_id, get_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
-        points_list = get_points_list(sess_id=sess_id)
+        points_list = get_points(sess_id=sess_id)
         points_dict_by_name = {x['name']: x['id'] for x in points_list}
 
         jobs_els = request.data.xpath('/getRaces/job')

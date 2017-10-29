@@ -7,8 +7,8 @@ from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_period
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.wialon.api import get_messages
-from ura.wialon.exceptions import WialonException
+from wialon.api import get_messages
+from wialon.exceptions import WialonException
 
 
 class MalfunctionsView(BaseReportView):

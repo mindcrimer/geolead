@@ -10,4 +10,5 @@ class HomeView(BaseTemplateView):
         kwargs = super(HomeView, self).get_context_data(**kwargs)
         kwargs['sid'] = self.request.GET.get('sid', None)
         kwargs['user'] = self.request.GET.get('user', None)
+
         return kwargs

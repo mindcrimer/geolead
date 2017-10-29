@@ -9,8 +9,8 @@ from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_
     get_wialon_discharge_report_template_id, get_period, cleanup_and_request_report, exec_report, \
     get_report_rows, get_wialon_kmu_report_template_id
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.wialon.api import get_units_list
-from ura.wialon.exceptions import WialonException
+from wialon.api import get_units
+from wialon.exceptions import WialonException
 
 
 class DischargeView(BaseReportView):
@@ -62,7 +62,7 @@ class DischargeView(BaseReportView):
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 try:
-                    units_list = get_units_list(sess_id=sess_id, extra_fields=True)
+                    units_list = get_units(sess_id=sess_id, extra_fields=True)
                 except WialonException as e:
                     raise ReportException(str(e))
 

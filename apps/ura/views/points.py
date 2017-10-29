@@ -4,7 +4,7 @@ from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import get_organization_user
-from ura.wialon.api import get_points_list
+from wialon.api import get_points
 
 
 class URAPointsResource(URAResource):
@@ -30,7 +30,7 @@ class URAPointsResource(URAResource):
         user = get_organization_user(request, org_id)
 
         try:
-            points = get_points_list(user)
+            points = get_points(user)
         except APIProcessError as e:
             return error_response(str(e), code=e.code)
 

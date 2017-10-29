@@ -14,9 +14,9 @@ from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime, parse_xml_input_data
 from ura.views.mixins import RidesMixin
-from ura.wialon.api import get_routes_list
-from ura.wialon.auth import authenticate_at_wialon
-from ura.wialon.exceptions import WialonException
+from wialon.api import get_routes
+from wialon.auth import authenticate_at_wialon
+from wialon.exceptions import WialonException
 
 
 class URAMovingResource(RidesMixin, URAResource):
@@ -36,7 +36,7 @@ class URAMovingResource(RidesMixin, URAResource):
         })
 
         sess_id = authenticate_at_wialon(request.user.wialon_token)
-        routes_list = get_routes_list(sess_id=sess_id, get_points=True)
+        routes_list = get_routes(sess_id=sess_id, get_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
         units_els = request.data.xpath('/getMoving/unit')

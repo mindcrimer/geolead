@@ -12,7 +12,7 @@ import requests
 from base.exceptions import ReportException
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
 from ura.models import UraJob
-from ura.wialon.auth import authenticate_at_wialon
+from wialon.auth import authenticate_at_wialon
 
 
 def get_wialon_report_object_id(user):

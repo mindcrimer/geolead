@@ -14,7 +14,7 @@ from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_datetime, parse_xml_input_data
 from ura.views.mixins import RidesMixin
-from wialon.api import get_routes, get_intersected_geozones, get_resources
+from wialon.api import get_routes
 from wialon.auth import authenticate_at_wialon
 from wialon.exceptions import WialonException
 
@@ -35,8 +35,8 @@ class URAMovingResource(RidesMixin, URAResource):
             'units': units
         })
 
-        sess_id = authenticate_at_wialon(request.user.wialon_token)
-        routes_list = get_routes(sess_id=sess_id, with_points=True)
+        self.sess_id = authenticate_at_wialon(request.user.wialon_token)
+        routes_list = get_routes(sess_id=self.sess_id, with_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
         units_els = request.data.xpath('/getMoving/unit')
@@ -64,23 +64,11 @@ class URAMovingResource(RidesMixin, URAResource):
                 date_end__lte=data.get('date_end')
             ).first()
 
-            route = None
             if job:
                 try:
-                    route = routes_dict.get(int(job.route_id))
+                    self.route = routes_dict.get(int(job.route_id))
                 except ValueError:
                     pass
-
-            route_point_names = [x['name'] for x in route['points']]
-
-            all_points_names = set()
-            all_points = {}
-
-            for r in routes_dict.values():
-                all_points_names.update([x['name'] for x in r['points']])
-                all_points.update({x['id']: x for x in r['points']})
-
-            resources_cache = None
 
             unit_info = {
                 'id': unit_id,
@@ -98,7 +86,7 @@ class URAMovingResource(RidesMixin, URAResource):
                 request.user,
                 get_wialon_geozones_report_template_id(request.user),
                 item_id=unit_id,
-                sess_id=sess_id
+                sess_id=self.sess_id
             )
 
             try:
@@ -108,7 +96,7 @@ class URAMovingResource(RidesMixin, URAResource):
                     dt_from,
                     dt_to,
                     object_id=unit_id,
-                    sess_id=sess_id
+                    sess_id=self.sess_id
                 )
             except ReportException:
                 raise WialonException('Не удалось получить отчет о поездках')
@@ -131,7 +119,7 @@ class URAMovingResource(RidesMixin, URAResource):
                         table_index,
                         table_info['rows'],
                         level=1,
-                        sess_id=sess_id
+                        sess_id=self.sess_id
                     )
 
                     report_data[table_info['name']] = rows
@@ -141,52 +129,17 @@ class URAMovingResource(RidesMixin, URAResource):
 
             self.normalize_rides(report_data, unit_info['date_end'])
 
-            previous_point_name = None
+            self.all_points_names = set()
+            self.all_points = {}
+            self.route_point_names = [x['name'] for x in self.route['points']] \
+                if self.route else []
+
+            for r in routes_dict.values():
+                self.all_points_names.update([x['name'] for x in r['points']])
+                self.all_points.update({x['id']: x for x in r['points']})
+
             for row in self.normalized_rides:
-                point_name = row['point']
-
-                # если маршрут или название точки вообще неизвестны, пишем SPACE
-                if not route or point_name not in all_points_names:
-                    point_name = 'SPACE'
-
-                # если же точка известна, но не входит в маршрут, то
-                # скорее всего она пересекается с другой геозоной из маршрута
-                elif point_name not in route_point_names:
-                    point_name = 'SPACE'
-
-                    if row['coords']:
-                        if resources_cache is None:
-                            resources_cache = {x['id']: [] for x in get_resources(sess_id=sess_id)}
-
-                        intersected_geozones = get_intersected_geozones(
-                            row['coords']['lon'],
-                            row['coords']['lat'],
-                            sess_id=sess_id,
-                            zones=resources_cache
-                        )
-
-                        intersected_geozones_ids = set()
-                        [
-                            intersected_geozones_ids.update([
-                                '%s-%s' % (resource_id, g) for g in geozones
-                            ]) for resource_id, geozones in intersected_geozones.items()
-                        ]
-                        intersected_geozones_names = list(filter(
-                            lambda p: p in route_point_names, [
-                                all_points[x]['name'] for x in intersected_geozones_ids
-                                if x in all_points
-                            ]
-                        ))
-
-                        if intersected_geozones_names:
-                            # если пересекаемых точек, известных маршруту более 1, то пробуем
-                            # удалить из списка предыдущую точку
-                            if len(intersected_geozones_names) > 1 and previous_point_name:
-                                intersected_geozones_names = filter(
-                                    lambda p: p != previous_point_name,
-                                    intersected_geozones_names
-                                )
-                            point_name = intersected_geozones_names[0]
+                point_name = self.get_normalized_point_name(row)
 
                 point_info = {
                     'name': point_name,
@@ -255,7 +208,7 @@ class URAMovingResource(RidesMixin, URAResource):
                         pass
 
                 unit_info['points'].append(point_info)
-                previous_point_name = point_name
+                self.previous_point_name = point_name
 
             for row in report_data['unit_thefts']:
                 volume = parse_float(row['c'][2])

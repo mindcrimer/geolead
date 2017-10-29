@@ -27,7 +27,7 @@ class URARacesResource(RidesMixin, URAResource):
 
     def __init__(self, **kwargs):
         super(URARacesResource, self).__init__(**kwargs)
-        self.normalized_rides = []
+        self.points_dict_by_name = {}
 
     @staticmethod
     def get_next_point(points, points_iterator=None):
@@ -54,12 +54,12 @@ class URARacesResource(RidesMixin, URAResource):
             'jobs': jobs
         })
 
-        sess_id = authenticate_at_wialon(request.user.wialon_token)
-        routes_list = get_routes(sess_id=sess_id, with_points=True)
+        self.sess_id = authenticate_at_wialon(request.user.wialon_token)
+        routes_list = get_routes(sess_id=self.sess_id, with_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
-        points_list = get_points(sess_id=sess_id)
-        points_dict_by_name = {x['name']: x['id'] for x in points_list}
+        points_list = get_points(sess_id=self.sess_id)
+        self.points_dict_by_name = {x['name']: x['id'] for x in points_list}
 
         jobs_els = request.data.xpath('/getRaces/job')
 
@@ -89,6 +89,7 @@ class URARacesResource(RidesMixin, URAResource):
                     'Маршрут с ID=%s не найден' % route_id, code='routes_not_found'
                 )
 
+            self.route = routes_dict[route_id]
             points = routes_dict[route_id]['points']
 
             if len(points) < 2:
@@ -106,7 +107,7 @@ class URARacesResource(RidesMixin, URAResource):
                 request.user,
                 get_wialon_geozones_report_template_id(request.user),
                 item_id=unit_id,
-                sess_id=sess_id,
+                sess_id=self.sess_id,
             )
 
             try:
@@ -116,7 +117,7 @@ class URARacesResource(RidesMixin, URAResource):
                     dt_from,
                     dt_to,
                     object_id=unit_id,
-                    sess_id=sess_id
+                    sess_id=self.sess_id
                 )
             except ReportException:
                 raise WialonException('Не удалось получить отчет о поездках')
@@ -136,7 +137,7 @@ class URARacesResource(RidesMixin, URAResource):
                         table_index,
                         table_info['rows'],
                         level=1,
-                        sess_id=sess_id
+                        sess_id=self.sess_id
                     )
 
                     report_data[table_info['name']] = rows
@@ -148,71 +149,19 @@ class URARacesResource(RidesMixin, URAResource):
                 report_data, utc_to_local_time(data.get('date_end'), request.user.ura_tz)
             )
 
-            current_point, points_iterator, new_loop = self.get_next_point(points)
-            start_point, end_point = points[0], points[-1]
-            race = {
-                'date_start': None,
-                'date_end': None,
-                'points': []
-            }
+            self.all_points_names = set()
+            self.all_points = {}
+            self.route_point_names = [x['name'] for x in self.route['points']]
 
-            last_distance = .0
+            for r in routes_dict.values():
+                self.all_points_names.update([x['name'] for x in r['points']])
+                self.all_points.update({x['id']: x for x in r['points']})
 
-            for row in self.normalized_rides:
-                row_point_name = row['point']
+            self.make_races(points, races)
 
-                if row_point_name == current_point:
-                    if race['date_start'] is None:
-                        race['date_start'] = row['time_in']
-
-                    point_id = points_dict_by_name.get(row_point_name, 'NOT_FOUND')
-
-                    point_info = {
-                        'time_in': row['time_in'],
-                        'time_out': row['time_out'],
-                        'id': point_id,
-                        'params': OrderedDict()
-                    }
-
-                    last_distance += row['distance']
-                    distance_delta = float_format(last_distance, -2)
-
-                    if row_point_name == start_point:
-                        point_info['type'] = 'startPoint'
-                        point_info['params']['fuelLevel'] = row['fuel_start']
-
-                        point_info['params']['distance'] = distance_delta
-
-                    elif row_point_name == end_point:
-                        point_info['type'] = 'endPoint'
-                        point_info['params']['fuelLevel'] = row['fuel_end']
-                        point_info['params']['distance'] = distance_delta
-
-                    else:
-                        point_info['type'] = 'checkPoint'
-                        point_info['params']['fuelLevelIn'] = row['fuel_start']
-                        point_info['params']['distanceIn'] = distance_delta
-
-                    # время движения получим из хронологии
-                    point_info['params']['moveTime'] = .0
-
-                    race['points'].append(point_info)
-
-                    current_point, points_iterator, new_loop = self.get_next_point(
-                        points, points_iterator
-                    )
-
-                    if new_loop:
-                        last_distance = .0
-                        if race['date_end'] is None:
-                            race['date_end'] = row['time_out']
-
-                        races.append(race)
-                        race = {
-                            'date_start': None,
-                            'date_end': None,
-                            'points': []
-                        }
+            if not races:
+                self.previous_point_name = None
+                self.make_races(list(reversed(points)), races)
 
             for row in report_data['unit_chronology']:
                 row_data = row['c']
@@ -255,6 +204,10 @@ class URARacesResource(RidesMixin, URAResource):
 
                         point['params']['moveTime'] += delta.seconds
 
+            for race in job_info['races']:
+                for point in race['points']:
+                    point['params']['moveTime'] = round(point['params']['moveTime'] / 60.0, 2)
+
             # пост-фильтрация незаконченных маршрутов
             job_info['races'] = filter(
                 lambda rc: len(
@@ -265,3 +218,72 @@ class URARacesResource(RidesMixin, URAResource):
             jobs.append(job_info)
 
         return XMLResponse('ura/races.xml', context)
+
+    def make_races(self, points, races):
+        current_point, points_iterator, new_loop = self.get_next_point(points)
+        start_point, end_point = points[0], points[-1]
+        race = {
+            'date_start': None,
+            'date_end': None,
+            'points': []
+        }
+
+        last_distance = .0
+
+        for row in self.normalized_rides:
+            row_point_name = self.get_normalized_point_name(row)
+
+            if row_point_name == current_point['name']:
+                if race['date_start'] is None:
+                    race['date_start'] = row['time_in']
+
+                point_id = self.points_dict_by_name.get(row_point_name, 'NOT_FOUND')
+
+                point_info = {
+                    'name': row_point_name,
+                    'time_in': row['time_in'],
+                    'time_out': row['time_out'],
+                    'id': point_id,
+                    'params': OrderedDict()
+                }
+
+                last_distance += row['distance']
+                distance_delta = float_format(last_distance, -2)
+
+                if row_point_name == start_point['name']:
+                    point_info['type'] = 'startPoint'
+                    point_info['params']['fuelLevel'] = row['fuel_start']
+
+                    point_info['params']['distance'] = distance_delta
+
+                elif row_point_name == end_point['name']:
+                    point_info['type'] = 'endPoint'
+                    point_info['params']['fuelLevel'] = row['fuel_end']
+                    point_info['params']['distance'] = distance_delta
+
+                else:
+                    point_info['type'] = 'checkPoint'
+                    point_info['params']['fuelLevelIn'] = row['fuel_start']
+                    point_info['params']['distanceIn'] = distance_delta
+
+                # время движения получим из хронологии
+                point_info['params']['moveTime'] = .0
+
+                race['points'].append(point_info)
+
+                current_point, points_iterator, new_loop = self.get_next_point(
+                    points, points_iterator
+                )
+
+                if new_loop:
+                    last_distance = .0
+                    if race['date_end'] is None:
+                        race['date_end'] = row['time_out']
+
+                    races.append(race)
+                    race = {
+                        'date_start': None,
+                        'date_end': None,
+                        'points': []
+                    }
+            self.previous_point_name = row_point_name

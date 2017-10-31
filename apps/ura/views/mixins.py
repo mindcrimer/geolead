@@ -3,8 +3,9 @@ from copy import deepcopy
 
 import six
 
-from base.utils import parse_float, get_distance
+from base.utils import parse_float
 from reports.utils import utc_to_local_time, parse_wialon_report_datetime
+from wialon import WIALON_POINT_IGNORE_TIMEOUT
 from wialon.api import get_resources, get_intersected_geozones
 
 
@@ -172,7 +173,13 @@ class RidesMixin(object):
     def append_to_normilized_rides(self, candidate_point):
         if self.normalized_rides:
             prev_point = self.normalized_rides[-1]
-            if prev_point['point'] == candidate_point['point']:
+            delta = (candidate_point['time_out'] - candidate_point['time_in']).seconds
+            # если предыдущая точка равна текущей или общий период был менее допущенного времени
+            if prev_point['point'] == candidate_point['point']\
+                    or (
+                            self.get_normalized_point_name(candidate_point) == 'SPACE'
+                            and delta < WIALON_POINT_IGNORE_TIMEOUT
+                    ):
                 prev_point.update(
                     time_out=candidate_point['time_out'],
                     distance=prev_point['distance'] + candidate_point['distance'],

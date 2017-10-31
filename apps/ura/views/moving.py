@@ -256,14 +256,17 @@ class URAMovingResource(RidesMixin, URAResource):
                     ),
                     request.user.ura_tz
                 )
-                time_until = utc_to_local_time(
-                    parse_wialon_report_datetime(
-                        row['c'][1]['t']
-                        if isinstance(row['c'][1], dict)
-                        else row['c'][1]
-                    ),
-                    request.user.ura_tz
-                )
+
+                time_until_value = row['c'][1]['t']\
+                    if isinstance(row['c'][1], dict) else row['c'][1]
+
+                if 'unknown' in time_until_value.lower():
+                    time_until = data['date_end']
+                else:
+                    time_until = utc_to_local_time(
+                        parse_wialon_report_datetime(time_until_value),
+                        request.user.ura_tz
+                    )
 
                 for point in unit_info['points']:
                     if point['time_in'] > time_until:
@@ -294,14 +297,17 @@ class URAMovingResource(RidesMixin, URAResource):
                     ),
                     request.user.ura_tz
                 )
-                time_until = utc_to_local_time(
-                    parse_wialon_report_datetime(
-                        row_data[2]['t']
-                        if isinstance(row_data[2], dict)
-                        else row_data[2]
-                    ),
-                    request.user.ura_tz
-                )
+
+                time_until_value = row_data[2]['t']\
+                    if isinstance(row_data[2], dict) else row_data[2]
+
+                if 'unknown' in time_until_value.lower():
+                    time_until = data['date_end']
+                else:
+                    time_until = utc_to_local_time(
+                        parse_wialon_report_datetime(time_until_value),
+                        request.user.ura_tz
+                    )
 
                 for point in unit_info['points']:
                     if point['time_in'] > time_until:

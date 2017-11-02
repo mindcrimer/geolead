@@ -260,7 +260,6 @@ class URAMovingResource(URAResource):
                         message['pos']['x'],
                         message['pos']['y']
                     )
-                    self.current_distance += prev_message['distance']
 
                 # находим по времени в сообщении наличие на момент времени в геозоне
                 found_geozone = False
@@ -271,26 +270,29 @@ class URAMovingResource(URAResource):
 
                         # и текущая геозона сменилась - закрываем предыдущую, открывая новую
                         if not current_geozone or geozone['name'] != current_geozone['name']:
-                            self.add_new_point(message, geozone)
+                            self.add_new_point(message, prev_message, geozone)
                             current_geozone = geozone
+
+                        if prev_message:
+                            self.current_distance += prev_message['distance']
 
                         # если сообщение последнее, то закрываем пробег последнего участка
                         if i == messages_length0:
                             fuel_level = round(self.get_fuel_level(message), 2)
                             self.unit_info['points'][-1]['params']['endFuelLevel'] = fuel_level
-                            self.unit_info['points'][-1]['params']['odoMeter'] = round(
-                                self.current_distance, 2
-                            )
+                            self.unit_info['points'][-1]['params']['odoMeter'] = \
+                                self.current_distance
 
                         found_geozone = True
                         break
-                
+
                 if not found_geozone:
                     if self.unit_info['points']\
                             and self.unit_info['points'][-1]['name'] == 'SPACE':
                         self.unit_info['points'][-1]['time_out'] = message['t']
+                        self.unit_info['points'][-1]['params']['odoMeter'] = self.current_distance
                     else:
-                        self.add_new_point(message, {
+                        self.add_new_point(message, prev_message, {
                             'name': 'SPACE',
                             'time_in': message['t'],
                             'time_out': message['t']
@@ -461,7 +463,7 @@ class URAMovingResource(URAResource):
             self.calibration_table, message['p'][self.fuel_level_name]
         )
 
-    def add_new_point(self, message, geozone):
+    def add_new_point(self, message, prev_message, geozone):
         fuel_level = round(self.get_fuel_level(message), 2)
 
         new_point = {
@@ -481,16 +483,21 @@ class URAMovingResource(URAResource):
         }
 
         # закрываем пробег и топливо на конец участка для предыдущей точки
+        if prev_message:
+            fuel_level = round(self.get_fuel_level(prev_message), 2)
+        else:
+            fuel_level = .0
+
         try:
             previous_geozone = self.unit_info['points'][-1]
             previous_geozone['time_out'] = geozone['time_in']
-            previous_geozone['params']['odoMeter'] = round(self.current_distance, 2)
+            previous_geozone['params']['odoMeter'] = self.current_distance
             previous_geozone['params']['endFuelLevel'] = fuel_level
         except IndexError:
             pass
 
         # сбрасываем пробег
-            self.current_distance = .0
+        self.current_distance = .0
 
         self.unit_info['points'].append(new_point)
 

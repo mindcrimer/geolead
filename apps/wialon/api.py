@@ -401,3 +401,21 @@ def get_units(user=None, sess_id=None, extra_fields=False):
 
     return units
 
+
+def get_unit_settings(item_id, user=None, sess_id=None):
+    """Получение данных о машине (объекте)"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = authenticate_at_wialon(user.wialon_token)
+
+    request_params = json.dumps({
+        'id': item_id,
+        'flags': 1 + 4096
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+            '?svc=core/search_item&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    return r.json()['item']

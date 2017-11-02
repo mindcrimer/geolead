@@ -145,6 +145,10 @@ class URARacesResource(RidesMixin, URAResource):
                 except ReportException:
                     raise WialonException('Не удалось извлечь данные о поездке')
 
+            self.normalize_rides(
+                report_data, utc_to_local_time(data.get('date_end'), request.user.ura_tz)
+            )
+
             self.all_points_names = set()
             self.all_points = {}
             self.route_point_names = [x['name'] for x in self.route['points']]
@@ -152,10 +156,6 @@ class URARacesResource(RidesMixin, URAResource):
             for r in routes_dict.values():
                 self.all_points_names.update([x['name'] for x in r['points']])
                 self.all_points.update({x['id']: x for x in r['points']})
-
-            self.normalize_rides(
-                report_data, utc_to_local_time(data.get('date_end'), request.user.ura_tz)
-            )
 
             self.make_races(points, races)
 

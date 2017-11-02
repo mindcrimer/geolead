@@ -238,3 +238,9 @@ class RidesMixin(object):
                     point_name = intersected_geozones_names[0]
 
         return point_name
+
+
+class RideIntervalsMixin(object):
+    def __init__(self, *args, **kwargs):
+        super(RideIntervalsMixin, self).__init__(*args, **kwargs)
+        self.route = None

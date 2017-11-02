@@ -124,7 +124,7 @@ def utc_to_local_time(dt, timezone):
     if dt is None:
         return None
 
-    local_dt = dt + timezone.utcoffset(datetime.datetime.now())
+    local_dt = dt + timezone.utcoffset(dt)
     if local_dt.tzinfo is None:
         local_dt = timezone.localize(local_dt)
     return local_dt

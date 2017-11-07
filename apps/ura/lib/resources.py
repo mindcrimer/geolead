@@ -80,7 +80,7 @@ class URAResource(TemplateView):
             except WialonException:
                 attempts += 1
                 # после каждого падения Виалона ждет 5 секунд и повторяем попытку
-                sleep(5)
+                sleep(1)
 
             except (ValueError, IndexError, KeyError, AttributeError, TypeError):
                 if not settings.DEBUG:

@@ -302,6 +302,31 @@ class BaseUraRidesView(URAResource):
 
         self.print_time_needed('Points build')
 
+    @staticmethod
+    def get_point_type(geozone):
+        name = geozone['name'].lower()
+        point_type = 0
+
+        if 'база' in name:
+            point_type = 1
+
+        if 'разгрузка' in name:
+            point_type = 2
+
+        if 'заправка' in name:
+            point_type = 3
+
+        if 'маршрут' in name:
+            point_type = 4
+
+        if 'погрузка' in name:
+            point_type = 6
+
+        if 'весы' in name:
+            point_type = 7
+
+        return point_type
+
     def add_new_point(self, message, prev_message, geozone):
         fuel_level = round(self.get_fuel_level(message), 2)
 
@@ -309,6 +334,7 @@ class BaseUraRidesView(URAResource):
             'name': geozone['name'],
             'time_in': geozone['time_in'],
             'time_out': geozone['time_out'],
+            'type': self.get_point_type(geozone),
             'params': OrderedDict((
                 ('startFuelLevel', fuel_level),
                 ('endFuelLevel', .0),

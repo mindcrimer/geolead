@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import datetime
+from collections import OrderedDict
 
 from base.exceptions import ReportException
+from base.utils import get_distance
 from reports.utils import get_period, cleanup_and_request_report, \
     get_wialon_geozones_report_template_id, exec_report, get_report_rows
 from snippets.http.response import error_response
@@ -39,13 +41,14 @@ class BaseUraRidesView(URAResource):
         self.unit_id = None
         self.unit_settings = {}
         self.unit_zones_visit = []
+        self.ride_points = []
 
     def pre_view_trigger(self, request, **kwargs):
         super(BaseUraRidesView, self).pre_view_trigger(request, **kwargs)
         self.sess_id = authenticate_at_wialon(request.user.wialon_token)
 
-    def get_input_data(self, unit_el):
-        self.input_data = parse_xml_input_data(self.request, self.model_mapping, unit_el)
+    def get_input_data(self, elem):
+        self.input_data = parse_xml_input_data(self.request, self.model_mapping, elem)
         return self.input_data
 
     def get_job(self, **kwargs):
@@ -239,6 +242,103 @@ class BaseUraRidesView(URAResource):
 
     def start_timer(self):
         self.script_time_from = datetime.datetime.now()
+
+    def process_messages(self):
+        prev_message = None
+        current_geozone = None
+        messages_length0 = len(self.messages) - 1
+
+        self.print_time_needed('Prepare')
+
+        for i, message in enumerate(self.messages):
+            message['distance'] = .0
+
+            if prev_message:
+                # получаем пройденное расстояние для предыдущей точки
+                # TODO: попробовать через geopy
+                prev_message['distance'] = get_distance(
+                    prev_message['pos']['x'],
+                    prev_message['pos']['y'],
+                    message['pos']['x'],
+                    message['pos']['y']
+                )
+
+            # находим по времени в сообщении наличие на момент времени в геозоне
+            found_geozone = False
+            for geozone in self.unit_zones_visit:
+
+                # если точка входит по времени в геозону
+                if geozone['time_in'] <= message['t'] <= geozone['time_out']:
+
+                    # и текущая геозона сменилась - закрываем предыдущую, открывая новую
+                    if not current_geozone or geozone['name'] != current_geozone['name']:
+                        self.add_new_point(message, prev_message, geozone)
+                        current_geozone = geozone
+
+                    found_geozone = True
+                    break
+
+            if prev_message:
+                self.current_distance += prev_message['distance']
+
+            if not found_geozone:
+                if self.ride_points and self.ride_points[-1]['name'] == 'SPACE':
+                    self.ride_points[-1]['time_out'] = message['t']
+                    self.ride_points[-1]['params']['odoMeter'] = self.current_distance
+                else:
+                    self.add_new_point(message, prev_message, {
+                        'name': 'SPACE',
+                        'time_in': message['t'],
+                        'time_out': message['t']
+                    })
+
+            # если сообщение последнее, то закрываем пробег последнего участка
+            if i == messages_length0:
+                fuel_level = round(self.get_fuel_level(message), 2)
+                self.ride_points[-1]['params']['endFuelLevel'] = fuel_level
+                self.ride_points[-1]['params']['odoMeter'] = \
+                    self.current_distance
+            prev_message = message
+
+        self.print_time_needed('Points build')
+
+    def add_new_point(self, message, prev_message, geozone):
+        fuel_level = round(self.get_fuel_level(message), 2)
+
+        new_point = {
+            'name': geozone['name'],
+            'time_in': geozone['time_in'],
+            'time_out': geozone['time_out'],
+            'params': OrderedDict((
+                ('startFuelLevel', fuel_level),
+                ('endFuelLevel', .0),
+                ('fuelRefill', .0),
+                ('fuelDrain', .0),
+                ('stopMinutes', .0),
+                ('moveMinutes', .0),
+                ('motoHours', .0),
+                ('odoMeter', .0)
+            ))
+        }
+
+        # закрываем пробег и топливо на конец участка для предыдущей точки
+        if prev_message:
+            fuel_level = round(self.get_fuel_level(prev_message), 2)
+        else:
+            fuel_level = .0
+
+        try:
+            previous_geozone = self.ride_points[-1]
+            previous_geozone['time_out'] = geozone['time_in']
+            previous_geozone['params']['odoMeter'] = self.current_distance
+            previous_geozone['params']['endFuelLevel'] = fuel_level
+        except IndexError:
+            pass
+
+        # сбрасываем пробег
+        self.current_distance = .0
+
+        self.ride_points.append(new_point)
 
     def print_time_needed(self, message=''):
         print(

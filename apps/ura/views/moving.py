@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
-from collections import OrderedDict
 
 from base.exceptions import APIProcessError
-from base.utils import parse_float, get_distance
+from base.utils import parse_float
 from reports.utils import utc_to_local_time, parse_wialon_report_datetime
 from snippets.utils.datetime import utcnow
 from ura import models
@@ -23,7 +22,7 @@ class URAMovingResource(BaseUraRidesView):
         }
 
     def report_post_processing(self, unit_info):
-        for point in unit_info['points']:
+        for point in self.ride_points:
             point['time_in'] = utc_to_local_time(
                 datetime.datetime.utcfromtimestamp(point['time_in']),
                 self.request.user.ura_tz
@@ -48,7 +47,7 @@ class URAMovingResource(BaseUraRidesView):
                     self.request.user.ura_tz
                 )
 
-                for point in unit_info['points']:
+                for point in self.ride_points:
                     if point['time_in'] <= dt <= point['time_out']:
                         point['params']['fuelDrain'] += volume
                         break
@@ -68,7 +67,7 @@ class URAMovingResource(BaseUraRidesView):
                     self.request.user.ura_tz
                 )
 
-                for point in unit_info['points']:
+                for point in self.ride_points:
                     if point['time_in'] <= dt <= point['time_out']:
                         point['params']['fuelRefill'] += volume
                         break
@@ -99,7 +98,7 @@ class URAMovingResource(BaseUraRidesView):
                     self.request.user.ura_tz
                 )
 
-            for point in unit_info['points']:
+            for point in self.ride_points:
                 if point['time_in'] > time_until:
                     # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
                     break
@@ -142,7 +141,7 @@ class URAMovingResource(BaseUraRidesView):
                     self.request.user.ura_tz
                 )
 
-            for point in unit_info['points']:
+            for point in self.ride_points:
                 if point['time_in'] > time_until:
                     # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
                     break
@@ -160,10 +159,9 @@ class URAMovingResource(BaseUraRidesView):
 
         self.print_time_needed('MoveTime')
 
-    @staticmethod
-    def prepare_output_data(unit_info):
+    def prepare_output_data(self):
         # преобразуем секунды в минуты и часы
-        for i, point in enumerate(unit_info['points']):
+        for i, point in enumerate(self.ride_points):
             point['params']['moveMinutes'] = round(
                 (
                     (point['time_out'] - point['time_in']).seconds
@@ -177,104 +175,6 @@ class URAMovingResource(BaseUraRidesView):
                 point['params']['motoHours'] / 3600.0, 2
             )
             point['params']['odoMeter'] = round(point['params']['odoMeter'], 2)
-
-    def process_messages(self, unit_info):
-        prev_message = None
-        current_geozone = None
-        messages_length0 = len(self.messages) - 1
-
-        self.print_time_needed('Prepare')
-
-        for i, message in enumerate(self.messages):
-            message['distance'] = .0
-
-            if prev_message:
-                # получаем пройденное расстояние для предыдущей точки
-                # TODO: попробовать через geopy
-                prev_message['distance'] = get_distance(
-                    prev_message['pos']['x'],
-                    prev_message['pos']['y'],
-                    message['pos']['x'],
-                    message['pos']['y']
-                )
-
-            # находим по времени в сообщении наличие на момент времени в геозоне
-            found_geozone = False
-            for geozone in self.unit_zones_visit:
-
-                # если точка входит по времени в геозону
-                if geozone['time_in'] <= message['t'] <= geozone['time_out']:
-
-                    # и текущая геозона сменилась - закрываем предыдущую, открывая новую
-                    if not current_geozone or geozone['name'] != current_geozone['name']:
-                        self.add_new_point(message, prev_message, geozone, unit_info)
-                        current_geozone = geozone
-
-                    found_geozone = True
-                    break
-
-            if prev_message:
-                self.current_distance += prev_message['distance']
-
-            if not found_geozone:
-                if unit_info['points'] \
-                        and unit_info['points'][-1]['name'] == 'SPACE':
-                    unit_info['points'][-1]['time_out'] = message['t']
-                    unit_info['points'][-1]['params']['odoMeter'] = self.current_distance
-                else:
-                    self.add_new_point(message, prev_message, {
-                        'name': 'SPACE',
-                        'time_in': message['t'],
-                        'time_out': message['t']
-                    }, unit_info)
-
-            # если сообщение последнее, то закрываем пробег последнего участка
-            if i == messages_length0:
-                fuel_level = round(self.get_fuel_level(message), 2)
-                unit_info['points'][-1]['params']['endFuelLevel'] = fuel_level
-                unit_info['points'][-1]['params']['odoMeter'] = \
-                    self.current_distance
-            prev_message = message
-
-        self.print_time_needed('Points build')
-
-    def add_new_point(self, message, prev_message, geozone, unit_info):
-        fuel_level = round(self.get_fuel_level(message), 2)
-
-        new_point = {
-            'name': geozone['name'],
-            'time_in': geozone['time_in'],
-            'time_out': geozone['time_out'],
-            'params': OrderedDict((
-                ('startFuelLevel', fuel_level),
-                ('endFuelLevel', .0),
-                ('fuelRefill', .0),
-                ('fuelDrain', .0),
-                ('stopMinutes', .0),
-                ('moveMinutes', .0),
-                ('motoHours', .0),
-                ('odoMeter', .0)
-            ))
-        }
-
-        # закрываем пробег и топливо на конец участка для предыдущей точки
-        if prev_message:
-            fuel_level = round(self.get_fuel_level(prev_message), 2)
-        else:
-            fuel_level = .0
-
-        try:
-            previous_geozone = unit_info['points'][-1]
-            previous_geozone['time_out'] = geozone['time_in']
-            previous_geozone['params']['odoMeter'] = self.current_distance
-            previous_geozone['params']['endFuelLevel'] = fuel_level
-        except IndexError:
-            pass
-
-        # сбрасываем пробег
-        self.current_distance = .0
-
-        unit_info['points'].append(new_point)
 
     def get_job(self):
         self.job = models.UraJob.objects.filter(
@@ -316,20 +216,21 @@ class URAMovingResource(BaseUraRidesView):
             self.get_object_settings()
             self.get_object_messages()
 
+            self.ride_points = []
             unit_info = {
                 'id': self.unit_id,
                 'date_begin': utc_to_local_time(
                     self.input_data['date_begin'], request.user.ura_tz
                 ),
                 'date_end': utc_to_local_time(self.input_data['date_end'], request.user.ura_tz),
-                'points': []
+                'points': self.ride_points
             }
 
             self.start_timer()
             self.prepare_geozones_visits()
-            self.process_messages(unit_info)
+            self.process_messages()
             self.report_post_processing(unit_info)
-            self.prepare_output_data(unit_info)
+            self.prepare_output_data()
 
             units.append(unit_info)
             self.print_time_needed('Total calc')

@@ -156,6 +156,15 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
     def report_post_processing(self, job_info):
         for race in job_info['races']:
+            race['date_start'] = utc_to_local_time(
+                datetime.datetime.utcfromtimestamp(race['date_start']),
+                self.request.user.ura_tz
+            )
+            race['date_end'] = utc_to_local_time(
+                datetime.datetime.utcfromtimestamp(race['date_end']),
+                self.request.user.ura_tz
+            )
+
             for point in race['points']:
                 point['time_in'] = utc_to_local_time(
                     datetime.datetime.utcfromtimestamp(point['time_in']),

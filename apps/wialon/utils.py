@@ -22,13 +22,13 @@ def get_fuel_level(calibration_table, value):
     # если вообще есть строки в таблице
     if row:
         # когда нет следующей строки, тащим формулу из последней строки
-        if next_row is None:
-            a, b = row['a'], row['b']
-
-        else:
-            ratio = (value - row['x']) / (next_row['x'] - row['x'])
-            a = row['a'] + (ratio * (next_row['a'] - row['a']))
-            b = row['b'] + (ratio * (next_row['b'] - row['b']))
+        # if next_row is None:
+        a, b = row['a'], row['b']
+        #
+        # else:
+        #     ratio = (value - row['x']) / (next_row['x'] - row['x'])
+        #     a = row['a'] + (ratio * (next_row['a'] - row['a']))
+        #     b = row['b'] + (ratio * (next_row['b'] - row['b']))
 
         return value * a + b
 

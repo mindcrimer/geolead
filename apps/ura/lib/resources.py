@@ -26,6 +26,9 @@ class URAResource(TemplateView):
     content_type = 'application/json'
     http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
 
+    def pre_view_trigger(self, request, **kwargs):
+        pass
+
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         method = request.method.lower()
@@ -55,6 +58,8 @@ class URAResource(TemplateView):
             except AuthenticationFailed as e:
                 # обновлять токен не имеет смысла, он неправильный. Просим войти заново.
                 return error_response(str(e), status=403, code=getattr(e, 'code', None))
+
+        self.pre_view_trigger(request, **kwargs)
 
         attempts = 0
         attempts_limit = 20

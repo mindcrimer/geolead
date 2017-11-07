@@ -66,10 +66,17 @@ class URARacesResource(BaseUraRidesView, URAResource):
             'points': []
         }
 
-        last_distance = .0
+        last_distance = None
 
         for row in self.ride_points:
             row_point_name = row['name']
+
+            # если пробег открыт, добавляем
+            if last_distance is not None:
+                last_distance += row['params']['odoMeter']
+
+            if row['name'] == 'SPACE':
+                continue
 
             if row_point_name == current_point:
                 if race['date_start'] is None:
@@ -85,10 +92,16 @@ class URARacesResource(BaseUraRidesView, URAResource):
                     'params': OrderedDict()
                 }
 
-                last_distance += row['params']['odoMeter']
+                if row_point_name == start_point:
+                    # для стартовой точки открываем пробег
+                    last_distance = row['params']['odoMeter']
+
                 distance_delta = float_format(last_distance, -2)
 
                 if row_point_name == start_point:
+                    # для стартовой точки открываем пробег
+                    if last_distance == .0:
+                        last_distance += row['params']['odoMeter']
                     point_info['type'] = 'startPoint'
                     point_info['params']['fuelLevel'] = row['params']['startFuelLevel']
 
@@ -114,7 +127,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
                 )
 
                 if new_loop:
-                    last_distance = .0
+                    last_distance = None
                     if race['date_end'] is None:
                         race['date_end'] = row['time_out']
 
@@ -236,7 +249,6 @@ class URARacesResource(BaseUraRidesView, URAResource):
                 'races': races
             }
 
-            self.ride_points = list(filter(lambda x: x['name'] != 'SPACE', self.ride_points))
             self.make_races(races)
 
             if not races:

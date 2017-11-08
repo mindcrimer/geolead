@@ -185,7 +185,7 @@ class URAMovingResource(BaseUraRidesView):
 
         if not self.job:
             raise APIProcessError(
-                'Задача c unit_id=%s не найдена' % self.input_data['job_id'], code='job_not_found'
+                'Задача c unit_id=%s не найдена' % self.input_data['unit_id'], code='job_not_found'
             )
 
         return self.job

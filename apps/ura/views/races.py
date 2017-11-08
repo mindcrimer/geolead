@@ -25,6 +25,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
         super(URARacesResource, self).__init__(**kwargs)
         self.previous_point_name = None
         self.points_dict_by_name = {}
+        self.route_endpoints = []
 
     def get_report_data_tables(self):
         self.report_data = {
@@ -58,8 +59,25 @@ class URARacesResource(BaseUraRidesView, URAResource):
                 point['params']['moveTime'] = round(point['params']['moveTime'] / 60.0, 2)
 
     def make_races(self, races):
+        # готовим точки маршрута от погрузки до разгрузки
+        start_found = False
+        self.route_endpoints = []
+
+        for point in self.route_point_names:
+            point_name = point.lower()
+            if 'погрузка' in point_name:
+                self.route_endpoints.append(point)
+                start_found = True
+
+            # разгрузкой заканчиваем маршрут
+            if start_found and 'разгрузка' in point_name:
+                self.route_endpoints.append(point)
+
+        if len(self.route_endpoints) < 2:
+            return
+
         current_point, points_iterator, new_loop = self.get_next_point()
-        start_point, end_point = self.route_point_names[0], self.route_point_names[-1]
+        start_point, end_point = self.route_endpoints[0], self.route_endpoints[-1]
         race = {
             'date_start': None,
             'date_end': None,
@@ -68,6 +86,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
         last_distance = None
 
+        start_found = False
         for row in self.ride_points:
             row_point_name = row['name']
 
@@ -78,7 +97,11 @@ class URARacesResource(BaseUraRidesView, URAResource):
             if row['name'] == 'SPACE':
                 continue
 
-            if row_point_name == current_point:
+            if row_point_name == current_point \
+                    or (start_found and row_point_name in self.route_point_names):
+                if row_point_name == current_point:
+                    start_found = True
+
                 if race['date_start'] is None:
                     race['date_start'] = row['time_in']
 
@@ -108,6 +131,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
                     point_info['params']['distance'] = distance_delta
 
                 elif row_point_name == end_point:
+                    start_found = False
                     point_info['type'] = 'endPoint'
                     point_info['params']['fuelLevel'] = row['params']['endFuelLevel']
                     point_info['params']['distance'] = distance_delta
@@ -122,11 +146,14 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
                 race['points'].append(point_info)
 
-                current_point, points_iterator, new_loop = self.get_next_point(
-                    points_iterator
-                )
+                # переключаем курсор поиска только для начального или конечного участка
+                if row_point_name == current_point:
+                    current_point, points_iterator, new_loop = self.get_next_point(
+                        points_iterator
+                    )
 
                 if new_loop:
+                    start_found = False
                     last_distance = None
                     if race['date_end'] is None:
                         race['date_end'] = row['time_out']
@@ -143,12 +170,12 @@ class URARacesResource(BaseUraRidesView, URAResource):
         new_loop = False
 
         if points_iterator is None:
-            points_iterator = iter(self.route_point_names)
+            points_iterator = iter(self.route_endpoints)
 
         try:
             current_point = next(points_iterator)
         except StopIteration:
-            points_iterator = iter(self.route_point_names)
+            points_iterator = iter(self.route_endpoints)
             current_point = next(points_iterator)
             new_loop = True
 
@@ -259,11 +286,6 @@ class URARacesResource(BaseUraRidesView, URAResource):
             }
 
             self.make_races(races)
-
-            if not races:
-                self.previous_point_name = None
-                self.route_point_names = list(reversed(self.route_point_names))
-                self.make_races(races)
 
             self.report_post_processing(job_info)
             self.prepare_output_data(job_info)

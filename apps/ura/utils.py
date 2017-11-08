@@ -32,12 +32,14 @@ def get_organization_user(request, org_id):
     return user
 
 
-def parse_xml_input_data(request, mapping, element):
+def parse_xml_input_data(request, mapping, element, preserve_tzinfo=False):
     data = {}
     for k, v in mapping.items():
         try:
             if v[1] == parse_datetime:
-                data[k] = v[1](element.get(v[0]), request.user.ura_tz).replace(tzinfo=None)
+                data[k] = v[1](element.get(v[0]), request.user.ura_tz)
+                if not preserve_tzinfo:
+                    data[k] = data[k].replace(tzinfo=None)
             else:
                 data[k] = v[1](element.get(v[0]))
         except (ValueError, TypeError):

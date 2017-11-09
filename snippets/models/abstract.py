@@ -11,7 +11,7 @@ from snippets.models.enumerates import StatusEnum
 CREATED_VERBOSE = _('Создано')
 UPDATED_VERBOSE = _('Обновлено')
 LASTMOD_FIELDS = ('created', 'updated')
-UTIL_FIELDS = ('id', 'ordering', 'status') + LASTMOD_FIELDS
+UTIL_FIELDS = ('id', 'ordering', 'status')
 
 
 class BaseQuerySet(QuerySet):

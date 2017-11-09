@@ -8,7 +8,7 @@ from ura import models
 class UraJobAdmin(admin.ModelAdmin):
     """Заявки"""
     date_hierarchy = 'created'
-    fields = models.UraJob().collect_fields() + ['created', 'updated']
+    fields = models.UraJob().collect_fields()
     list_display = ('id', 'name', 'driver_fio', 'date_begin', 'date_end')
     list_display_links = ('id', 'name')
     ordering = ('-created',)

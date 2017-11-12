@@ -10,6 +10,7 @@ from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
     exec_report, get_report_rows
 from reports.views.base import BaseReportView, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from users.models import User
 from wialon.api import get_units
 from wialon.exceptions import WialonException
 
@@ -92,12 +93,14 @@ class DrivingStyleView(BaseReportView):
             report_data = OrderedDict()
 
             if form.is_valid():
-                sess_id = form.cleaned_data.get('sid')
+                sess_id = self.request.session.get('sid')
                 if not sess_id:
                     raise ReportException(WIALON_NOT_LOGINED)
 
-                user = form.cleaned_data.get('user')
-                if not user:
+                try:
+                    user = User.objects.filter(is_active=True)\
+                        .get(username=self.request.session.get('user'))
+                except User.DoesNotExist:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 try:

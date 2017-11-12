@@ -5,10 +5,17 @@ from snippets.views import BaseTemplateView
 class HomeView(BaseTemplateView):
     """Главная страница"""
     template_name = 'core/home.html'
+    
+    def get(self, request, **kwargs):
+        sid = self.request.GET.get('sid', None)
+        if sid:
+            request.session['sid'] = sid
 
-    def get_context_data(self, **kwargs):
-        kwargs = super(HomeView, self).get_context_data(**kwargs)
-        kwargs['sid'] = self.request.GET.get('sid', None)
-        kwargs['user'] = self.request.GET.get('user', None)
+        user = self.request.GET.get('user', None)
+        if user:
+            request.session['user'] = user
 
-        return kwargs
+        kwargs['sid'] = request.session.get('sid')
+        kwargs['user'] = request.session.get('user')
+
+        return super(HomeView, self).get(request, **kwargs)

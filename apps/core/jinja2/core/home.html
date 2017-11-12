@@ -1,14 +1,30 @@
 {%- extends 'layouts/main.html' -%}
 
 {%- block PAGE_CONTENT -%}
-	<div class="uk-margin-top">
-		<ul>
-			<li><a href="{{ url('reports:discharge') }}?sid={{ sid or '' }}&user={{ user or '' }}">
-				Отчет по перерасходу топлива
-			</a></li>
-			<li><a href="{{ url('reports:driving_style') }}?sid={{ sid or '' }}&user={{ user or '' }}">
-				Отчет нарушений ПДД и инструкции по эксплуатации техники
-			</a></li>
-		</ul>
-	</div>
+	{%- if not user or not sid -%}
+		<div class="global-warning">
+			<div class="global-warning__inner">
+				<ul class="messages">
+					<li>Требуется войти через APPS</li>
+				</ul>
+			</div>
+		</div>
+
+	{%- else -%}
+		<div class="uk-margin-top">
+			<ul>
+				<li>
+					<a href="{{ url('reports:discharge') }}">Отчет по перерасходу топлива</a>
+				</li>
+
+				<li>
+					<a href="{{ url('reports:driving_style') }}">Отчет нарушений ПДД и инструкции по эксплуатации техники</a>
+				</li>
+{#				#}
+{#				<li>#}
+{#					<a href="{{ url('reports:driving_style') }}">Отчет нарушений ПДД и инструкции по эксплуатации техники</a>#}
+{#				</li>#}
+			</ul>
+		</div>
+	{%- endif -%}
 {%- endblock -%}

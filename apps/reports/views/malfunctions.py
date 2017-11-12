@@ -7,6 +7,7 @@ from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_period
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from users.models import User
 from wialon.api import get_messages
 from wialon.exceptions import WialonException
 
@@ -32,12 +33,14 @@ class MalfunctionsView(BaseReportView):
             report_data = OrderedDict()
 
             if form.is_valid():
-                sess_id = form.cleaned_data.get('sid')
+                sess_id = self.request.session.get('sid')
                 if not sess_id:
                     raise ReportException(WIALON_NOT_LOGINED)
 
-                user = form.cleaned_data.get('user')
-                if not user:
+                try:
+                    user = User.objects.filter(is_active=True)\
+                        .get(username=self.request.session.get('user'))
+                except User.DoesNotExist:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 dt_from, dt_to = get_period(

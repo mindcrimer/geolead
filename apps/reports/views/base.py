@@ -29,15 +29,13 @@ class BaseReportView(BaseTemplateView):
             'report_data': None,
             'report_name': self.report_name,
             'messages': get_messages(self.request) or [],
-            'sid': self.request.GET.get('sid', ''),
-            'user': self.request.GET.get('user', '')
+            'sid': self.request.session.get('sid', ''),
+            'user': self.request.session.get('user', '')
         }
 
         data = self.request.POST if self.request.method == 'POST' else {
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
-            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
-            'sid': context['sid'],
-            'user': context['user']
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
         }
         form = self.form(data)
 
@@ -73,7 +71,7 @@ class BaseReportView(BaseTemplateView):
             errors = str(kwargs['form'].errors)
             if 'sid' in errors:
                 raise ReportException(
-                    WIALON_FORM_ERRORS + '. Возможно, вы совершили вход не через Wialon.'
+                    WIALON_FORM_ERRORS + '. Возможно, вы не совершили вход через Wialon / APPS'
                 )
 
             if 'user' in errors:
@@ -81,8 +79,8 @@ class BaseReportView(BaseTemplateView):
                     WIALON_FORM_ERRORS + '. Возможно, имя пользователя из Wialon не совпадает.'
                 )
 
-        kwargs['sess_id'] = self.request.GET.get('sid', '')
-        kwargs['username'] = self.request.GET.get('user', '')
+        kwargs['sess_id'] = self.request.session.get('sid', '')
+        kwargs['username'] = self.request.session.get('user', '')
 
         if not kwargs['sess_id']:
             raise ReportException(WIALON_NOT_LOGINED)

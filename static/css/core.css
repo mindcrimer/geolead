@@ -7,17 +7,73 @@
 .tright {
   text-align: right; }
 
-.form {
-  margin: 40px 0 0; }
-  .form .errors {
-    color: red; }
-  .form-controls {
-    max-width: 384px; }
+.form .errors {
+  color: red; }
+.form-controls {
+  max-width: 100%; }
 
 .messages {
   list-style: none;
   padding: 20px;
   margin: 0 0 20px; }
+  .messages .error {
+    color: #C10600; }
+
+.report-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 20px); }
+  .report-settings .inner {
+    display: block; }
+  .report-settings .form {
+    margin: 20px auto;
+    max-width: 460px; }
+
+.reports-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 20px);
+  font-size: 20px;
+  line-height: 0; }
+  .reports-list * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0; }
+  .reports-list li {
+    display: inline-block;
+    margin: 10px;
+    padding: 20px;
+    border: 1px solid #eee;
+    vertical-align: top; }
+    .reports-list li .icon {
+      height: 120px;
+      display: block;
+      font-size: 100px;
+      line-height: 100px;
+      padding: 0 0 20px; }
+    .reports-list li .title {
+      display: inline-block;
+      height: 72px;
+      line-height: 72px; }
+      .reports-list li .title .inner {
+        display: inline-block;
+        line-height: 24px;
+        vertical-align: middle; }
+  .reports-list a {
+    width: 260px;
+    height: 200px;
+    display: block;
+    color: #333;
+    text-decoration: none;
+    transition: all .3s ease; }
+    .reports-list a:hover, .reports-list a:focus {
+      color: #999; }
 
 .nowrap {
   white-space: nowrap; }

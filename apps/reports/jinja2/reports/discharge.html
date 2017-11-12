@@ -1,10 +1,5 @@
 {%- extends 'reports/base.html' -%}
 
-{%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
-
-{%- block REPORT_NAME %}{{ report_name|e }}{% endblock -%}
-
-
 {%- block REPORT_HEADING -%}
 <div class="report__heading-row uk-margin">
 	Дата: {{ today|date('d.m.Y') -}}
@@ -98,7 +93,6 @@
 	</table>
 </div>
 {%- endblock -%}
-
 
 
 {%- block REPORT_HINT -%}

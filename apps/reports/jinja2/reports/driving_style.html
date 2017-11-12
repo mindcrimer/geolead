@@ -1,24 +1,20 @@
 {%- extends 'reports/base.html' -%}
 
-{%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
-
-{%- block REPORT_NAME %}{{ report_name|e }}{% endblock -%}
-
-
 {%- block REPORT_HEADING -%}
-<div class="report__heading-row uk-margin">
-	Период: {{ form.cleaned_data.dt_from|date('d.m.Y') -}}
-	&nbsp;&mdash;&nbsp;
-	{{- form.cleaned_data.dt_to|date('d.m.Y') -}}
-</div>
-<div class="report__heading-row uk-margin">
-	ФИО ответственного за разбор событий: ____________________________________________
-</div>
+	<div class="report__heading-row uk-margin">
+		Период: {{ form.cleaned_data.dt_from|date('d.m.Y') -}}
+		&nbsp;&mdash;&nbsp;
+		{{- form.cleaned_data.dt_to|date('d.m.Y') -}}
+	</div>
+	<div class="report__heading-row uk-margin">
+		ФИО ответственного за разбор событий:
+		____________________________________________
+	</div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
-Детализация нарушений ПДД и инструкции по эксплуатации техники
+	Детализация нарушений ПДД и инструкции по эксплуатации техники
 {%- endblock -%}
 
 

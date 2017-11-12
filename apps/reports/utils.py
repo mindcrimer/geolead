@@ -111,6 +111,22 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
     return ''
 
 
+def geocode(lat, lng):
+    r = requests.get(
+        'https://geocode-maps.yandex.ru/1.x/?geocode=%s,%s&sco=latlong&format=json&'
+        'results=1&kind=house' % (lat, lng)
+    )
+
+    result = r.json()
+
+    try:
+        address = result['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
+    except (KeyError, IndexError, TypeError):
+        return None
+
+    return '%s, %s' % (address['name'], address['description'])
+
+
 def parse_wialon_report_datetime(str_date):
     if '-----' in str_date:
         return None

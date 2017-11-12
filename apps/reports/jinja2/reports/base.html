@@ -1,6 +1,6 @@
 {%- extends 'layouts/main.html' -%}
 
-{%- block PAGE_TITLE %}Отчеты{% endblock -%}
+{%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
 
 {%- block EXTRA_HEAD -%}
 	<link rel="stylesheet" media="print" href="{{ static_with_mtime('css/print.css') }}">
@@ -17,7 +17,8 @@
 
 {%- if report_data -%}
 	<div class="report">
-		<h1>{% block REPORT_NAME %}{% endblock %}</h1>
+		<h1>{% block REPORT_NAME %}{{ report_name|e }}{% endblock %}</h1>
+
 		<div class="report__heading">
 			{%- block REPORT_HEADING %}{% endblock -%}
 		</div>
@@ -37,10 +38,15 @@
 	</div>
 
 {%- elif report_data == None -%}
-	{%- block FORM %}{% endblock -%}
+	<div class="report-settings">
 
-	<div class="uk-margin">
-		<a href="{{ url('core:home') }}" class="uk-button uk-button-default">Назад</a>
+		<div class="inner">
+			{%- block FORM %}{% endblock -%}
+
+			<div class="uk-margin">
+				<a href="{{ url('core:home') }}" class="uk-button uk-button-default">Назад</a>
+			</div>
+		</div>
 	</div>
 
 {%- else -%}

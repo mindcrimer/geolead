@@ -12,18 +12,39 @@
 
 	{%- else -%}
 		<div class="uk-margin-top">
-			<ul>
+			<ul class="reports-list">
 				<li>
-					<a href="{{ url('reports:discharge') }}">Отчет по перерасходу топлива</a>
-				</li>
+					<a href="{{ url('reports:discharge') }}">
+						<span class="icon fa fa-tint"></span>
+						<span class="title">
+							<span class="inner">
+								Отчет по перерасходу топлива
+							</span>
+						</span>
+					</a>
+				</li>{# -#}
 
 				<li>
-					<a href="{{ url('reports:driving_style') }}">Отчет нарушений ПДД и инструкции по эксплуатации техники</a>
-				</li>
-{#				#}
-{#				<li>#}
-{#					<a href="{{ url('reports:driving_style') }}">Отчет нарушений ПДД и инструкции по эксплуатации техники</a>#}
-{#				</li>#}
+					<a href="{{ url('reports:driving_style') }}">
+						<span class="icon fa fa-road"></span>
+						<span class="title">
+							<span class="inner">
+								Отчет нарушений ПДД и инструкции по эксплуатации техники
+							</span>
+						</span>
+					</a>
+				</li>{# -#}
+
+				<li>
+					<a href="{{ url('reports:malfunctions') }}">
+						<span class="icon fa fa-chain-broken"></span>
+						<span class="title">
+							<span class="inner">
+								Отчет о состоянии оборудования ССМТ
+							</span>
+						</span>
+					</a>
+				</li>{# -#}
 			</ul>
 		</div>
 	{%- endif -%}

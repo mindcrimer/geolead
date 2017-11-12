@@ -1,28 +1,77 @@
 {%- extends 'reports/base.html' -%}
 
-{%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
-
-{%- block REPORT_NAME %}{{ report_name|e }}{% endblock -%}
-
-
 {%- block REPORT_HEADING -%}
-<div class="report__heading-row uk-margin">
-	Период: {{ form.cleaned_data.dt_from|date('d.m.Y') -}}
-	&nbsp;&mdash;&nbsp;
-	{{- form.cleaned_data.dt_to|date('d.m.Y') -}}
-</div>
+	<div class="report__heading-row uk-margin">
+		Дата: {{ form.cleaned_data.dt_from|date('d.m.Y') -}}
+	</div>
+
+	<div class="report__heading-row uk-margin">
+		ФИО ответственного за<br/>устранение неполадок:
+		____________________________________________
+	</div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
-Отчет по неисправностям
+	<div class="report__heading-row uk-margin">
+		Всего оборудованных транспортных объектов ССМТ: {{ stats['total'] -}}
+	</div>
+
+	<div class="report__heading-row uk-margin">
+		Из них*: исправных {{ stats['total'] - stats['broken'] }}<br/>
+		Возможно неисправных {{ stats['broken'] -}}
+	</div>
 {%- endblock -%}
 
 
 {%- block REPORT_TABLE -%}
 <div class="table-wrap">
 	<table class="report-table">
+		<thead>
 
+			<tr>
+				<td rowspan="2">Гос№ ТС</td>
+				<td colspan="2">Последняя полученная информация</td>
+				<td rowspan="2">ФИО водителя</td>
+				<td rowspan="2">
+					Наименование возможно<br/>
+					неисправного оборудования (ДУТ, ...)
+				</td>
+			</tr>
+
+			<tr>
+				<td>Место/геозона</td>
+				<td>Время</td>
+			</tr>
+
+		</thead>
+
+		{%- for row in report_data.values() -%}
+			<tbody>
+				<tr>
+					<td>{{ row['key'] }}</td>
+					<td>{{ row['place'] }}</td>
+					<td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
+					<td class="nowrap">{{ row['driver_name'] }}</td>
+					<td>{{ '<br/>'.join(row['malfunctions']) }}</td>
+				</tr>
+			</tbody>
+		{%- endfor -%}
+	</table>
+</div>
+{%- endblock -%}
+
+
+{%- block REPORT_HINT -%}
+<div class="hint uk-margin-top">
+	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
+		<tr>
+			<td style="vertical-align:top">
+				*Состояния:<br/>
+				<span class="fa fa-check"></span><br/>
+				<span class="fa fa-check"></span>
+			</td>
+		</tr>
 	</table>
 </div>
 {%- endblock -%}

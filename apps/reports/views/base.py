@@ -7,7 +7,7 @@ from django.utils.timezone import utc
 
 from base.exceptions import ReportException
 from snippets.views import BaseTemplateView
-
+from wialon.exceptions import WialonException
 
 WIALON_INTERNAL_EXCEPTION = \
     'Произошла ошибка при получении данных. ' \
@@ -55,7 +55,7 @@ class BaseReportView(BaseTemplateView):
     def post(self, request, *args, **kwargs):
         try:
             context = self.get_context_data(**kwargs)
-        except ReportException as e:
+        except (ReportException, WialonException) as e:
             messages.error(request, str(e))
             context = super(BaseReportView, self).get_context_data(**kwargs)
             context = self.get_default_context_data(**context)

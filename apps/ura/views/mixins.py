@@ -165,12 +165,12 @@ class BaseUraRidesView(URAResource):
 
     def prepare_geozones_visits(self):
         # удаляем лишнее
-        self.report_data['unit_zones_visit'] = map(
+        self.report_data['unit_zones_visit'] = tuple(map(
             lambda x: x['c'], self.report_data['unit_zones_visit']
-        )
+        ))
 
         # удаляем геозоны, которые нас не интересуют
-        self.report_data['unit_zones_visit'] = list(filter(
+        self.report_data['unit_zones_visit'] = tuple(filter(
             lambda pr: pr[0].strip() in self.route_point_names,
             self.report_data['unit_zones_visit']
         ))
@@ -179,9 +179,8 @@ class BaseUraRidesView(URAResource):
         self.unit_zones_visit = []
         for i, row in enumerate(self.report_data['unit_zones_visit']):
             if isinstance(row[2], str):
-                # если время выхода не указано, то по указанию заказчика считаем, что движение
-                # объекта незакончено на участке, и мы его пропускаем
-                continue
+                # если конец участка неизвестен, считаем, что конец участка - конец периода запроса
+                row[2] = {'v': self.request_dt_to}
 
             row = {
                 'name': row[0].strip(),
@@ -286,8 +285,11 @@ class BaseUraRidesView(URAResource):
                     self.ride_points[-1]['time_out'] = message['t']
                     self.ride_points[-1]['params']['odoMeter'] = self.current_distance
                 else:
+                    current_geozone = {
+                        'name': 'SPACE'
+                    }
                     self.add_new_point(message, prev_message, {
-                        'name': 'SPACE',
+                        'name': current_geozone['name'],
                         'time_in': message['t'],
                         'time_out': message['t']
                     })

@@ -8,7 +8,7 @@ argparse==1.4.0           # via uwsgitop
 beautifulsoup4==4.6.0
 blessings==1.6            # via curtsies
 bpython==0.16
-certifi==2017.7.27.1      # via requests
+certifi==2017.11.5        # via requests
 chardet==3.0.4            # via requests
 curtsies==0.2.11          # via bpython
 django-appconf==1.0.1     # via django-image-cropping
@@ -20,14 +20,14 @@ django-redis-cache==1.7.1
 django-solo==1.1.2
 django-suit==0.2.25
 django-timezone-field==2.0
-django==1.11.6
-easy-thumbnails==2.4.2
+django==1.11.7
+easy-thumbnails==2.5
 flake8==3.5.0
 greenlet==0.4.12          # via bpython
 hiredis==0.2.0
 idna==2.6                 # via requests
-jinja2==2.9.6
-lxml==4.1.0
+jinja2==2.10
+lxml==4.1.1
 markdown==2.6.9
 markupsafe==1.0           # via jinja2
 marshmallow==2.14.0
@@ -39,10 +39,10 @@ psycopg2==2.7.3.2
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
 pygments==2.2.0           # via bpython
-pytz==2017.2
+pytz==2017.3
 redis==2.10.6
 requests==2.18.4          # via bpython
-simplejson==3.11.1        # via uwsgitop
+simplejson==3.12.0        # via uwsgitop
 six==1.11.0
 ujson==1.35
 urllib3==1.22             # via requests
@@ -50,3 +50,4 @@ uwsgi==2.0.15
 uwsgitop==0.10
 wcwidth==0.1.7            # via curtsies
 xlrd==1.1.0
+xlwt==1.3.0

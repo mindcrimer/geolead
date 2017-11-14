@@ -7,7 +7,12 @@ from django.utils import formats
 from django.utils.dateformat import format as date_format
 from reports.utils import utc_to_local_time, format_timedelta as formattimedelta
 
-from snippets.template_backends.jinja2 import jinjafilter
+from snippets.template_backends.jinja2 import jinjafilter, jinjaglobal
+
+
+@jinjaglobal
+def site_url():
+    return settings.SITE_URL
 
 
 @jinjafilter

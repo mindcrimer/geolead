@@ -17,23 +17,32 @@
 
 {%- if report_data -%}
 	<div class="report">
-		<h1>{% block REPORT_NAME %}{{ report_name|e }}{% endblock %}</h1>
+		<div class="report-export-wrapper">
+			<h1>{% block REPORT_NAME %}{{ report_name|e }}{% endblock %}</h1>
 
-		<div class="report__heading">
-			{%- block REPORT_HEADING %}{% endblock -%}
+			<div class="report__heading">
+				{%- block REPORT_HEADING %}{% endblock -%}
+			</div>
+
+			<div class="uk-margin" style="text-align:right">
+				{%- block REPORT_HEAD_RIGHT %}{% endblock -%}
+			</div>
+
+			<div class="table-wrapper">
+				{%- block REPORT_TABLE %}{% endblock -%}
+			</div>
+
+			<p>&nbsp;</p>
+
+			{%- block REPORT_HINT %}{% endblock -%}
 		</div>
-
-		<div class="uk-margin" style="text-align:right">
-			{%- block REPORT_HEAD_RIGHT %}{% endblock -%}
-		</div>
-
-		{%- block REPORT_TABLE %}{% endblock -%}
-		<p>&nbsp;</p>
-
-		{%- block REPORT_HINT %}{% endblock -%}
 
 		<div class="uk-margin">
 			<a href="" class="uk-button uk-button-default">Назад</a>
+
+{#			<a href="?download=xls" class="uk-button uk-button-primary btn-xls" style="float: right">#}
+{#				<span class="fa fa-file-excel-o"></span> Скачать#}
+{#			</a>#}
 		</div>
 	</div>
 

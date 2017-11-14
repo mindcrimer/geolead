@@ -7,6 +7,10 @@ def get_fuel_level(calibration_table, value):
     Таблица предварительна должна быть отсортирована по ключу "x"
     """
     row, next_row = None, None
+
+    if value <= 0:
+        return 0
+
     table_len_0 = len(calibration_table) - 1
 
     for i, row in enumerate(calibration_table):

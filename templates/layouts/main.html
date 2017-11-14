@@ -9,7 +9,7 @@
 	<title>{% block PAGE_TITLE %}GeoLead{% endblock %}</title>
 	{%- block EXTRA_HEAD %}{% endblock -%}
 </head>
-<body>
+<body data-siteurl="{{ site_url() }}">
 	<div class="wrapper">
 		{%- block PAGE_CONTENT %}{% endblock -%}
 	</div>
@@ -18,7 +18,6 @@
 	<link rel="stylesheet" href="{{ static_with_mtime('css/core.css') }}" />
 	<link rel="stylesheet" href="{{ static_with_mtime('css/font-awesome.min.css') }}" />
 	<link rel="stylesheet" href="{{ static_with_mtime('css/jquery.datetimepicker.css') }}" />
-	<link rel="stylesheet" href="{{ static_with_mtime('css/') }}" />
 	<script src="{{ static_with_mtime('js/jquery-3.2.1.min.js') }}"></script>
 	<script src="{{ static_with_mtime('js/uikit.min.js') }}"></script>
 	<script src="{{ static_with_mtime('js/jquery.datetimepicker.full.min.js') }}"></script>

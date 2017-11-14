@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 import datetime
+import time
 
+import xlwt
 from django.contrib import messages
 from django.contrib.messages import get_messages
+from django.http import HttpResponse
 from django.utils.timezone import utc
+
+import ujson
 
 from base.exceptions import ReportException
 from snippets.views import BaseTemplateView
@@ -22,6 +27,7 @@ class BaseReportView(BaseTemplateView):
     """Базовый класс отчета"""
     form = None
     report_name = ''
+    context_dump_fields = ('report_data',)
 
     def get_default_context_data(self, **kwargs):
         context = {
@@ -53,8 +59,15 @@ class BaseReportView(BaseTemplateView):
             return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
+        if 'download' in request.GET:
+            return self.download_xls(request, *args, **kwargs)
         try:
             context = self.get_context_data(**kwargs)
+            # if context['report_data']:
+            #     key = 'context_%s' % self.report_name
+            #     dump_context = self.get_dump_context(context)
+            #     request.session[key] = ujson.dumps(dump_context)
+
         except (ReportException, WialonException) as e:
             messages.error(request, str(e))
             context = super(BaseReportView, self).get_context_data(**kwargs)
@@ -62,6 +75,35 @@ class BaseReportView(BaseTemplateView):
             return self.render_to_response(context)
 
         return self.render_to_response(context)
+
+    def get_dump_context(self, context):
+        return {x: y for x, y in context.items() if x in self.context_dump_fields}
+
+    def download_xls(self, request, *args, **kwargs):
+        key = 'context_%s' % self.report_name
+
+        context = request.session.get(key)
+        if not context:
+            messages.error(request, 'Данные отчета не найдены')
+            context = super(BaseReportView, self).get_context_data(**kwargs)
+            context = self.get_default_context_data(**context)
+            return self.render_to_response(context)
+
+        context = ujson.loads(context)
+        filename = '%s_%s.xls' % (self.report_name, int(time.time()))
+
+        workbook = xlwt.Workbook()
+        worksheet = workbook.add_sheet('Отчет')
+
+        self.write_xls_data(worksheet, context)
+
+        response = HttpResponse(mimetype="application/ms-excel")
+        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        workbook.save(response)
+        return response
+
+    def write_xls_data(self, worksheet, context):
+        return worksheet
 
     def get_context_data(self, **kwargs):
         kwargs = super(BaseReportView, self).get_context_data(**kwargs)

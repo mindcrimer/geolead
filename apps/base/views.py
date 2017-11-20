@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.template.response import TemplateResponse
 
-from snippets.views import BaseTemplateView
+from snippets.views import BaseTemplateView, BaseView
 
 
 class TemplateResponse400(TemplateResponse):
@@ -56,3 +56,9 @@ class Error500View(BaseErrorView):
     """Внутренняя ошибка сервера"""
     response_class = TemplateResponse500
     template_name = 'errors/500.html'
+
+
+class Error500TestView(BaseView):
+    """Внутренняя ошибка сервера"""
+    def get(self, request, **kwargs):
+        raise ValueError('Test 500 error')

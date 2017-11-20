@@ -20,5 +20,9 @@ urlpatterns = (
     url(
         r'^500/$',
         views.Error500View.as_view(), name='500'
+    ),
+    url(
+        r'^500-test/$',
+        views.Error500TestView.as_view(), name='500_test'
     )
 )

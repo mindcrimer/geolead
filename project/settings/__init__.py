@@ -208,8 +208,6 @@ SUIT_CONFIG = {
     ]
 }
 
-LOGGING_ROOT = os.path.normpath(os.path.join(SITE_ROOT, 'logs'))
-
 MPTT_ADMIN_LEVEL_INDENT = 20
 
 REDIS_HOST = 'localhost'

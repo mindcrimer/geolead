@@ -58,10 +58,10 @@ class DischargeView(BaseReportView):
                 if not sess_id:
                     raise ReportException(WIALON_NOT_LOGINED)
 
-                try:
-                    user = User.objects.filter(is_active=True)\
-                        .get(wialon_username=self.request.session.get('user'))
-                except User.DoesNotExist:
+                user = User.objects.filter(is_active=True)\
+                    .filter(wialon_username=self.request.session.get('user')).first()
+
+                if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 try:

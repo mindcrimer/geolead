@@ -31,7 +31,7 @@ class UserAdmin(UserAdmin):
         }),
         (_('Персональная информация'), {
             'classes': ('suit-tab', 'suit-tab-general'),
-            'fields': ('last_name', 'first_name', 'middle_name', 'email')
+            'fields': ('email',)
         }),
         (_('Важные даты'), {
             'classes': ('suit-tab', 'suit-tab-general'),
@@ -57,11 +57,11 @@ class UserAdmin(UserAdmin):
     )
     form = UserAdminForm
     list_display = (
-        'username', 'get_full_name', 'organization_name', 'is_active', 'is_staff', 'is_superuser'
+        'username', 'organization_name', 'is_active', 'is_staff', 'is_superuser'
     )
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
-    readonly_fields = ('last_login', 'date_joined', 'created', 'updated', 'full_name')
-    search_fields = ('=id', 'username', 'full_name', 'email', 'wialon_token', 'organization_name')
+    readonly_fields = ('last_login', 'date_joined', 'created', 'updated')
+    search_fields = ('=id', 'username', 'email', 'wialon_token', 'organization_name')
     suit_form_tabs = (
         ('general', _('Общее')),
         ('permission', _('Права')),

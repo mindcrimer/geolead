@@ -59,7 +59,29 @@ class URAResource(TemplateView):
                 # обновлять токен не имеет смысла, он неправильный. Просим войти заново.
                 return error_response(str(e), status=403, code=getattr(e, 'code', None))
 
-        self.pre_view_trigger(request, **kwargs)
+        try:
+            self.pre_view_trigger(request, **kwargs)
+        except APIProcessError as e:
+            return error_response(
+                str(e),
+                status=e.http_status if e.http_status else None,
+                code=e.code
+            )
+        except (ValueError, IndexError, KeyError, AttributeError, TypeError):
+            if not settings.DEBUG:
+                send_trigger_email(
+                    'Ошибка в работе интеграции WIalon', extra_data={
+                        'POST': request.body
+                    }
+                )
+
+                return error_response(
+                    'Ошибка входящих данных из источника данных. '
+                    'Попробуйте повторить запрос позже',
+                    status=400,
+                    code='source_data_invalid'
+                )
+            raise
 
         attempts = 0
         attempts_limit = 20

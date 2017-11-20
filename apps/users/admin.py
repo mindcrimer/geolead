@@ -49,8 +49,9 @@ class UserAdmin(UserAdmin):
     )
     form = UserAdminForm
     list_display = (
-        'username', 'organization_name', 'is_active', 'is_staff', 'is_superuser'
+        'username', 'organization_name', 'supervisor', 'is_active', 'is_staff', 'is_superuser'
     )
+    list_editable = ('is_active',)
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     readonly_fields = ('last_login', 'date_joined', 'created', 'updated')
     search_fields = ('=id', 'username', 'email', 'wialon_token', 'organization_name')

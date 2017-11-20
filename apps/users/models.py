@@ -54,7 +54,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
 
     ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))
     organization_name = models.CharField(
-        _('Название организации в Wialon'), blank=True, null=False, max_length=255
+        _('Название организации в УРА'), blank=True, null=False, max_length=255
     )
     supervisor = models.ForeignKey(
         'self', blank=True, null=True, verbose_name=_('Супервайзер'),

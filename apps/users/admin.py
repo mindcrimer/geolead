@@ -49,7 +49,7 @@ class UserAdmin(UserAdmin):
     )
     form = UserAdminForm
     list_display = (
-        'username', 'organization_name', 'supervisor', 'is_active', 'is_staff', 'is_superuser'
+        'username', 'organization_name', 'wialon_username', 'supervisor', 'is_active', 'is_staff'
     )
     list_editable = ('is_active', 'supervisor')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')

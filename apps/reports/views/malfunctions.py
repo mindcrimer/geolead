@@ -48,7 +48,7 @@ class MalfunctionsView(BaseReportView):
 
                 try:
                     user = User.objects.filter(is_active=True)\
-                        .get(username=self.request.session.get('user'))
+                        .get(wialon_username=self.request.session.get('user'))
                 except User.DoesNotExist:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 

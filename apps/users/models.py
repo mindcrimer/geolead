@@ -21,6 +21,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
             'unique': _("A user with that username already exists."),
         },
     )
+
     first_name = models.CharField(
         _('Имя ответственного лица'), max_length=150, blank=True, null=True
     )
@@ -29,9 +30,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
     )
 
     wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)
-    organization_name = models.CharField(
-        _('Название организации в Wialon'), blank=True, null=False, max_length=255
-    )
+    wialon_username = models.CharField(_('Логин в Wialon'), max_length=255, blank=True, null=True)
 
     wialon_report_object_id = models.BigIntegerField(
         _('ID группового объекта для отчетов в Wialon'), blank=True, null=True
@@ -51,7 +50,12 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_kmu_report_template_id = models.BigIntegerField(
         _('ID шаблона отчета "Работа крановой установки" в Wialon'), blank=True, null=True
     )
+    wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
 
+    ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))
+    organization_name = models.CharField(
+        _('Название организации в Wialon'), blank=True, null=False, max_length=255
+    )
     supervisor = models.ForeignKey(
         'self', blank=True, null=True, verbose_name=_('Супервайзер'),
         help_text=_(
@@ -59,9 +63,6 @@ class User(AbstractUser, LastModMixin, BasicModel):
             'под одним логин/паролем'
         )
     )
-
-    ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))
-    wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
 
     class Meta:
         verbose_name = _('Профиль пользователя')

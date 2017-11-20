@@ -26,25 +26,17 @@ class UserAdmin(UserAdmin):
         (None, {
             'classes': ('suit-tab', 'suit-tab-general'),
             'fields': (
-                'is_active', 'username', 'password', 'user_permissions', 'created', 'updated'
+                'username', 'password', 'is_active', 'created', 'updated'
             )
-        }),
-        (_('Персональная информация'), {
-            'classes': ('suit-tab', 'suit-tab-general'),
-            'fields': ('email',)
-        }),
-        (_('Важные даты'), {
-            'classes': ('suit-tab', 'suit-tab-general'),
-            'fields': ('last_login', 'date_joined')
         }),
         (_('Права доступа'), {
             'classes': ('suit-tab', 'suit-tab-permission'),
-            'fields': ('is_staff', 'is_superuser')
+            'fields': ('is_staff', 'is_superuser', 'user_permissions')
         }),
         (_('Wialon'), {
             'classes': ('suit-tab', 'suit-tab-wialon'),
             'fields': (
-                'wialon_token', 'organization_name', 'supervisor', 'wialon_tz',
+                'wialon_token', 'wialon_username', 'wialon_tz',
                 'wialon_report_object_id', 'wialon_report_resource_id',
                 'wialon_discharge_report_template_id', 'wialon_driving_style_report_template_id',
                 'wialon_geozones_report_template_id', 'wialon_kmu_report_template_id'
@@ -52,7 +44,7 @@ class UserAdmin(UserAdmin):
         }),
         (_('УРА'), {
             'classes': ('suit-tab', 'suit-tab-ura'),
-            'fields': ('ura_tz',)
+            'fields': ('ura_tz', 'organization_name', 'supervisor')
         })
     )
     form = UserAdminForm

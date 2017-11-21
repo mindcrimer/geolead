@@ -99,6 +99,12 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
             if row_point_name == current_point \
                     or (start_found and row_point_name in self.route_point_names):
+                if row_point_name == start_point and start_found:
+                    # фальстарт, машина вернулась в стартовую точку -
+                    # значит начинаем рейс сначала
+                    last_distance = None
+                    race['points'] = []
+
                 if row_point_name == current_point:
                     start_found = True
 
@@ -238,8 +244,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
                     if point['time_out'] < time_from:
                         continue
 
-                    delta = min(time_until, point['time_out']) \
-                            - max(time_from, point['time_in'])
+                    delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
                     # не пересекаются:
                     if delta.seconds < 0 or delta.days < 0:
                         continue

@@ -81,7 +81,18 @@ class URAResource(TemplateView):
                     status=400,
                     code='source_data_invalid'
                 )
-            raise
+        except:
+            send_trigger_email(
+                'Ошибка в работе интеграции WIalon', extra_data={
+                    'POST': request.body
+                }
+            )
+
+            return error_response(
+                'Внутренняя ошибка сервера',
+                status=500,
+                code='internal_server_error'
+            )
 
         attempts = 0
         attempts_limit = 20
@@ -119,6 +130,19 @@ class URAResource(TemplateView):
                         code='source_data_invalid'
                     )
                 raise
+
+            except:
+                send_trigger_email(
+                    'Ошибка в работе интеграции WIalon', extra_data={
+                        'POST': request.body
+                    }
+                )
+
+                return error_response(
+                    'Внутренняя ошибка сервера',
+                    status=500,
+                    code='internal_server_error'
+                )
 
         return error_response(
             'Лимит попыток обращения к источнику данных (%s попыток) закончился' % attempts_limit,

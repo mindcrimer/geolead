@@ -202,6 +202,7 @@ SUIT_CONFIG = {
     'MENU_OPEN_FIRST_CHILD': True,
     'MENU': [
         'core',
+        'general',
         'reports',
         'ura',
         'users'

@@ -191,7 +191,7 @@ class BaseUraRidesView(URAResource):
             # проверим интервалы между отрезками
             try:
                 previous_geozone = self.unit_zones_visit[-1]
-                # если время входа в текущую не превышает 1 минуту выхода из предыдщуей
+                # если время входа в текущую не превышает 1 минуту выхода из предыдущей
                 delta = row['time_in'] - previous_geozone['time_out']
                 if delta < 60:
                     # если имена совпадают
@@ -203,23 +203,22 @@ class BaseUraRidesView(URAResource):
                         # или же просто предыдущей точке удлиняем время выхода (или усреднять?)
                         previous_geozone['time_out'] = row['time_in']
 
+                    # если же объект вылетел из геозоны в другую менее чем на 1 минуту
+                    # (то есть проехал в текущей геозоне менее 1 минуты) - списываем на помехи
+                    if row['time_out'] - row['time_in'] < 60:
+                        # и при этом в дальнейшем вернется в предыдущую:
+                        try:
+                            next_geozone = self.report_data['unit_zones_visit'][i + 1]
+                            if next_geozone[0].strip() == previous_geozone['name']:
+                                # то игнорируем текущую геозону, будто ее и не было,
+                                # расширив по диапазону времени предыдущую
+                                previous_geozone['time_out'] = row['time_out']
+                                continue
+                        except IndexError:
+                            pass
+
             except IndexError:
                 pass
-
-            # если объект вылетел из геозоны в другую менее чем на 1 минуту
-            # (то есть проехал в текущей геозоне менее 1 минуты) - списываем на помехи
-            if row['time_out'] - row['time_in'] < 60:
-                # и при этом в дальнейшем вернется в предыдущую:
-                try:
-                    previous_geozone = self.unit_zones_visit[-1]
-                    next_geozone = self.report_data['unit_zones_visit'][i + 1]
-                    if next_geozone[0].strip() == previous_geozone['name']:
-                        # то игнорируем текущую геозону, будто ее и не было,
-                        # расширив по диапазону времени предыдущую
-                        previous_geozone['time_out'] = row['time_out']
-                        continue
-                except IndexError:
-                    pass
 
             self.unit_zones_visit.append(row)
 

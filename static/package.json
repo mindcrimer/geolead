@@ -1,0 +1,14 @@
+{
+  "name": "geolead_resource",
+  "version": "1.0.0",
+  "description": "A Vue.js project",
+  "author": "Raphael Kamashev <wizzzet@gmail.com>",
+  "private": true,
+  "dependencies": {
+    "phantomjs": "^2.1.7"
+  },
+  "engines": {
+    "node": ">= 4.0.0",
+    "npm": ">= 3.0.0"
+  }
+}

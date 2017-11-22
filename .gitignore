@@ -23,4 +23,5 @@ Thumbs.db
 /logs/
 project/settings/settings_local.py
 /public/
+/static/node_modules/
 /venv/

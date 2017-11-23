@@ -12,7 +12,7 @@ import requests
 from base.exceptions import ReportException
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
 from ura.models import UraJob
-from wialon.auth import authenticate_at_wialon
+from wialon.auth import get_wialon_session_key
 
 
 def get_wialon_report_object_id(user):
@@ -168,7 +168,7 @@ def get_period(dt_from, dt_to, timezone=utc):
 
 def cleanup_and_request_report(user, template_id, item_id=None, sess_id=None):
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     if item_id is None:
         item_id = get_wialon_report_resource_id(user)
@@ -200,7 +200,7 @@ def cleanup_and_request_report(user, template_id, item_id=None, sess_id=None):
 def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, object_id=None,
                 sess_id=None):
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     if report_resource_id is None:
         report_resource_id = get_wialon_report_resource_id(user)
@@ -236,7 +236,7 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
 
 def get_report_rows(user, table_index, rows, level=0, sess_id=None):
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     rows = requests.post(
         settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +

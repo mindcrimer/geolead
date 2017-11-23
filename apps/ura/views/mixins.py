@@ -10,7 +10,7 @@ from snippets.http.response import error_response
 from ura.lib.resources import URAResource
 from ura.utils import parse_datetime, parse_xml_input_data
 from wialon.api import get_routes, get_unit_settings, get_messages
-from wialon.auth import authenticate_at_wialon
+from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
 from wialon.utils import get_fuel_level
 
@@ -45,7 +45,7 @@ class BaseUraRidesView(URAResource):
 
     def pre_view_trigger(self, request, **kwargs):
         super(BaseUraRidesView, self).pre_view_trigger(request, **kwargs)
-        self.sess_id = authenticate_at_wialon(request.user.wialon_token)
+        self.sess_id = get_wialon_session_key(request.user)
 
     def get_input_data(self, elem):
         self.input_data = parse_xml_input_data(self.request, self.model_mapping, elem)

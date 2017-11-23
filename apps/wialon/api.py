@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
 
-import requests
 from django.conf import settings
 from django.core.cache import cache
+
+import requests
+
 from wialon import WIALON_ENTIRE_ERROR, DEFAULT_CACHE_TIMEOUT
 from wialon.exceptions import WialonException
-
-from wialon.auth import authenticate_at_wialon
+from wialon.auth import get_wialon_session_key
 
 
 def get_drivers(user=None, sess_id=None):
@@ -15,7 +16,7 @@ def get_drivers(user=None, sess_id=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     cache_key = 'drivers:%s' % sess_id
     drivers_list = cache.get(cache_key)
@@ -65,7 +66,7 @@ def get_intersected_geozones(lon, lat, user=None, sess_id=None, zones=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     if zones is None:
         zones = {x['id']: [] for x in get_resources(user, sess_id)}
@@ -92,7 +93,7 @@ def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     requests.get(
         settings.WIALON_BASE_URL + (
@@ -126,7 +127,7 @@ def get_points(user=None, sess_id=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     cache_key = 'points:%s' % sess_id
     points_list = cache.get(cache_key)
@@ -175,7 +176,7 @@ def get_report_templates(user=None, sess_id=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     cache_key = 'report_templates:%s' % sess_id
     report_templates_list = cache.get(cache_key)
@@ -225,7 +226,7 @@ def get_resources(user=None, sess_id=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     cache_key = 'resources:%s' % sess_id
     resources_list = cache.get(cache_key)
@@ -275,7 +276,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     cache_key = 'routes:%s' % sess_id
     routes_list = cache.get(cache_key)
@@ -337,7 +338,7 @@ def get_units(user=None, sess_id=None, extra_fields=False):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     cache_key = 'units:%s' % sess_id
     units_list = cache.get(cache_key)
@@ -407,7 +408,7 @@ def get_unit_settings(item_id, user=None, sess_id=None):
     assert user or sess_id
 
     if sess_id is None:
-        sess_id = authenticate_at_wialon(user.wialon_token)
+        sess_id = get_wialon_session_key(user)
 
     request_params = json.dumps({
         'id': item_id,

@@ -21,8 +21,7 @@ class URAOrgsResource(URAResource):
             return error_response('Не указан параметр idDoc', code='idDoc_not_found')
 
         orgs = User.objects\
-            .filter(Q(pk=request.user.pk) | Q(supervisor=request.user))\
-            .filter(wialon_token__isnull=False, is_active=True)
+            .filter(Q(pk=request.user.pk) | Q(supervisor=request.user)).filter(is_active=True)
 
         context = self.get_context_data(**kwargs)
         context.update({

@@ -73,3 +73,6 @@ class User(AbstractUser, LastModMixin, BasicModel):
 
     def __str__(self):
         return self.username
+
+    def get_organization_name(self):
+        return self.organization_name if self.organization_name else self.username

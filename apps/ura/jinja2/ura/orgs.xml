@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <orgAnswer idDoc="{{ doc_id }}" dateCreate="{{ create_date|date('d.m.Y H:i:s') }}">
     {%- for org in orgs %}
-    <Organization idOrg="{{ org.pk }}" nameOrg="{{ org.organization_name|e }}"/>
+    <Organization idOrg="{{ org.pk }}" nameOrg="{{ org.get_organization_name()|e }}"/>
     {%- endfor %}
 </orgAnswer>

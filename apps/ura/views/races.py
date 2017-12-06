@@ -253,7 +253,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
     def post(self, request, **kwargs):
         jobs = []
-        print('Start getRaces')
+        print('Start getRaces:\n' + request.body)
 
         context = self.get_context_data(**kwargs)
         context.update({

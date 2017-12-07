@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.template.defaultfilters import floatformat
 
-from base.exceptions import APIProcessError
+from base.exceptions import APIProcessError, AuthenticationFailed
 from reports.utils import local_to_utc_time
 from users.models import User
 
@@ -17,17 +17,17 @@ def parse_datetime(str_date, timezone):
     return local_to_utc_time(local_dt, timezone)
 
 
-def get_organization_user(request, org_id):
+def get_organization_user(supervisor, org_id):
     if not org_id:
-        raise APIProcessError('Не указан параметр idOrg', code='idOrg_not_found')
+        raise AuthenticationFailed('Не указан параметр idOrg', code='idOrg_not_found')
 
     try:
         user = User.objects.filter(is_active=True, wialon_token__isnull=False).get(pk=org_id)
     except User.DoesNotExist:
-        raise APIProcessError('Организация не найдена', code='org_not_found')
+        raise AuthenticationFailed('Организация не найдена', code='org_not_found')
 
-    if user.pk != request.user.pk and user.supervisor_id != request.user.pk:
-        raise APIProcessError('Нет доступа к данной организации', code='org_forbidden')
+    if user.pk != supervisor.pk and user.supervisor_id != supervisor.pk:
+        raise AuthenticationFailed('Нет доступа к данной организации', code='org_forbidden')
 
     return user
 

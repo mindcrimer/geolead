@@ -17,11 +17,13 @@ from base.exceptions import APIParseError, AuthenticationFailed, APIValidationEr
 from snippets.utils.email import send_trigger_email
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
+from ura.utils import get_organization_user
 from wialon.exceptions import WialonException
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class URAResource(TemplateView):
+    authenticate_as_supervisor = False
     template_engine = 'jinja2'
     content_type = 'application/json'
     http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
@@ -150,10 +152,21 @@ class URAResource(TemplateView):
             code='attempts_limit'
         )
 
-    @staticmethod
-    def authenticate(request):
-        user, password = extract_token_from_request(request)
-        user = authenticate_credentials(user, password)
+    def authenticate(self, request):
+        username, password = extract_token_from_request(request)
+        supervisor = authenticate_credentials(username, password)
+
+        if self.authenticate_as_supervisor:
+            return supervisor
+
+        org_id = None
+        if request.data:
+            try:
+                org_id = int(request.data.getroot().get('idOrg'))
+            except (TypeError, ValueError):
+                pass
+
+        user = get_organization_user(supervisor, org_id)
 
         return user
 

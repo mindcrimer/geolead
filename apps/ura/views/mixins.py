@@ -2,7 +2,7 @@
 import datetime
 from collections import OrderedDict
 
-from base.exceptions import ReportException
+from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance
 from reports.utils import get_period, cleanup_and_request_report, \
     get_wialon_geozones_report_template_id, exec_report, get_report_rows
@@ -68,9 +68,11 @@ class BaseUraRidesView(URAResource):
         routes_dict = {x['id']: x for x in routes_list}
 
         try:
-            self.route = routes_dict.get(int(self.job.route_id))
-        except ValueError:
-            pass
+            self.route = routes_dict[int(self.job.route_id)]
+        except (ValueError, KeyError):
+            raise APIProcessError(
+                'Маршрут id=%s не найден среди известных мармрутов' % self.job.route_id
+            )
 
         self.route_point_names = [x['name'] for x in self.route['points']] if self.route else []
 

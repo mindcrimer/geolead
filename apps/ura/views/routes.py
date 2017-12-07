@@ -3,7 +3,6 @@ from base.exceptions import APIProcessError
 from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
-from ura.utils import get_organization_user
 from wialon.api import get_routes
 
 
@@ -25,10 +24,8 @@ class URARoutesResource(URAResource):
         except ValueError:
             org_id = 0
 
-        user = get_organization_user(request, org_id)
-
         try:
-            routes = get_routes(user)
+            routes = get_routes(request.user)
         except APIProcessError as e:
             return error_response(str(e), code=e.code)
 

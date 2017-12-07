@@ -15,6 +15,9 @@ class HomeView(BaseTemplateView):
         if user:
             request.session['user'] = user
 
+        if user or sid:
+            request.session.set_expiry(60 * 60)
+
         kwargs['sid'] = request.session.get('sid')
         kwargs['user'] = request.session.get('user')
 

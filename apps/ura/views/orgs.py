@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.db.models import Q
-
 from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
@@ -9,6 +7,8 @@ from users.models import User
 
 class URAOrgsResource(URAResource):
     """Получение списка организаций"""
+    authenticate_as_supervisor = True
+
     def post(self, request, *args, **kwargs):
 
         doc = request.data.xpath('/orgRequest')

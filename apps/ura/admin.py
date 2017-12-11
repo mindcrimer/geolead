@@ -12,7 +12,7 @@ class UraJobAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'driver_fio', 'date_begin', 'date_end')
     list_display_links = ('id', 'name')
     ordering = ('-created',)
-    readonly_fields = ('created', 'updated')
+    readonly_fields = ('created', 'updated', 'execution_status')
     search_fields = ('=id', 'name', 'unit_id', 'route_id', 'driver_id', 'driver_fio')
 
     def has_add_permission(self, request):

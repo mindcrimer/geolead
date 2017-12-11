@@ -45,6 +45,40 @@
 						</span>
 					</a>
 				</li>{# -#}
+
+				<li>
+					<a href="{{ url('reports:finished_jobs') }}">
+						<span class="icon fa fa-hourglass-end"></span>
+						<span class="title">
+							<span class="inner">
+								Отчет по актуальности шаблонов заданий
+							</span>
+						</span>
+					</a>
+				</li>{# -#}
+
+				<li>
+					<a href="{{ url('reports:overstatements') }}">
+						<span class="icon fa fa-coffee"></span>
+						<span class="title">
+							<span class="inner">
+								Отчет о сверхнормативных простоях
+							</span>
+						</span>
+					</a>
+				</li>{# -#}
+
+				<li>
+					<a href="{{ url('reports:invalid_job_start_end') }}">
+						<span class="icon fa fa-calendar-check-o"></span>
+						<span class="title">
+							<span class="inner">
+								Отчет о несвоевременном начале и окончании выполнения задания
+							</span>
+						</span>
+					</a>
+				</li>{# -#}
+
 			</ul>
 		</div>
 	{%- endif -%}

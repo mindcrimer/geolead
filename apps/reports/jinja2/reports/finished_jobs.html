@@ -4,11 +4,11 @@
 	<div class="report__heading-row uk-margin">
 		Период:
 		{{ form.cleaned_data.dt_from|date('d.m.Y H:M:s') }}&nbsp;&mdash;&nbsp;
-		{{ form.cleaned_data.dt_to|date('d.m.Y H:M:s') -}}
+		{{ form.cleaned_data.dt_to|date('d.m.Y H:M:s') }}
 	</div>
 
 	<div class="report__heading-row uk-margin">
-		ФИО ответственного за<br/>устранение неполадок:
+		ФИО ответственного за<br/>корректировку:
 		____________________________________________
 	</div>
 {%- endblock -%}
@@ -16,12 +16,11 @@
 
 {%- block REPORT_HEAD_RIGHT %}
 	<div class="report__heading-row uk-margin">
-		Всего оборудованных транспортных объектов ССМТ: {{ stats['total'] -}}
+		Всего шаблонов заданий в базе ССМТ: {{ stats['total'] -}}
 	</div>
 
 	<div class="report__heading-row uk-margin">
-		Из них*: исправных {{ stats['total'] - stats['broken'] }}<br/>
-		Возможно неисправных {{ stats['broken'] -}}
+		Из них неактуальных заданий: {{ stats['non_actual'] -}}
 	</div>
 {%- endblock -%}
 
@@ -32,31 +31,21 @@
 		<thead>
 
 			<tr>
-				<td rowspan="2">Гос№ ТС</td>
-				<td colspan="2">Последняя полученная информация</td>
-				<td rowspan="2">ФИО водителя</td>
-				<td rowspan="2">
-					Наименование возможно<br/>
-					неисправного оборудования (ДУТ, ...)
-				</td>
+				<td rowspan="2">№ шаблона задания из ССМТ</td>
+				<td colspan="2">Кол-во путевых листов</td>
+				<td rowspan="2">Актуальность, %</td>
 			</tr>
 
 			<tr>
-				<td>Место/геозона</td>
-				<td>Время</td>
+				<td>Заявлено</td>
+				<td>Исполнялось*</td>
 			</tr>
 
 		</thead>
 
 		{%- for row in report_data.values() -%}
 			<tbody>
-				<tr>
-					<td>{{ row['key'] }}</td>
-					<td>{{ row['place'] }}</td>
-					<td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
-					<td class="nowrap">{{ row['driver_name'] }}</td>
-					<td>{{ '<br/>'.join(row['malfunctions']) }}</td>
-				</tr>
+
 			</tbody>
 		{%- endfor -%}
 	</table>
@@ -69,12 +58,14 @@
 	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
 		<tr>
 			<td style="vertical-align:top">
-				*Состояния:<br/>
-				<span class="fa fa-check"></span>
-				исправное - передача данных с датчиков и блока (трекера) осуществляется без затруднений;<br/>
-
-				<span class="fa fa-check"></span>
-				неисправное - отсутствует передача данных с блока (трекера) или датчиков (веса, ДУТ, ...) более 3 часов.
+				* Исполненое задание - по факту работы транспорта в рамках одного путевого листа было
+				зафиксировано посещение заданных заданием геозон, хотя бы однократно.
+			</td>
+		</tr>
+		<tr><td>&nbsp;</td></tr>
+		<tr>
+			<td style="vertical-align:top">
+				Условия неактуальности: менее 20%
 			</td>
 		</tr>
 	</table>

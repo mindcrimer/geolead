@@ -2,9 +2,9 @@
 
 {%- block REPORT_HEADING -%}
 	<div class="report__heading-row uk-margin">
-		Период: {{ form.cleaned_data.dt_from|date('d.m.Y') -}}
-		&nbsp;&mdash;&nbsp;
-		{{- form.cleaned_data.dt_to|date('d.m.Y') -}}
+		Период:
+		{{ form.cleaned_data.dt_from|date('d.m.Y H:M:s') }}&nbsp;&mdash;&nbsp;
+		{{ form.cleaned_data.dt_to|date('d.m.Y H:M:s') }}
 	</div>
 	<div class="report__heading-row uk-margin">
 		ФИО ответственного за разбор событий:

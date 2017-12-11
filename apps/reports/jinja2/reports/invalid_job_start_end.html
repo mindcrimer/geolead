@@ -4,24 +4,14 @@
 	<div class="report__heading-row uk-margin">
 		Период:
 		{{ form.cleaned_data.dt_from|date('d.m.Y H:M:s') }}&nbsp;&mdash;&nbsp;
-		{{ form.cleaned_data.dt_to|date('d.m.Y H:M:s') -}}
-	</div>
-
-	<div class="report__heading-row uk-margin">
-		ФИО ответственного за<br/>устранение неполадок:
-		____________________________________________
+		{{ form.cleaned_data.dt_to|date('d.m.Y H:M:s') }}
 	</div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
 	<div class="report__heading-row uk-margin">
-		Всего оборудованных транспортных объектов ССМТ: {{ stats['total'] -}}
-	</div>
-
-	<div class="report__heading-row uk-margin">
-		Из них*: исправных {{ stats['total'] - stats['broken'] }}<br/>
-		Возможно неисправных {{ stats['broken'] -}}
+		Список случаев несоответствий выездов*
 	</div>
 {%- endblock -%}
 
@@ -30,33 +20,45 @@
 <div class="table-wrap">
 	<table class="report-table">
 		<thead>
-
 			<tr>
-				<td rowspan="2">Гос№ ТС</td>
-				<td colspan="2">Последняя полученная информация</td>
-				<td rowspan="2">ФИО водителя</td>
-				<td rowspan="2">
-					Наименование возможно<br/>
-					неисправного оборудования (ДУТ, ...)
-				</td>
-			</tr>
-
-			<tr>
-				<td>Место/геозона</td>
-				<td>Время</td>
+				<td>Гос № ТС</td>
+				<td>ФИО водителя</td>
+				<td>Время начала смены из путевого листа</td>
+				<td>№ шаблона задания</td>
+				<td>Фактическое место/геозона (в рамках шаблона задания) на начало смены</td>
+				<td>Фактическое место/геозона на начало смены</td>
 			</tr>
 
 		</thead>
 
-		{%- for row in report_data.values() -%}
+		{%- for row in report_data.get('start').values() -%}
 			<tbody>
-				<tr>
-					<td>{{ row['key'] }}</td>
-					<td>{{ row['place'] }}</td>
-					<td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
-					<td class="nowrap">{{ row['driver_name'] }}</td>
-					<td>{{ '<br/>'.join(row['malfunctions']) }}</td>
-				</tr>
+
+			</tbody>
+		{%- endfor -%}
+	</table>
+</div>
+
+<div class="report__heading-row uk-margin">
+	Список случаев несоответствий заездов
+</div>
+
+<div class="table-wrap">
+	<table class="report-table">
+		<thead>
+			<tr>
+				<td>Гос № ТС</td>
+				<td>ФИО водителя</td>
+				<td>Время окончания смены из путевого листа</td>
+				<td>№ шаблона задания</td>
+				<td>Время фактического прибытия</td>
+				<td>**Отклонение, ч</td>
+			</tr>
+		</thead>
+
+		{%- for row in report_data.get('end').values() -%}
+			<tbody>
+
 			</tbody>
 		{%- endfor -%}
 	</table>
@@ -69,13 +71,11 @@
 	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
 		<tr>
 			<td style="vertical-align:top">
-				*Состояния:<br/>
-				<span class="fa fa-check"></span>
-				исправное - передача данных с датчиков и блока (трекера) осуществляется без затруднений;<br/>
-
-				<span class="fa fa-check"></span>
-				неисправное - отсутствует передача данных с блока (трекера) или датчиков (веса, ДУТ, ...) более 3 часов.
+				* если во время начала смены автомобиль не находился в стартовой точке (гараже или соответствующем месте) - фиксируется несоответствие выезда
 			</td>
+		</tr>
+		<tr>
+			<td>** более 30 мин. от планового завершения смены</td>
 		</tr>
 	</table>
 </div>

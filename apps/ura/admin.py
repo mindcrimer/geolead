@@ -9,6 +9,7 @@ class UraJobLogTabularInline(admin.TabularInline):
     fields = models.UraJobLog().collect_fields()
     model = models.UraJobLog
     ordering = ('-created',)
+    readonly_fields = ('created', 'updated')
 
     def has_add_permission(self, request):
         return False

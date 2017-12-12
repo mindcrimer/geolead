@@ -8,7 +8,7 @@ from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
-from ura.utils import parse_datetime, float_format
+from ura.utils import parse_datetime, float_format, log_job_request
 from ura.views.mixins import BaseUraRidesView
 
 
@@ -42,6 +42,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
                 'Задача c job_id=%s не найдена' % self.input_data['job_id'], code='job_not_found'
             )
 
+        log_job_request(self.job, self.request.body.decode('utf-8'))
         return self.job
 
     @staticmethod

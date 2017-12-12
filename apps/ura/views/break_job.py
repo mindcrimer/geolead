@@ -3,7 +3,7 @@ from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
-from ura.utils import parse_datetime, parse_xml_input_data
+from ura.utils import parse_datetime, parse_xml_input_data, log_job_request
 
 
 class URABreakJobsResource(URAResource):
@@ -43,6 +43,7 @@ class URABreakJobsResource(URAResource):
                         setattr(job, k, v)
                         job.save()
                     jobs.append(job)
+                    log_job_request(self.job, request.body.decode('utf-8'))
 
         context = self.get_context_data(**kwargs)
         context.update({

@@ -30,6 +30,16 @@ class UraJob(BasicModel, LastModMixin):
         verbose_name_plural = _('Путевые листы')
 
 
+class UraJobLog(BasicModel, LastModMixin):
+    """Журнал изменения и запроса данных по путевым листам"""
+    job = models.ForeignKey('UraJob', verbose_name=_('Путевой лист'), related_name='log')
+    request = models.TextField(_('Запрос'))
+
+    class Meta:
+        verbose_name = _('Запись лога путевого листа')
+        verbose_name_plural = _('Лог путевого листа')
+
+
 class UraJobPoint(BasicModel, LastModMixin):
     """Точки (геозоны путевого листа по мере прохождения"""
     job = models.ForeignKey('UraJob', verbose_name=_('Путевой лист'), related_name='points')

@@ -42,7 +42,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
                 'Задача c job_id=%s не найдена' % self.input_data['job_id'], code='job_not_found'
             )
 
-        log_job_request(self.job, self.request.body.decode('utf-8'))
+        log_job_request(self.job, str(self.request.body))
         return self.job
 
     @staticmethod

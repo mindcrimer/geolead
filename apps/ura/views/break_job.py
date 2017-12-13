@@ -43,7 +43,7 @@ class URABreakJobsResource(URAResource):
                         setattr(job, k, v)
                         job.save()
                     jobs.append(job)
-                    log_job_request(self.job, request.body.decode('utf-8'))
+                    log_job_request(self.job, str(request.body))
 
         context = self.get_context_data(**kwargs)
         context.update({

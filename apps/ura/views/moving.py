@@ -189,7 +189,7 @@ class URAMovingResource(BaseUraRidesView):
                 'Задача c unit_id=%s не найдена' % self.input_data['unit_id'], code='job_not_found'
             )
 
-        log_job_request(self.job, self.request.body.decode('utf-8'))
+        log_job_request(self.job, str(self.request.body))
         return self.job
 
     def post(self, request, **kwargs):

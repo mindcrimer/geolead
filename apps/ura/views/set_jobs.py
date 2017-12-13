@@ -35,7 +35,7 @@ class URASetJobsResource(URAResource):
 
                 job = self.model.objects.create(**data)
                 jobs.append(job)
-                log_job_request(job, request.body.decode('utf-8'))
+                log_job_request(job, str(request.body))
 
         context = self.get_context_data(**kwargs)
         context.update({

@@ -69,8 +69,6 @@ def authenticate_at_wialon(user):
     if not result:
         return None
 
-    result = result.decode('utf-8')
-
     token_key = 'access_token'
     if token_key not in result:
         return None

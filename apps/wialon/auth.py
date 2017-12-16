@@ -58,7 +58,12 @@ def authenticate_at_wialon(user):
     """Выполняет вход в Wialon через phantomjs и возвращает токен"""
     phantomjs_bin = os.path.join(settings.STATIC_ROOT, 'node_modules/phantomjs/bin/phantomjs')
     phantomjs_js = os.path.join(settings.STATIC_ROOT, 'vendors/login.js')
-    args = [phantomjs_bin, phantomjs_js, user.wialon_username, user.wialon_password]
+    args = [
+        phantomjs_bin,
+        phantomjs_js,
+        json.dumps(user.wialon_username),
+        json.dumps(user.wialon_password)
+    ]
     result = subprocess.check_output(args)
     if not result:
         return None

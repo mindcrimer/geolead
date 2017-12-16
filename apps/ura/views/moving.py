@@ -232,6 +232,7 @@ class URAMovingResource(BaseUraRidesView):
             self.prepare_geozones_visits()
             self.process_messages()
             self.report_post_processing(unit_info)
+            self.update_job_points_cache()
             self.prepare_output_data()
 
             units.append(unit_info)

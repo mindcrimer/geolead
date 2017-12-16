@@ -114,7 +114,7 @@ class URARacesResource(RidesMixin, URAResource):
                     sess_id=self.sess_id
                 )
             except ReportException:
-                raise WialonException('Не удалось получить отчет о поездках')
+                raise WialonException('Не удалось получить в Wialon отчет о поездках')
 
             report_data = {
                 'unit_trips': [],
@@ -137,7 +137,7 @@ class URARacesResource(RidesMixin, URAResource):
                     report_data[table_info['name']] = rows
 
                 except ReportException:
-                    raise WialonException('Не удалось извлечь данные о поездке')
+                    raise WialonException('Не удалось получить в Wialon отчет о поездках')
 
             self.normalize_rides(
                 report_data, utc_to_local_time(data.get('date_end'), request.user.ura_tz)

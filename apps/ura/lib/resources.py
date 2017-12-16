@@ -98,6 +98,7 @@ class URAResource(TemplateView):
 
         attempts = 0
         attempts_limit = 20
+        last_error = ''
         while attempts < attempts_limit:
             try:
                 return handler(request, *args, **kwargs)
@@ -112,10 +113,12 @@ class URAResource(TemplateView):
                     code=e.code
                 )
 
-            except WialonException:
+            except WialonException as e:
+                last_error = str(e)
                 attempts += 1
+                print('Инициирую новую попытку доступа к Wialon')
                 # после каждого падения Виалона ждет 5 секунд и повторяем попытку
-                sleep(1)
+                sleep(.5)
 
             except (ValueError, IndexError, KeyError, AttributeError, TypeError):
                 if not settings.DEBUG:
@@ -147,7 +150,8 @@ class URAResource(TemplateView):
                 )
 
         return error_response(
-            'Лимит попыток обращения к источнику данных (%s попыток) закончился' % attempts_limit,
+            'Лимит попыток обращения к источнику данных (%s попыток) закончился.'
+            'Последняя найденная ошибка: %s' % (attempts_limit, last_error),
             status=400,
             code='attempts_limit'
         )

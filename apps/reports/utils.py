@@ -19,21 +19,24 @@ from wialon.exceptions import WialonException
 
 def get_wialon_report_object_id(user):
     name = settings.WIALON_DEFAULT_GROUP_OBJECT_NAME
+    users_name = user.wialon_group_object_name.strip() if user.wialon_group_object_name else None
 
-    if user.wialon_group_object_name:
-        name = user.wialon_group_object_name
+    if users_name:
+        name = users_name
 
     return get_group_object_id(name, user=user)
 
 
 def get_wialon_report_resource_id(user):
-    name = user.wialon_resource_name
+    name = user.wialon_resource_name.strip() if user.wialon_resource_name else None
     return get_resource_id(name, user=user)
 
 
 def get_wialon_report_template_id(template_name, user):
     name = settings.WIALON_DEFAULT_TEMPLATE_NAMES.get(template_name)
     users_name = getattr(user, 'wialon_%s_report_template_name' % template_name)
+    users_name = users_name.strip() if users_name else None
+
     if users_name:
         name = users_name
 

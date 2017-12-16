@@ -5,9 +5,9 @@ from collections import OrderedDict
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
-    get_wialon_report_template_id
-from snippets.http.response import error_response
+    get_wialon_report_template_id, local_to_utc_time
 from ura.lib.resources import URAResource
+from ura.models import UraJobPoint
 from ura.utils import parse_datetime, parse_xml_input_data
 from wialon.api import get_routes, get_unit_settings, get_messages
 from wialon.auth import get_wialon_session_key
@@ -102,7 +102,7 @@ class BaseUraRidesView(URAResource):
                 sess_id=self.sess_id
             )
         except ReportException:
-            raise WialonException('Не удалось получить отчет о поездках')
+            raise WialonException('Не удалось получить в Wialon отчет о поездках')
 
         for table_index, table_info in enumerate(r['reportResult']['tables']):
             if table_info['name'] not in self.report_data:
@@ -120,7 +120,7 @@ class BaseUraRidesView(URAResource):
                 self.report_data[table_info['name']] = rows
 
             except ReportException:
-                raise WialonException('Не удалось извлечь данные о поездке')
+                raise WialonException('Не удалось получить в Wialon отчет о поездках')
 
     def get_object_settings(self):
         # получаем настройки объекта (машины)
@@ -301,9 +301,28 @@ class BaseUraRidesView(URAResource):
 
         self.print_time_needed('Points build')
 
+    def update_job_points_cache(self):
+        """Обновляем кэш пройденных точек"""
+        self.job.points.all().delete()
+        for point in self.ride_points:
+            time_in = local_to_utc_time(point['time_in'], self.request.user.ura_tz)
+            time_out = local_to_utc_time(point['time_out'], self.request.user.ura_tz)
+
+            jp = UraJobPoint(
+                job=self.job,
+                title=point['name'],
+                point_type=self.get_point_type(point['name']),
+                enter_date_time=time_in,
+                leave_date_time=time_out,
+                total_time=(time_out - time_in).seconds,
+                parking_time=point['params']['stopMinutes']
+            )
+
+            jp.save()
+
     @staticmethod
-    def get_point_type(geozone):
-        name = geozone['name'].lower()
+    def get_point_type(geozone_name):
+        name = geozone_name.lower()
         point_type = 0
 
         if 'база' in name:
@@ -333,7 +352,7 @@ class BaseUraRidesView(URAResource):
             'name': geozone['name'],
             'time_in': geozone['time_in'],
             'time_out': geozone['time_out'],
-            'type': self.get_point_type(geozone),
+            'type': self.get_point_type(geozone['name']),
             'params': OrderedDict((
                 ('startFuelLevel', fuel_level),
                 ('endFuelLevel', .0),
@@ -366,9 +385,10 @@ class BaseUraRidesView(URAResource):
         self.ride_points.append(new_point)
 
     def print_time_needed(self, message=''):
-        print(
-            '%s: %s' % (
-                message,
-                ((datetime.datetime.now() - self.script_time_from).microseconds / 1000)
-            )
-        )
+        # print(
+        #     '%s: %s' % (
+        #         message,
+        #         ((datetime.datetime.now() - self.script_time_from).microseconds / 1000)
+        #     )
+        # )
+        pass

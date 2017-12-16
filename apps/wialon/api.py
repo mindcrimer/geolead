@@ -45,7 +45,7 @@ def get_drivers(user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        raise WialonException('Не удалось извлечь из Wialon список водителей.')
 
     drivers = []
     for item in res['items']:
@@ -89,7 +89,11 @@ def get_group_object_id(name, user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res or 'items' not in res or len(res['items']) == 0:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        extra = ''
+        if user:
+            extra = 'Проверьте правильность имени группового объекта в настройках интеграции ' \
+                    'у пользователя "%s".' % user
+        raise WialonException('Не найден ID группового объекта.%s' % extra)
 
     return res['items'][0]['id']
 
@@ -150,7 +154,9 @@ def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        raise WialonException(
+            'Не удалось извлечь из Wialon список сообщений. ID объекта: %s' % item_id
+        )
 
     return res
 
@@ -189,7 +195,7 @@ def get_points(user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        raise WialonException('Не удалось извлечь из Wialon список геозон.')
 
     points = []
     for item in res['items']:
@@ -239,7 +245,7 @@ def get_resources(user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        raise WialonException('Не удалось извлечь из Wialon список ресурсов.')
 
     resources = []
     for item in res['items']:
@@ -282,7 +288,11 @@ def get_resource_id(name, user=None, sess_id=None):
     res = r.json()
 
     if 'error' in res or 'items' not in res or len(res['items']) == 0:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        extra = ''
+        if user:
+            extra = 'Проверьте правильность имени ресурса пользователя в настройках интеграции ' \
+                    'у пользователя "%s".' % user
+        raise WialonException('Не найден ID ресурса.%s' % extra)
 
     return res['items'][0]['id']
 
@@ -316,9 +326,15 @@ def get_report_template_id(name, user=None, sess_id=None):
 
     if 'error' in res or 'items' not in res or len(res['items']) == 0 \
             or 'rep' not in res['items'][0] or len(res['items'][0]['rep']) == 0:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        extra = ''
+        if user:
+            extra = 'Проверьте правильность имени шаблона отчета в настройках интеграции ' \
+                    'у пользователя "%s".' % user
+        raise WialonException(
+            'Не найден ID шаблона отчета "%s".%s' % (name, extra)
+        )
 
-    reports = list(filter(lambda x: x['n'] == name, res['items'][0]['rep'].values()))
+    reports = list(filter(lambda x: x['n'].strip() == name, res['items'][0]['rep'].values()))
     if reports:
         return reports[0]['id']
 
@@ -363,7 +379,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
     res = r.json()
 
     if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        raise WialonException('Не удалось извлечь из Wialon список маршрутов.')
 
     routes = []
     for r in res['items']:
@@ -421,7 +437,7 @@ def get_units(user=None, sess_id=None, extra_fields=False):
     res = r.json()
 
     if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
+        raise WialonException('Не удалось извлечь из Wialon список объектов (ТС).')
 
     units = []
     for item in res['items']:

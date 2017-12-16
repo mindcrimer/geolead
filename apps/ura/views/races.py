@@ -66,6 +66,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
         for point in self.route_point_names:
             point_name = point.lower()
+
             if 'погрузка' in point_name:
                 self.route_endpoints.append(point)
                 start_found = True

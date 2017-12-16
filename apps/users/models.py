@@ -30,6 +30,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
     )
 
     wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)
+    wialon_password = models.CharField(_('Пароль в Wialon'), blank=True, null=True, max_length=255)
     wialon_username = models.CharField(_('Логин в Wialon'), max_length=255, blank=True, null=True)
     wialon_password = models.CharField(_('Пароль в Wialon'), max_length=100, blank=True, null=True)
 

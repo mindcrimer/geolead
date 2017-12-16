@@ -22,7 +22,6 @@ class URAOrgsResource(URAResource):
 
         orgs = User.objects.filter(
             supervisor=request.user,
-            wialon_token__isnull=False,
             is_active=True
         )
 

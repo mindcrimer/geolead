@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
+import os
+import subprocess
 import urllib.request
 
 from django.conf import settings
@@ -11,49 +13,6 @@ from base.exceptions import APIProcessError
 
 
 SESSION_TIMEOUT = 60 * 5
-
-
-def authenticate_at_wialon(user):
-    """Выполняет вход в Wialon через phantomjs и возвращает токен"""
-    token = None
-    return token
-
-
-def login_wialon_via_token(user, token, attempt=0):
-    params = urllib.request.quote(json.dumps({'token': token if token else ''}))
-    r = requests.get(
-        settings.WIALON_BASE_URL + ('?svc=token/login&params=%s' % params)
-    )
-    res = r.json()
-
-    try:
-        sess_id = res['eid']
-    except (KeyError, IndexError):
-        # неудачный вход. Сбиваем токен и пробуем получить новый токен, после чего повторяем вход
-        user.wialon_token = None
-        token = get_user_wialon_token(user)
-        if token and attempt < 3:
-            return login_wialon_via_token(user, token, attempt=attempt + 1)
-
-        raise APIProcessError(
-            'Невозможно открыть сессию в Wialon. Возможно, пароль пользователя недействителен.',
-            code='password_invalid'
-        )
-
-    return sess_id
-
-
-def get_user_wialon_token(user):
-    token = user.wialon_token
-
-    if not token:
-        token = authenticate_at_wialon(user)
-
-        if token and token != user.wialon_token:
-            user.wialon_token = token
-            user.save()
-
-    return token
 
 
 def get_wialon_session_key(user):
@@ -69,3 +28,62 @@ def get_wialon_session_key(user):
             cache.set(cache_key, sess_id, SESSION_TIMEOUT)
 
     return sess_id
+
+
+def login_wialon_via_token(user, token, attempt=0):
+    params = urllib.request.quote(json.dumps({'token': token if token else ''}))
+    r = requests.get(
+        settings.WIALON_BASE_URL + ('?svc=token/login&params=%s' % params)
+    )
+    res = r.json()
+
+    try:
+        sess_id = res['eid']
+    except (KeyError, IndexError):
+        # неудачный вход. Сбиваем токен и пробуем получить новый токен, после чего повторяем вход
+        user.wialon_token = None
+        token = get_user_wialon_token(user)
+        if token and attempt < 2:
+            return login_wialon_via_token(user, token, attempt=attempt + 1)
+
+        raise APIProcessError(
+            'Невозможно открыть сессию в Wialon. Возможно, пароль пользователя недействителен.',
+            code='password_invalid'
+        )
+
+    return sess_id
+
+
+def authenticate_at_wialon(user):
+    """Выполняет вход в Wialon через phantomjs и возвращает токен"""
+    phantomjs_bin = os.path.join(settings.STATIC_ROOT, 'node_modules/phantomjs/bin/phantomjs')
+    phantomjs_js = os.path.join(settings.STATIC_ROOT, 'vendors/login.js')
+    args = [phantomjs_bin, phantomjs_js, user.wialon_username, user.wialon_password]
+    result = subprocess.check_output(args)
+    if not result:
+        return None
+
+    result = result.decode('utf-8')
+
+    token_key = 'access_token'
+    if token_key not in result:
+        return None
+
+    parts = [x.split('=') for x in result.split('?')[1].split('&')]
+    parts = {x[0]: x[1] for x in parts}
+    token = parts.get(token_key)
+
+    return token
+
+
+def get_user_wialon_token(user):
+    token = user.wialon_token
+
+    if not token:
+        token = authenticate_at_wialon(user)
+
+        if token and token != user.wialon_token:
+            user.wialon_token = token
+            user.save()
+
+    return token

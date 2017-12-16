@@ -23,7 +23,7 @@ def get_organization_user(supervisor, org_id):
         raise AuthenticationFailed('Не указан параметр idOrg', code='idOrg_not_found')
 
     try:
-        user = User.objects.filter(is_active=True, wialon_token__isnull=False).get(pk=org_id)
+        user = User.objects.filter(is_active=True).get(pk=org_id)
     except User.DoesNotExist:
         raise AuthenticationFailed('Организация не найдена', code='org_not_found')
 

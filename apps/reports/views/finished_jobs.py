@@ -4,9 +4,11 @@ import datetime
 
 from base.exceptions import ReportException
 from reports import forms
-from reports.utils import get_period
+from reports.utils import get_period, local_to_utc_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from ura.models import UraJob
 from users.models import User
+from wialon.api import get_routes
 
 
 class FinishedJobsView(BaseReportView):
@@ -19,8 +21,9 @@ class FinishedJobsView(BaseReportView):
     def get_new_grouping():
         return {
             'key': '',
-            'place': '',
-            'dt': ''
+            'plan': 0,
+            'finished': 0,
+            'ratio': .0
         }
 
     def get_context_data(self, **kwargs):
@@ -47,11 +50,49 @@ class FinishedJobsView(BaseReportView):
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                dt_from, dt_to = get_period(
-                    form.cleaned_data['dt_from'],
-                    form.cleaned_data['dt_to'],
-                    user.wialon_tz
-                )
+                dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
+                dt_to = local_to_utc_time(form.cleaned_data['dt_to'], user.wialon_tz)
+
+                routes = {
+                    x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
+                }
+
+                jobs = UraJob.objects\
+                    .filter(
+                        date_begin__gte=dt_from,
+                        date_end__lte=dt_to,
+                        route_id__in=list(routes.keys())
+                    )\
+                    .prefetch_related('points')
+
+                stats['total'] = len(jobs)
+
+                for job in jobs:
+                    key = job.route_id
+
+                    if key not in report_data:
+                        report_data[key] = self.get_new_grouping()
+                        report_data[key]['key'] = key
+
+                    report_data[key]['plan'] += 1
+
+                    route = routes.get(int(job.route_id))
+                    route_points = {p['name'] for p in route['points']}
+                    points = list(
+                        map(
+                            lambda x: x.title,
+                            filter(lambda x: x.title != 'SPACE', job.points.all())
+                        )
+                    )
+                    remaining_route_points = [x for x in route_points if x not in points]
+
+                    if remaining_route_points:
+                        stats['non_actual'] += 1
+                    else:
+                        report_data[key]['finished'] += 1
+
+                for v in report_data.values():
+                    v['ratio'] = round((v['finished'] / v['plan']) * 100, 2)
 
         kwargs.update(
             stats=stats,

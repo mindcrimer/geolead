@@ -3,7 +3,7 @@
 {%- block REPORT_HEADING -%}
 	<div class="report__heading-row uk-margin">
 		Период:
-		{{ form.cleaned_data.dt_from|date('d.m.Y H:i:s') }}&nbsp;&mdash;&nbsp;
+		{{ form.cleaned_data.dt_from|date('d.m.Y H:i:s') }}&nbsp;&mdash;
 		{{ form.cleaned_data.dt_to|date('d.m.Y H:i:s') }}
 	</div>
 
@@ -45,7 +45,12 @@
 
 		{%- for row in report_data.values() -%}
 			<tbody>
-
+				<tr>
+					<td>{{ row['key'] }}</td>
+					<td class="tright">{{ row['plan'] }}</td>
+					<td class="tright">{{ row['finished'] }}</td>
+					<td class="tright">{{ row['ratio'] }}</td>
+				</tr>
 			</tbody>
 		{%- endfor -%}
 	</table>
@@ -62,7 +67,6 @@
 				зафиксировано посещение заданных заданием геозон, хотя бы однократно.
 			</td>
 		</tr>
-		<tr><td>&nbsp;</td></tr>
 		<tr>
 			<td style="vertical-align:top">
 				Условия неактуальности: менее 20%

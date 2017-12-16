@@ -68,12 +68,6 @@ def get_group_object(name, user=None, sess_id=None):
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
-    cache_key = 'drivers:%s' % sess_id
-    drivers_list = cache.get(cache_key)
-
-    if drivers_list:
-        return json.loads(drivers_list)
-
     request_params = json.dumps({
         'spec': {
             'itemsType': 'avl_unit_group',
@@ -308,6 +302,39 @@ def get_resources(user=None, sess_id=None):
         cache.set(cache_key, json.dumps(resources), DEFAULT_CACHE_TIMEOUT)
 
     return resources
+
+
+def get_resource(name, user=None, sess_id=None):
+    """Получает ID ресурса пользователя"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = get_wialon_session_key(user)
+
+    request_params = json.dumps({
+        'spec': {
+            'itemsType': 'avl_resource',
+            'propName': 'sys_name',
+            'propValueMask': name,
+            'sortType': 'sys_name',
+            'propType': 'property'
+        },
+        'force': 1,
+        'flags': 1,
+        'from': 0,
+        'to': 0
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    res = r.json()
+
+    if 'error' in res or 'items' not in res or len(res['items']) == 0:
+        raise WialonException(WIALON_ENTIRE_ERROR)
+
+    return res['items'][0]['id']
 
 
 def get_routes(user=None, sess_id=None, with_points=False):

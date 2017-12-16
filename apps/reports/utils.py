@@ -12,7 +12,7 @@ import requests
 from base.exceptions import ReportException
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
 from ura.models import UraJob
-from wialon.api import get_group_object
+from wialon.api import get_group_object, get_resource
 from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
 
@@ -27,9 +27,8 @@ def get_wialon_report_object_id(user):
 
 
 def get_wialon_report_resource_id(user):
-    return user.wialon_report_resource_id \
-        if user.wialon_report_resource_id \
-        else settings.WIALON_DEFAULT_REPORT_RESOURCE_ID
+    name = user.wialon_resource_name
+    return get_resource(name, user=user)
 
 
 def get_wialon_discharge_report_template_id(user):
@@ -208,7 +207,16 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
         sess_id = get_wialon_session_key(user)
 
     if report_resource_id is None:
-        report_resource_id = get_wialon_report_resource_id(user)
+        try:
+            report_resource_id = get_wialon_report_resource_id(user)
+        except WialonException:
+            report_resource_id = None
+
+        if not report_resource_id:
+            raise ReportException(
+                'Не удалось получить ID ресурса для пользователя %s '
+                '(наименование ресурса: %s' % (str(user), user.wialon_resource_name)
+            )
 
     if object_id is None:
         try:

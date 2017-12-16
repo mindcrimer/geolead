@@ -36,10 +36,10 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_group_object_name = models.CharField(
         _('Наименование группового объекта'), max_length=255, blank=True, null=True
     )
-
-    wialon_report_resource_id = models.BigIntegerField(
-        _('ID ресурса отчетов в Wialon'), blank=True, null=True
+    wialon_resource_name = models.CharField(
+        _('Наименование ресурса'), max_length=255, blank=True, null=True
     )
+
     wialon_discharge_report_template_id = models.BigIntegerField(
         _('ID отчета "Перерасход топлива" в Wialon'), blank=True, null=True
     )

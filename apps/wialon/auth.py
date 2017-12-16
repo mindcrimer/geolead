@@ -61,10 +61,11 @@ def authenticate_at_wialon(user):
     args = [
         phantomjs_bin,
         phantomjs_js,
-        json.dumps(user.wialon_username),
-        json.dumps(user.wialon_password)
+        user.wialon_username,
+        user.wialon_password
     ]
-    result = subprocess.check_output(args)
+    result = subprocess.check_output(args, universal_newlines=True)
+
     if not result:
         return None
 

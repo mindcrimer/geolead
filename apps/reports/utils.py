@@ -12,13 +12,18 @@ import requests
 from base.exceptions import ReportException
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
 from ura.models import UraJob
+from wialon.api import get_group_object
 from wialon.auth import get_wialon_session_key
+from wialon.exceptions import WialonException
 
 
 def get_wialon_report_object_id(user):
-    return user.wialon_report_object_id \
-        if user.wialon_report_object_id \
-        else settings.WIALON_REPORTS_DEFAULT_OBJECT_ID
+    name = settings.WIALON_DEFAULT_GROUP_OBJECT_NAME
+
+    if user.wialon_group_object_name:
+        name = user.wialon_group_object_name
+
+    return get_group_object(name, user=user)
 
 
 def get_wialon_report_resource_id(user):
@@ -206,7 +211,19 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
         report_resource_id = get_wialon_report_resource_id(user)
 
     if object_id is None:
-        object_id = get_wialon_report_object_id(user)
+        try:
+            object_id = get_wialon_report_object_id(user)
+        except WialonException:
+            object_id = None
+
+        if not object_id:
+            raise ReportException(
+                'Не удалось получить ID группового объекта для пользователя %s '
+                '(наименование группового объекта: %s' % (
+                    str(user),
+                    user.wialon_group_object_name
+                )
+            )
 
     r = requests.post(
         settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {

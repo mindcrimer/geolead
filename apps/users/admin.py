@@ -36,10 +36,11 @@ class UserAdmin(UserAdmin):
         (_('Wialon'), {
             'classes': ('suit-tab', 'suit-tab-wialon'),
             'fields': (
-                'wialon_token', 'wialon_username', 'wialon_tz', 'wialon_password',
-                'wialon_report_object_id', 'wialon_report_resource_id',
-                'wialon_discharge_report_template_id', 'wialon_driving_style_report_template_id',
-                'wialon_geozones_report_template_id', 'wialon_kmu_report_template_id'
+                'wialon_token', 'wialon_username', 'wialon_password', 'wialon_tz',
+                'wialon_group_object_name',
+                'wialon_report_resource_id', 'wialon_discharge_report_template_id',
+                'wialon_driving_style_report_template_id', 'wialon_geozones_report_template_id',
+                'wialon_kmu_report_template_id'
             )
         }),
         (_('УРА'), {

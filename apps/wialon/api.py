@@ -61,6 +61,45 @@ def get_drivers(user=None, sess_id=None):
     return drivers
 
 
+def get_group_object(name, user=None, sess_id=None):
+    """Получает групповой объект"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = get_wialon_session_key(user)
+
+    cache_key = 'drivers:%s' % sess_id
+    drivers_list = cache.get(cache_key)
+
+    if drivers_list:
+        return json.loads(drivers_list)
+
+    request_params = json.dumps({
+        'spec': {
+            'itemsType': 'avl_unit_group',
+            'propName': 'sys_name',
+            'propValueMask': name,
+            'sortType': 'sys_name',
+            'propType': 'property'
+        },
+        'force': 1,
+        'flags': 1,
+        'from': 0,
+        'to': 0
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    res = r.json()
+
+    if 'error' in res or 'items' not in res or len(res['items']) == 0:
+        raise WialonException(WIALON_ENTIRE_ERROR)
+
+    return res['items'][0]['id']
+
+
 def get_intersected_geozones(lon, lat, user=None, sess_id=None, zones=None):
     """Получает геозоны, пересекаемые c указанной координатой"""
     assert user or sess_id

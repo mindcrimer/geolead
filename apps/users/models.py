@@ -33,9 +33,10 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_username = models.CharField(_('Логин в Wialon'), max_length=255, blank=True, null=True)
     wialon_password = models.CharField(_('Пароль в Wialon'), max_length=100, blank=True, null=True)
 
-    wialon_report_object_id = models.BigIntegerField(
-        _('ID группового объекта для отчетов в Wialon'), blank=True, null=True
+    wialon_group_object_name = models.CharField(
+        _('Наименование группового объекта'), max_length=255, blank=True, null=True
     )
+
     wialon_report_resource_id = models.BigIntegerField(
         _('ID ресурса отчетов в Wialon'), blank=True, null=True
     )

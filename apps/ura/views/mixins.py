@@ -89,14 +89,13 @@ class BaseUraRidesView(URAResource):
             self.input_data['date_end']
         )
 
-        template_id = get_wialon_report_template_id('geozones', self.request.user)
         cleanup_and_request_report(
-            self.request.user, template_id, item_id=self.unit_id, sess_id=self.sess_id)
+            self.request.user, self.report_template_id, item_id=self.unit_id, sess_id=self.sess_id)
 
         try:
             r = exec_report(
                 self.request.user,
-                template_id,
+                self.report_template_id,
                 self.request_dt_from,
                 self.request_dt_to,
                 object_id=self.unit_id,

@@ -282,6 +282,12 @@ THUMBNAIL_PROCESSORS = (
 WIALON_BASE_URL = 'https://hst-api.wialon.com/wialon/ajax.html'
 
 WIALON_DEFAULT_GROUP_OBJECT_NAME = 'Ресурс'
+WIALON_DEFAULT_TEMPLATE_NAMES = {
+    'discharge': 'Ресурс перерасход топлива',
+    'driving_style': 'Ресурс БВ',
+    'geozones': 'Ресурс Геозоны',
+    'kmu': 'Работа крановой установки'
+}
 
 WIALON_CACHE_TIMEOUT = 45
 

@@ -76,6 +76,7 @@ class DischargeView(BaseReportView):
                 )
 
                 device_fields = defaultdict(lambda: {'extras': .0, 'idle': .0, 'kmu': 0})
+                template_id = get_wialon_report_template_id('kmu', user)
                 for unit in units_list:
                     # норматив потребления доп.оборудования, л / час
                     extras_values = [
@@ -102,7 +103,6 @@ class DischargeView(BaseReportView):
                     if device_fields[unit['name']]['idle'] \
                             and device_fields[unit['name']]['extras']:
 
-                        template_id = get_wialon_report_template_id('kmu', user)
                         cleanup_and_request_report(user, template_id, sess_id=sess_id)
 
                         r = exec_report(

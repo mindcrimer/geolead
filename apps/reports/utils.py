@@ -32,7 +32,10 @@ def get_wialon_report_resource_id(user):
 
 
 def get_wialon_report_template_id(template_name, user):
-    name = getattr(user, 'wialon_%s_report_template_name' % template_name)
+    name = settings.WIALON_DEFAULT_TEMPLATE_NAMES.get(template_name)
+    users_name = getattr(user, 'wialon_%s_report_template_name' % template_name)
+    if users_name:
+        name = users_name
 
     return get_report_template_id(name, user)
 

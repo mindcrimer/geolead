@@ -66,6 +66,7 @@ class URARacesResource(RidesMixin, URAResource):
         if not jobs_els:
             return error_response('Не указаны объекты типа job', code='jobs_not_found')
 
+        template_id = get_wialon_report_template_id('geozones', request.user)
         for j in jobs_els:
             data = parse_xml_input_data(request, self.model_mapping, j)
 
@@ -103,7 +104,6 @@ class URARacesResource(RidesMixin, URAResource):
                 data['date_end']
             )
 
-            template_id = get_wialon_report_template_id('geozones', request.user)
             cleanup_and_request_report(
                 request.user, template_id, item_id=unit_id, sess_id=self.sess_id
             )

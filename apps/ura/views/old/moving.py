@@ -61,6 +61,7 @@ class URAMovingResource(RidesMixin, URAResource):
                 code='geozones_report_not_found'
             )
 
+        template_id = get_wialon_report_template_id('geozones', request.user)
         for unit_el in units_els:
             data = parse_xml_input_data(request, self.model_mapping, unit_el)
 
@@ -90,7 +91,6 @@ class URAMovingResource(RidesMixin, URAResource):
                 data['date_end']
             )
 
-            template_id = get_wialon_report_template_id('geozones', request.user)
             cleanup_and_request_report(
                 request.user, template_id, item_id=unit_id, sess_id=self.sess_id
             )

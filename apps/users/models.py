@@ -39,19 +39,19 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_resource_name = models.CharField(
         _('Наименование ресурса'), max_length=255, blank=True, null=True
     )
+    wialon_discharge_report_template_name = models.CharField(
+        _('Наименование отчета "Перерасход топлива"'), max_length=255, blank=True, null=True
+    )
+    wialon_driving_style_report_template_name = models.CharField(
+        _('Наименование отчета "Стиль вождения (ПДД)"'), max_length=255, blank=True, null=True
+    )
+    wialon_geozones_report_template_name = models.CharField(
+        _('Наименование отчета "Геозоны"'), max_length=255, blank=True, null=True
+    )
+    wialon_kmu_report_template_name = models.CharField(
+        _('Наименование отчета "Работа крановой установки"'), max_length=255, blank=True, null=True
+    )
 
-    wialon_discharge_report_template_id = models.BigIntegerField(
-        _('ID отчета "Перерасход топлива" в Wialon'), blank=True, null=True
-    )
-    wialon_driving_style_report_template_id = models.BigIntegerField(
-        _('ID шаблона отчета "Стиль вождения" в Wialon'), blank=True, null=True
-    )
-    wialon_geozones_report_template_id = models.BigIntegerField(
-        _('ID шаблона отчета "Геозоны" в Wialon'), blank=True, null=True
-    )
-    wialon_kmu_report_template_id = models.BigIntegerField(
-        _('ID шаблона отчета "Работа крановой установки" в Wialon'), blank=True, null=True
-    )
     wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
 
     ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))

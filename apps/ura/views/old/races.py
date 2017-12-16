@@ -3,8 +3,8 @@ from collections import OrderedDict
 
 from base.exceptions import ReportException
 from reports.utils import cleanup_and_request_report, get_period, \
-    get_wialon_geozones_report_template_id, exec_report, get_report_rows, utc_to_local_time, \
-    parse_wialon_report_datetime
+    exec_report, get_report_rows, utc_to_local_time, \
+    parse_wialon_report_datetime, get_wialon_report_template_id
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
@@ -103,20 +103,14 @@ class URARacesResource(RidesMixin, URAResource):
                 data['date_end']
             )
 
+            template_id = get_wialon_report_template_id('geozones', request.user)
             cleanup_and_request_report(
-                request.user,
-                get_wialon_geozones_report_template_id(request.user),
-                item_id=unit_id,
-                sess_id=self.sess_id,
+                request.user, template_id, item_id=unit_id, sess_id=self.sess_id
             )
 
             try:
                 r = exec_report(
-                    request.user,
-                    get_wialon_geozones_report_template_id(request.user),
-                    dt_from,
-                    dt_to,
-                    object_id=unit_id,
+                    request.user, template_id, dt_from, dt_to, object_id=unit_id,
                     sess_id=self.sess_id
                 )
             except ReportException:

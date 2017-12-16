@@ -83,7 +83,7 @@ class URAResource(TemplateView):
                     status=400,
                     code='source_data_invalid'
                 )
-        except:
+        except Exception:
             send_trigger_email(
                 'Ошибка в работе интеграции WIalon', extra_data={
                     'POST': request.body
@@ -133,7 +133,7 @@ class URAResource(TemplateView):
                     )
                 raise
 
-            except:
+            except Exception:
                 send_trigger_email(
                     'Ошибка в работе интеграции WIalon', extra_data={
                         'POST': request.body

@@ -61,8 +61,8 @@ def get_drivers(user=None, sess_id=None):
     return drivers
 
 
-def get_group_object(name, user=None, sess_id=None):
-    """Получает групповой объект"""
+def get_group_object_id(name, user=None, sess_id=None):
+    """Получает ID группового объекта"""
     assert user or sess_id
 
     if sess_id is None:
@@ -204,56 +204,6 @@ def get_points(user=None, sess_id=None):
     return points
 
 
-def get_report_templates(user=None, sess_id=None):
-    """Получает список шаблонов отчетов"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
-    cache_key = 'report_templates:%s' % sess_id
-    report_templates_list = cache.get(cache_key)
-
-    if report_templates_list:
-        return json.loads(report_templates_list)
-
-    request_params = json.dumps({
-        'spec': {
-            'itemsType': 'avl_resource',
-            'propName': 'reporttemplates',
-            'propValueMask': '*',
-            'sortType': 'reporttemplates',
-            'propType': 'propitemname'
-        },
-        'force': 1,
-        'flags': 1 + 8192,
-        'from': 0,
-        'to': 0
-    })
-    r = requests.get(
-        settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
-        )
-    )
-    res = r.json()
-
-    if 'error' in res:
-        raise WialonException(WIALON_ENTIRE_ERROR)
-
-    report_templates = []
-    for item in res['items']:
-        if item and item['rep']:
-            report_templates.extend([{
-                'id': '%s-%s' % (item['id'], x['id']),
-                'name': x['n']
-            } for x in item['rep'].values()])
-
-    if DEFAULT_CACHE_TIMEOUT:
-        cache.set(cache_key, json.dumps(report_templates), DEFAULT_CACHE_TIMEOUT)
-
-    return report_templates
-
-
 def get_resources(user=None, sess_id=None):
     """Получает список ресурсов (организаций в рамках Виалона)"""
     assert user or sess_id
@@ -304,7 +254,7 @@ def get_resources(user=None, sess_id=None):
     return resources
 
 
-def get_resource(name, user=None, sess_id=None):
+def get_resource_id(name, user=None, sess_id=None):
     """Получает ID ресурса пользователя"""
     assert user or sess_id
 
@@ -335,6 +285,44 @@ def get_resource(name, user=None, sess_id=None):
         raise WialonException(WIALON_ENTIRE_ERROR)
 
     return res['items'][0]['id']
+
+
+def get_report_template_id(name, user=None, sess_id=None):
+    """Получает групповой объект"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = get_wialon_session_key(user)
+
+    request_params = json.dumps({
+        'spec': {
+            'itemsType': 'avl_resource',
+            'propName': 'reporttemplates',
+            'propValueMask': name,
+            'sortType': 'reporttemplates',
+            'propType': 'propitemname'
+        },
+        'force': 1,
+        'flags': 1 + 8192,
+        'from': 0,
+        'to': 0
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    res = r.json()
+
+    if 'error' in res or 'items' not in res or len(res['items']) == 0 \
+            or 'rep' not in res['items'][0] or len(res['items'][0]['rep']) == 0:
+        raise WialonException(WIALON_ENTIRE_ERROR)
+
+    reports = list(filter(lambda x: x['n'] == name, res['items'][0]['rep'].values()))
+    if reports:
+        return reports[0]['id']
+
+    return None
 
 
 def get_routes(user=None, sess_id=None, with_points=False):

@@ -5,7 +5,7 @@ from snippets.views import BaseTemplateView
 class HomeView(BaseTemplateView):
     """Главная страница"""
     template_name = 'core/home.html'
-    
+
     def get(self, request, **kwargs):
         sid = self.request.GET.get('sid', None)
         if sid:

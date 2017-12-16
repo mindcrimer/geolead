@@ -6,7 +6,7 @@ from base.exceptions import ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
-    get_wialon_driving_style_report_template_id, get_period, cleanup_and_request_report, \
+    get_wialon_report_template_id, get_period, cleanup_and_request_report, \
     exec_report, get_report_rows
 from reports.views.base import BaseReportView, WIALON_INTERNAL_EXCEPTION, \
     WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
@@ -114,17 +114,10 @@ class DrivingStyleView(BaseReportView):
                     user.wialon_tz
                 )
 
-                cleanup_and_request_report(
-                    user, get_wialon_driving_style_report_template_id(user), sess_id=sess_id
-                )
+                template_id = get_wialon_report_template_id('driving_style', user)
+                cleanup_and_request_report(user, template_id, sess_id=sess_id)
 
-                r = exec_report(
-                    user,
-                    get_wialon_driving_style_report_template_id(user),
-                    dt_from,
-                    dt_to,
-                    sess_id=sess_id
-                )
+                r = exec_report(user, template_id, dt_from, dt_to, sess_id=sess_id)
 
                 for table_index, table_info in enumerate(r['reportResult']['tables']):
 

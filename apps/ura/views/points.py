@@ -26,7 +26,6 @@ class URAPointsResource(URAResource):
         except ValueError:
             org_id = 0
 
-
         try:
             points = get_points(request.user)
         except APIProcessError as e:

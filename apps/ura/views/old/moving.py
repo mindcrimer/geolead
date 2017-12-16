@@ -6,8 +6,7 @@ import datetime
 from base.exceptions import ReportException
 from base.utils import parse_float
 from reports.utils import parse_wialon_report_datetime, utc_to_local_time, get_period, \
-    cleanup_and_request_report, get_wialon_geozones_report_template_id, exec_report, \
-    get_report_rows
+    cleanup_and_request_report, exec_report, get_report_rows, get_wialon_report_template_id
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
@@ -25,6 +24,15 @@ class URAMovingResource(RidesMixin, URAResource):
         'date_end': ('dateEnd', parse_datetime),
         'unit_id': ('idUnit', int),
     }
+
+    def get_geozones_report_template_id(self):
+        report_template_id = get_wialon_report_template_id('geozones', self.request.user)
+        if report_template_id is None:
+            return error_response(
+                'Не указан ID шаблона отчета по геозонам у текущего пользователя',
+                code='geozones_report_not_found'
+            )
+        return report_template_id
 
     def post(self, request, *args, **kwargs):
         units = []
@@ -46,7 +54,7 @@ class URAMovingResource(RidesMixin, URAResource):
                 'Не указаны объекты типа unit', code='units_not_found'
             )
 
-        template_id = request.user.wialon_geozones_report_template_id
+        template_id = self.get_geozones_report_template_id()
         if template_id is None:
             return error_response(
                 'Не указан ID шаблона отчета по геозонам у текущего пользователя',
@@ -82,20 +90,14 @@ class URAMovingResource(RidesMixin, URAResource):
                 data['date_end']
             )
 
+            template_id = get_wialon_report_template_id('geozones', request.user)
             cleanup_and_request_report(
-                request.user,
-                get_wialon_geozones_report_template_id(request.user),
-                item_id=unit_id,
-                sess_id=self.sess_id
+                request.user, template_id, item_id=unit_id, sess_id=self.sess_id
             )
 
             try:
                 r = exec_report(
-                    request.user,
-                    get_wialon_geozones_report_template_id(request.user),
-                    dt_from,
-                    dt_to,
-                    object_id=unit_id,
+                    request.user, template_id, dt_from, dt_to, object_id=unit_id,
                     sess_id=self.sess_id
                 )
             except ReportException:

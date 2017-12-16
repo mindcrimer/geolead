@@ -6,8 +6,8 @@ from base.exceptions import ReportException
 from base.utils import parse_float
 from reports import forms
 from reports.utils import parse_timedelta, get_drivers_fio, parse_wialon_report_datetime, \
-    get_wialon_discharge_report_template_id, get_period, cleanup_and_request_report, exec_report, \
-    get_report_rows, get_wialon_kmu_report_template_id
+    get_wialon_report_template_id, get_period, cleanup_and_request_report, exec_report, \
+    get_report_rows
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from users.models import User
 from wialon.api import get_units
@@ -102,16 +102,11 @@ class DischargeView(BaseReportView):
                     if device_fields[unit['name']]['idle'] \
                             and device_fields[unit['name']]['extras']:
 
-                        cleanup_and_request_report(
-                            user, get_wialon_kmu_report_template_id(user), sess_id=sess_id
-                        )
+                        template_id = get_wialon_report_template_id('kmu', user)
+                        cleanup_and_request_report(user, template_id, sess_id=sess_id)
 
                         r = exec_report(
-                            user,
-                            get_wialon_kmu_report_template_id(user),
-                            dt_from,
-                            dt_to,
-                            object_id=unit['id'],
+                            user, template_id, dt_from, dt_to, object_id=unit['id'],
                             sess_id=sess_id
                         )
 
@@ -124,17 +119,10 @@ class DischargeView(BaseReportView):
                                     rows[0]['c'][4]
                                 ).seconds / 3600.0
 
-                cleanup_and_request_report(
-                    user, get_wialon_discharge_report_template_id(user), sess_id=sess_id
-                )
+                template_id = get_wialon_report_template_id('discharge', user)
+                cleanup_and_request_report(user, template_id, sess_id=sess_id)
 
-                r = exec_report(
-                    user,
-                    get_wialon_discharge_report_template_id(user),
-                    dt_from,
-                    dt_to,
-                    sess_id=sess_id
-                )
+                r = exec_report(user, template_id, dt_from, dt_to, sess_id=sess_id)
 
                 for table_index, table_info in enumerate(r['reportResult']['tables']):
                     rows = get_report_rows(

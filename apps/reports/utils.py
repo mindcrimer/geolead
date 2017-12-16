@@ -12,7 +12,7 @@ import requests
 from base.exceptions import ReportException
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
 from ura.models import UraJob
-from wialon.api import get_group_object, get_resource
+from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
 from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
 
@@ -23,36 +23,18 @@ def get_wialon_report_object_id(user):
     if user.wialon_group_object_name:
         name = user.wialon_group_object_name
 
-    return get_group_object(name, user=user)
+    return get_group_object_id(name, user=user)
 
 
 def get_wialon_report_resource_id(user):
     name = user.wialon_resource_name
-    return get_resource(name, user=user)
+    return get_resource_id(name, user=user)
 
 
-def get_wialon_discharge_report_template_id(user):
-    return user.wialon_discharge_report_template_id \
-        if user.wialon_discharge_report_template_id \
-        else settings.WIALON_DEFAULT_DISCHARGE_REPORT_TEMPLATE_ID
+def get_wialon_report_template_id(template_name, user):
+    name = getattr(user, 'wialon_%s_report_template_name' % template_name)
 
-
-def get_wialon_driving_style_report_template_id(user):
-    return user.wialon_driving_style_report_template_id \
-        if user.wialon_driving_style_report_template_id \
-        else settings.WIALON_DEFAULT_DRIVING_STYLE_REPORT_TEMPLATE_ID
-
-
-def get_wialon_geozones_report_template_id(user):
-    return user.wialon_geozones_report_template_id \
-        if user.wialon_geozones_report_template_id \
-        else settings.WIALON_DEFAULT_GEOZONES_REPORT_TEMPLATE_ID
-
-
-def get_wialon_kmu_report_template_id(user):
-    return user.wialon_kmu_report_template_id \
-        if user.wialon_kmu_report_template_id \
-        else settings.WIALON_DEFAULT_KMU_REPORT_TEMPLATE_ID
+    return get_report_template_id(name, user)
 
 
 def parse_timedelta(delta_string):

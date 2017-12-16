@@ -38,9 +38,9 @@ class UserAdmin(UserAdmin):
             'fields': (
                 'wialon_token', 'wialon_username', 'wialon_password', 'wialon_tz',
                 'wialon_group_object_name', 'wialon_resource_name',
-                'wialon_discharge_report_template_id',
-                'wialon_driving_style_report_template_id', 'wialon_geozones_report_template_id',
-                'wialon_kmu_report_template_id'
+                'wialon_discharge_report_template_name',
+                'wialon_driving_style_report_template_name',
+                'wialon_geozones_report_template_name', 'wialon_kmu_report_template_name'
             )
         }),
         (_('УРА'), {

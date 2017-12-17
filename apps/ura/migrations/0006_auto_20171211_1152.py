@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 ('wialon_id', models.IntegerField(verbose_name='ID в WIalon')),
                 ('title', models.CharField(max_length=255, verbose_name='Заголовок')),
                 ('total_time_standard', models.PositiveIntegerField(blank=True, null=True, verbose_name='Норматив времени нахождения, мин.')),
-                ('parking_time_standard', models.PositiveIntegerField(blank=True, null=True, verbose_name='Норматив времени остановок, мин.')),
+                ('parking_time_standard', models.PositiveIntegerField(blank=True, null=True, verbose_name='Норматив времени стоянок, мин.')),
             ],
             options={
                 'verbose_name': 'Геозона Wialon',

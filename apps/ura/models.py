@@ -72,6 +72,9 @@ class StandardJobTemplate(BasicModel, LastModMixin):
         verbose_name = _('Маршрут Wialon')
         verbose_name_plural = _('Маршруты Wialon')
 
+    def __str__(self):
+        return self.title
+
 
 class StandardPoint(BasicModel, LastModMixin):
     """Плановые геозоны маршрута (шаблона задания)"""
@@ -84,10 +87,13 @@ class StandardPoint(BasicModel, LastModMixin):
         _('Норматив времени нахождения, мин.'), null=True, blank=True
     )
     parking_time_standard = models.PositiveIntegerField(
-        _('Норматив времени остановок, мин.'), null=True, blank=True
+        _('Норматив времени стоянок, мин.'), null=True, blank=True
     )
 
     class Meta:
         unique_together = ('job_template', 'wialon_id')
         verbose_name = _('Геозона Wialon')
         verbose_name_plural = _('Геозоны Wialon')
+
+    def __str__(self):
+        return self.title

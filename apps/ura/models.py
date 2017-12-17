@@ -53,13 +53,16 @@ class UraJobPoint(BasicModel, LastModMixin):
     total_time = models.FloatField(_('Время в геозоне, сек'), blank=True, null=True)
     parking_time = models.FloatField(_('Время стоянки в геозоне, сек'), blank=True, null=True)
 
+    lat = models.FloatField(_('Широта входа в геозону'), null=True, blank=True)
+    lng = models.FloatField(_('Долгота входа в геозону'), null=True, blank=True)
+
     class Meta:
         verbose_name = _('Геозона путевого листа')
         verbose_name_plural = _('Геозоны путевого листа')
 
 
 class StandardJobTemplate(BasicModel, LastModMixin):
-    wialon_id = models.IntegerField(_('ID в WIalon'))
+    wialon_id = models.CharField(_('ID в WIalon'), max_length=64, unique=True)
     title = models.CharField(_('Заголовок'), max_length=255)
     space_overstatements_standard = models.PositiveIntegerField(
         _('Норматив перепростоя вне плановых геозон, мин.'), null=True, blank=True
@@ -72,8 +75,10 @@ class StandardJobTemplate(BasicModel, LastModMixin):
 
 class StandardPoint(BasicModel, LastModMixin):
     """Плановые геозоны маршрута (шаблона задания)"""
-    template_id = models.IntegerField(_('ID шаблона отчета (маршрута)'))
-    wialon_id = models.IntegerField(_('ID в WIalon'))
+    job_template = models.ForeignKey(
+        'StandardJobTemplate', related_name='points', verbose_name=_('Шаблон отчетов (маршрут)')
+    )
+    wialon_id = models.CharField(_('ID в WIalon'), max_length=64)
     title = models.CharField(_('Заголовок'), max_length=255)
     total_time_standard = models.PositiveIntegerField(
         _('Норматив времени нахождения, мин.'), null=True, blank=True
@@ -83,5 +88,6 @@ class StandardPoint(BasicModel, LastModMixin):
     )
 
     class Meta:
+        unique_together = ('job_template', 'wialon_id')
         verbose_name = _('Геозона Wialon')
         verbose_name_plural = _('Геозоны Wialon')

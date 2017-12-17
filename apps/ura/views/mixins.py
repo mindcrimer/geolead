@@ -315,7 +315,9 @@ class BaseUraRidesView(URAResource):
                 enter_date_time=time_in,
                 leave_date_time=time_out,
                 total_time=(time_out - time_in).seconds,
-                parking_time=point['params']['stopMinutes']
+                parking_time=point['params']['stopMinutes'],
+                lat=point['coords']['lat'],
+                lng=point['coords']['lng']
             )
 
             jp.save()
@@ -362,7 +364,11 @@ class BaseUraRidesView(URAResource):
                 ('moveMinutes', .0),
                 ('motoHours', .0),
                 ('odoMeter', .0)
-            ))
+            )),
+            'coords': {
+                'lat': message.get('pos', {}).get('y', None),
+                'lng': message.get('pos', {}).get('x', None)
+            }
         }
 
         # закрываем пробег и топливо на конец участка для предыдущей точки

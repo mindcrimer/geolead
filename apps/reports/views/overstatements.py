@@ -7,7 +7,7 @@ from django.db.models import Prefetch, Q
 from base.exceptions import ReportException
 from base.utils import get_point_type
 from reports import forms
-from reports.utils import local_to_utc_time
+from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.models import UraJob, StandardJobTemplate, StandardPoint
 from users.models import User
@@ -135,7 +135,16 @@ class OverstatementsView(BaseReportView):
                             if overstatement > .0:
                                 stats['total'] += overstatement
                                 row = self.get_new_grouping()
-                                row['period'] = '%s - %s'
+                                row['period'] = '%s - %s' % (
+                                    utc_to_local_time(
+                                        point.enter_date_time.replace(tzinfo=None),
+                                        user.wialon_tz
+                                    ),
+                                    utc_to_local_time(
+                                        point.leave_date_time.replace(tzinfo=None),
+                                        user.wialon_tz
+                                    )
+                                )
                                 row['route_id'] = job.route_id
                                 row['point_name'] = point.title
                                 row['point_type'] = get_point_type(point.title)

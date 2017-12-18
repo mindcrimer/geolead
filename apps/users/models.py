@@ -67,6 +67,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
     )
 
     class Meta:
+        ordering = ('username',)
         verbose_name = _('Профиль пользователя')
         verbose_name_plural = _('Профили пользователей')
 

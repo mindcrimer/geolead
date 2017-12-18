@@ -32,11 +32,16 @@ def cache_geozones():
                 name = route['name'].strip()
                 job_template, created = StandardJobTemplate.objects.get_or_create(
                     wialon_id=str(route['id']),
-                    defaults={'title': name}
+                    defaults={
+                        'title': name,
+                        'user': user
+                    }
                 )
 
-                if not created and job_template.title != name:
-                    job_template.title = name
+                if not created:
+                    if job_template.title != name:
+                        job_template.title = name
+                    job_template.user = user
                     job_template.save()
 
                 print('%s points found' % len(route['points']))

@@ -101,7 +101,7 @@ class StandardPointAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'title')
     list_filter = (
         TotalTimeStandardFilterSpec,
-        ParkingTimeStandardFilterSpec
+        ParkingTimeStandardFilterSpec, 'job_template__user'
     )
     list_select_related = True
     ordering = ('-created',)
@@ -127,7 +127,7 @@ class StandardJobTemplateAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'title')
     list_filter = (
         SpaceOverstatementsStandardNullFilterSpec, PointsTotalTimeStandardFilterSpec,
-        PointsParkingTimeStandardFilterSpec
+        PointsParkingTimeStandardFilterSpec, 'user'
     )
     ordering = ('-created',)
     readonly_fields = ('created', 'updated')

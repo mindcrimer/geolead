@@ -62,6 +62,10 @@ class UraJobPoint(BasicModel, LastModMixin):
 
 
 class StandardJobTemplate(BasicModel, LastModMixin):
+    user = models.ForeignKey(
+        'users.User', blank=True, null=True, verbose_name=_('Пользователь'),
+        related_name='standard_job_templates'
+    )
     wialon_id = models.CharField(_('ID в WIalon'), max_length=64, unique=True)
     title = models.CharField(_('Заголовок'), max_length=255)
     space_overstatements_standard = models.PositiveIntegerField(

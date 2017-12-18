@@ -3,8 +3,9 @@ from django.contrib import admin
 from django.contrib.admin import TabularInline
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import ugettext_lazy as _
+from import_export.admin import ExportMixin
 
-from ura import models
+from ura import models, import_export
 
 
 class NullFilterSpec(SimpleListFilter):
@@ -94,18 +95,18 @@ class StandardPointTabularInline(TabularInline):
 
 
 @admin.register(models.StandardPoint)
-class StandardPointAdmin(admin.ModelAdmin):
+class StandardPointAdmin(ExportMixin, admin.ModelAdmin):
     """Геозоны"""
     fields = models.StandardPoint().collect_fields()
     list_display = ('id', 'title', 'wialon_id', 'job_template', 'created', 'updated')
     list_display_links = ('id', 'title')
     list_filter = (
-        TotalTimeStandardFilterSpec,
-        ParkingTimeStandardFilterSpec, 'job_template__user'
+        TotalTimeStandardFilterSpec, ParkingTimeStandardFilterSpec, 'job_template__user'
     )
     list_select_related = True
     ordering = ('-created',)
     readonly_fields = ('created', 'updated')
+    resource_class = import_export.StandardPointResource
     search_fields = ('=id', '=wialon_id', 'title', 'job_template__title')
 
     def has_add_permission(self, request):

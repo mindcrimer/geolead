@@ -11,28 +11,34 @@ bpython==0.16
 certifi==2017.11.5        # via requests
 chardet==3.0.4            # via requests
 curtsies==0.2.11          # via bpython
+diff-match-patch==20121119  # via django-import-export
 django-appconf==1.0.1     # via django-image-cropping
-django-ckeditor==5.3.1
+django-ckeditor==5.4.0
 django-image-cropping==1.1.0
-django-js-asset==0.1.1    # via django-ckeditor
-django-mptt==0.8.7
+django-import-export==0.6.1
+django-js-asset==0.1.1    # via django-ckeditor, django-mptt
+django-mptt==0.9.0
 django-redis-cache==1.7.1
 django-solo==1.1.2
 django-suit==0.2.25
 django-timezone-field==2.0
-django==1.11.7
+django==1.11.8
 easy-thumbnails==2.5
+et-xmlfile==1.0.1         # via openpyxl
 flake8==3.5.0
 greenlet==0.4.12          # via bpython
 hiredis==0.2.0
 idna==2.6                 # via requests
+jdcal==1.3                # via openpyxl
 jinja2==2.10
 lxml==4.1.1
-markdown==2.6.9
+markdown==2.6.10
 markupsafe==1.0           # via jinja2
-marshmallow==2.14.0
+marshmallow==2.15.0
 mccabe==0.6.1             # via flake8
+odfpy==1.3.6              # via tablib
 olefile==0.44             # via pillow
+openpyxl==2.4.9           # via tablib
 pep8==1.7.1
 pillow==4.3.0
 psycopg2==2.7.3.2
@@ -40,11 +46,14 @@ pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
 pygments==2.2.0           # via bpython
 pytz==2017.3
+pyyaml==3.12              # via tablib
 redis==2.10.6
 requests==2.18.4          # via bpython
-simplejson==3.12.0        # via uwsgitop
+simplejson==3.13.2        # via uwsgitop
 six==1.11.0
+tablib==0.12.1            # via django-import-export
 ujson==1.35
+unicodecsv==0.14.1        # via tablib
 urllib3==1.22             # via requests
 uwsgi==2.0.15
 uwsgitop==0.10

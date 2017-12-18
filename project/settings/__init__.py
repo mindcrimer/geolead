@@ -143,6 +143,7 @@ INSTALLED_APPS = (
     'solo',
     'easy_thumbnails',
     'image_cropping',
+    'import_export',
     # базовые компоненты проекта (переопределяет контрибы веб-студии)
     'snippets.general',
     'snippets.seo',

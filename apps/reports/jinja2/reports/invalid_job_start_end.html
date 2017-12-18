@@ -10,13 +10,16 @@
 
 
 {%- block REPORT_HEAD_RIGHT %}
-	<div class="report__heading-row uk-margin">
-		Список случаев несоответствий выездов*
-	</div>
+	{%- if report_data.get('start') -%}
+		<div class="report__heading-row uk-margin">
+			Список случаев несоответствий выездов*
+		</div>
+	{%- endif -%}
 {%- endblock -%}
 
 
 {%- block REPORT_TABLE -%}
+{%- if report_data.get('start') -%}
 <div class="table-wrap">
 	<table class="report-table">
 		<thead>
@@ -31,15 +34,24 @@
 
 		</thead>
 
-		{%- for row in report_data.get('start').values() -%}
+		{%- for row in report_data.get('start') -%}
 			<tbody>
-
+				<tr>
+					<td>{{ row['car_number'] }}</td>
+					<td>{{ row['driver_fio'] }}</td>
+					<td>{{ row['job_date_start']|date('d.m.Y H:i:s') }}</td>
+					<td>{{ row['route_id'] }}</td>
+					<td>{{ row['route_fact_start'] }}</td>
+					<td>{{ row['fact_start'] }}</td>
+				</tr>
 			</tbody>
 		{%- endfor -%}
 	</table>
 </div>
+{%- endif -%}
 
-<div class="report__heading-row uk-margin">
+{%- if report_data.get('end') -%}
+<div class="report__heading-row uk-margin" style="text-align:right">
 	Список случаев несоответствий заездов
 </div>
 
@@ -56,13 +68,21 @@
 			</tr>
 		</thead>
 
-		{%- for row in report_data.get('end').values() -%}
+		{%- for row in report_data.get('end') -%}
 			<tbody>
-
+			<tr>
+				<td>{{ row['car_number'] }}</td>
+				<td>{{ row['driver_fio'] }}</td>
+				<td>{{ row['job_date_end']|date('d.m.Y H:i:s') }}</td>
+				<td>{{ row['route_id'] }}</td>
+				<td>{{ row['fact_end']|date('d.m.Y H:i:s') }}</td>
+				<td class="tright">{{ row['delta'] }}</td>
+			</tr>
 			</tbody>
 		{%- endfor -%}
 	</table>
 </div>
+{%- endif -%}
 {%- endblock -%}
 
 

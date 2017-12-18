@@ -55,7 +55,9 @@ class UserAdmin(UserAdmin):
     list_editable = ('is_active', 'supervisor')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     readonly_fields = ('last_login', 'date_joined', 'wialon_token', 'created', 'updated')
-    search_fields = ('=id', 'username', 'email', 'wialon_token', 'organization_name')
+    search_fields = (
+        '=id', 'username', 'email', 'wialon_token', 'organization_name', 'wialon_username'
+    )
     suit_form_tabs = (
         ('general', _('Общее')),
         ('permission', _('Права')),

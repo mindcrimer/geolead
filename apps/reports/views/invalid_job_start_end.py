@@ -89,7 +89,7 @@ class InvalidJobStartEndView(BaseReportView):
                         list(filter(lambda x: 'база' in x['name'].lower(), route_points))
                     ) > 0
 
-                    points = list(job.points.all())
+                    points = list(job.points.order_by('id'))
 
                     if not points:
                         # кэша нет, пропускаем
@@ -133,7 +133,9 @@ class InvalidJobStartEndView(BaseReportView):
                     row = self.get_new_end_grouping()
                     row['car_number'] = get_car_number(job.unit_id, units_dict)
                     row['driver_fio'] = job.driver_fio.strip()
-                    row['job_date_end'] = job.date_end
+                    row['job_date_end'] = utc_to_local_time(
+                        job.date_end.replace(tzinfo=None), user.wialon_tz
+                    )
                     row['route_id'] = str(job.route_id)
                     row['fact_end'] = utc_to_local_time(
                         end_point.enter_date_time.replace(tzinfo=None), user.wialon_tz

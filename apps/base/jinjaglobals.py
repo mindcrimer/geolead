@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
-
-from snippets.template_backends.jinja2 import jinjaglobal, jinjafilter
-
-
-@jinjaglobal
-def discus_account():
-    return settings.DISCUS_ACCOUNT
+from snippets.template_backends.jinja2 import jinjafilter
 
 
 @jinjafilter

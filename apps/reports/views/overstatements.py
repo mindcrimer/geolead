@@ -7,6 +7,7 @@ from django.db.models import Prefetch, Q
 from base.exceptions import ReportException
 from base.utils import get_point_type
 from reports import forms
+from reports.jinjaglobals import date
 from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.models import UraJob, StandardJobTemplate, StandardPoint
@@ -115,7 +116,7 @@ class OverstatementsView(BaseReportView):
                             spaces_total_time += point.total_time
 
                         else:
-                            point_standard = standard.get(point.title)
+                            point_standard = standard['points'].get(point.title)
                             if not point_standard:
                                 continue
 
@@ -133,17 +134,17 @@ class OverstatementsView(BaseReportView):
                                                  - point_standard['parking_time_standard']
 
                             if overstatement > .0:
-                                stats['total'] += overstatement
+                                stats['total'] += overstatement / 60.0
                                 row = self.get_new_grouping()
                                 row['period'] = '%s - %s' % (
-                                    utc_to_local_time(
+                                    date(utc_to_local_time(
                                         point.enter_date_time.replace(tzinfo=None),
                                         user.wialon_tz
-                                    ),
-                                    utc_to_local_time(
+                                    ), 'd.m.Y H:i:s'),
+                                    date(utc_to_local_time(
                                         point.leave_date_time.replace(tzinfo=None),
                                         user.wialon_tz
-                                    )
+                                    ), 'd.m.Y H:i:s')
                                 )
                                 row['route_id'] = job.route_id
                                 row['point_name'] = point.title
@@ -171,6 +172,9 @@ class OverstatementsView(BaseReportView):
 
                         report_data.append(row)
                         stats['total'] += row['overstatement']
+
+        if stats['total']:
+            stats['total'] = round(stats['total'], 2)
 
         kwargs.update(
             stats=stats,

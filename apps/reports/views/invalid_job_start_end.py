@@ -135,7 +135,7 @@ class InvalidJobStartEndView(BaseReportView):
                     row['driver_fio'] = job.driver_fio.strip()
                     row['job_date_end'] = job.date_end
                     row['route_id'] = str(job.route_id)
-                    row['fact_end'] = local_to_utc_time(end_point.enter_date_time, user.wialon_tz)
+                    row['fact_end'] = utc_to_local_time(end_point.enter_date_time, user.wialon_tz)
                     row['delta'] = round(delta / 60.0, 2)
 
                     report_data['end'].append(row)

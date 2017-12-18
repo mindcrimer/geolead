@@ -138,6 +138,8 @@ class InvalidJobStartEndView(BaseReportView):
                     row['fact_end'] = end_point.enter_date_time
                     row['delta'] = round(delta / 60.0, 2)
 
+                    report_data['end'].append(row)
+
         kwargs.update(
             stats=stats,
             report_data=report_data

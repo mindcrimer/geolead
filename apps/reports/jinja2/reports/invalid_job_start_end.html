@@ -28,6 +28,7 @@
 				<td>ФИО водителя</td>
 				<td>Время начала смены из путевого листа</td>
 				<td>№ шаблона задания</td>
+				<td>Название шаблона задания</td>
 				<td>Фактическое место/геозона (в рамках шаблона задания) на начало смены</td>
 				<td>Фактическое место/геозона на начало смены</td>
 			</tr>
@@ -41,6 +42,7 @@
 					<td>{{ row['driver_fio'] }}</td>
 					<td>{{ row['job_date_start']|date('d.m.Y H:i:s') }}</td>
 					<td>{{ row['route_id'] }}</td>
+					<td>{{ row['route_title'] }}</td>
 					<td>{{ row['route_fact_start'] }}</td>
 					<td>{{ row['fact_start'] }}</td>
 				</tr>
@@ -63,6 +65,7 @@
 				<td>ФИО водителя</td>
 				<td>Время окончания смены из путевого листа</td>
 				<td>№ шаблона задания</td>
+				<td>Название шаблона задания</td>
 				<td>Время фактического прибытия</td>
 				<td>**Отклонение, ч</td>
 			</tr>
@@ -75,6 +78,7 @@
 				<td>{{ row['driver_fio'] }}</td>
 				<td>{{ row['job_date_end']|date('d.m.Y H:i:s') }}</td>
 				<td>{{ row['route_id'] }}</td>
+				<td>{{ row['route_title'] }}</td>
 				<td>{{ row['fact_end']|date('d.m.Y H:i:s') }}</td>
 				<td class="tright">{{ row['delta'] }}</td>
 			</tr>

@@ -58,7 +58,7 @@ def send_trigger_email(event, obj=None, fields=None, emails=None, from_email=Non
     @
     """
     if emails is None:
-        emails = get_admin_emails(language=language)
+        emails = [x[1] for x in settings.ADMINS]
 
     if from_email is None:
         from_email = get_default_from_email()

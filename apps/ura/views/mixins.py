@@ -3,7 +3,7 @@ import datetime
 from collections import OrderedDict
 
 from base.exceptions import ReportException, APIProcessError
-from base.utils import get_distance
+from base.utils import get_distance, get_point_type
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
     get_wialon_report_template_id, local_to_utc_time
 from ura.lib.resources import URAResource
@@ -305,13 +305,13 @@ class BaseUraRidesView(URAResource):
         """Обновляем кэш пройденных точек"""
         self.job.points.all().delete()
         for point in self.ride_points:
-            time_in = local_to_utc_time(point['time_in'], self.request.user.ura_tz)
-            time_out = local_to_utc_time(point['time_out'], self.request.user.ura_tz)
+            time_in = point['time_in']
+            time_out = point['time_out']
 
             jp = UraJobPoint(
                 job=self.job,
                 title=point['name'],
-                point_type=self.get_point_type(point['name']),
+                point_type=get_point_type(point['name']),
                 enter_date_time=time_in,
                 leave_date_time=time_out,
                 total_time=(time_out - time_in).seconds,
@@ -322,31 +322,6 @@ class BaseUraRidesView(URAResource):
 
             jp.save()
 
-    @staticmethod
-    def get_point_type(geozone_name):
-        name = geozone_name.lower()
-        point_type = 0
-
-        if 'база' in name:
-            point_type = 1
-
-        if 'разгрузка' in name:
-            point_type = 2
-
-        if 'заправка' in name:
-            point_type = 3
-
-        if 'маршрут' in name:
-            point_type = 4
-
-        if 'погрузка' in name:
-            point_type = 6
-
-        if 'весы' in name:
-            point_type = 7
-
-        return point_type
-
     def add_new_point(self, message, prev_message, geozone):
         fuel_level = round(self.get_fuel_level(message), 2)
 
@@ -354,7 +329,7 @@ class BaseUraRidesView(URAResource):
             'name': geozone['name'],
             'time_in': geozone['time_in'],
             'time_out': geozone['time_out'],
-            'type': self.get_point_type(geozone['name']),
+            'type': get_point_type(geozone['name']),
             'params': OrderedDict((
                 ('startFuelLevel', fuel_level),
                 ('endFuelLevel', .0),

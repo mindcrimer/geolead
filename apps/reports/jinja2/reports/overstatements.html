@@ -37,9 +37,17 @@
 
 		</thead>
 
-		{%- for row in report_data.values() -%}
+		{%- for row in report_data -%}
 			<tbody>
-
+				<tr>
+					<td>{{ row['period'] }}</td>
+					<td>{{ row['route_id'] }}</td>
+					<td>{{ row['point_name'] }}</td>
+					<td>{{ row['point_type'] }}</td>
+					<td>{{ row['car_number'] }}</td>
+					<td>{{ row['driver_fio'] }}</td>
+					<td>{{ row['overstatement'] }}</td>
+				</tr>
 			</tbody>
 		{%- endfor -%}
 	</table>

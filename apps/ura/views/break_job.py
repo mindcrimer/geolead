@@ -3,7 +3,7 @@ from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
-from ura.utils import parse_datetime, parse_xml_input_data, log_job_request
+from ura.utils import parse_datetime, parse_xml_input_data
 
 
 class URABreakJobsResource(URAResource):
@@ -30,20 +30,19 @@ class URABreakJobsResource(URAResource):
                     return error_response('Не указан параметр idJob', code='idJob_not_found')
 
                 if data['date_end'] <= data['date_begin']:
-                    self.model.objects.filter(id=job_id).delete()
+                    self.model.objects.filter(pk=job_id).delete()
                 else:
                     try:
-                        job = self.model.objects.get(id=job_id)
+                        self.job = self.model.objects.get(pk=job_id)
                     except self.model.DoesNotExist:
                         return error_response(
                             'Задание с ID=%s не найдено' % job_id, code='job_not_found'
                         )
 
                     for k, v in data.iems():
-                        setattr(job, k, v)
-                        job.save()
-                    jobs.append(job)
-                    log_job_request(self.job, str(request.body))
+                        setattr(self.job, k, v)
+                        self.job.save()
+                    jobs.append(self.job)
 
         context = self.get_context_data(**kwargs)
         context.update({

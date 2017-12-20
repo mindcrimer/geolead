@@ -3,7 +3,6 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from snippets.models import LastModMixin, BasicModel
-from ura.enums import JobExecutionStatusEnum
 
 
 class UraJob(BasicModel, LastModMixin):
@@ -19,12 +18,6 @@ class UraJob(BasicModel, LastModMixin):
     return_time = models.DateTimeField(_('Дата/время return'), blank=True, null=True)
     leave_time = models.DateTimeField(_('Дата/время leave'), blank=True, null=True)
 
-    execution_status = models.CharField(
-        _('Статус прохождения (актуальности)'), max_length=50,
-        choices=JobExecutionStatusEnum.get_choices(),
-        default=JobExecutionStatusEnum.default
-    )
-
     class Meta:
         verbose_name = _('Путевой лист')
         verbose_name_plural = _('Путевые листы')
@@ -32,12 +25,19 @@ class UraJob(BasicModel, LastModMixin):
 
 class UraJobLog(BasicModel, LastModMixin):
     """Журнал изменения и запроса данных по путевым листам"""
-    job = models.ForeignKey('UraJob', verbose_name=_('Путевой лист'), related_name='log')
-    request = models.TextField(_('Запрос'))
+    job = models.ForeignKey(
+        'UraJob', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
+    )
+    request = models.TextField(_('Запрос'), blank=True, null=True)
+    response = models.TextField(_('Ответ'), blank=True, null=True)
+    response_status = models.PositiveSmallIntegerField(_('Статус ответа'), blank=True, null=True)
 
     class Meta:
         verbose_name = _('Запись лога путевого листа')
         verbose_name_plural = _('Лог путевого листа')
+
+    def __str__(self):
+        return '%s (%s)' % (self.pk, self.response_status)
 
 
 class UraJobPoint(BasicModel, LastModMixin):
@@ -59,6 +59,9 @@ class UraJobPoint(BasicModel, LastModMixin):
     class Meta:
         verbose_name = _('Геозона путевого листа')
         verbose_name_plural = _('Геозоны путевого листа')
+
+    def __str__(self):
+        return str(self.pk)
 
 
 class StandardJobTemplate(BasicModel, LastModMixin):

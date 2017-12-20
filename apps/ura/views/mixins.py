@@ -133,7 +133,10 @@ class BaseUraRidesView(URAResource):
         ))
 
         if not fuel_level_conf:
-            raise WialonException('Нет данных о настройках датчика уровня топлива')
+            raise APIProcessError(
+                'Нет данных о настройках датчика уровня топлива (%s)' %
+                self.unit_settings.get('nm', '')
+            )
 
         def get_calibration_table_sort_key(item):
             return item['x']

@@ -17,6 +17,7 @@ from base.exceptions import APIParseError, AuthenticationFailed, APIValidationEr
 from snippets.utils.email import send_trigger_email
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
+from ura.models import UraJobLog
 from ura.utils import get_organization_user
 from wialon.exceptions import WialonException
 
@@ -28,11 +29,14 @@ class URAResource(TemplateView):
     content_type = 'application/json'
     http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
 
+    def __init__(self, *args, **kwargs):
+        super(URAResource, self).__init__(*args, **kwargs)
+        self.job = None
+
     def pre_view_trigger(self, request, **kwargs):
         pass
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch_method(self, request, *args, **kwargs):
         method = request.method.lower()
         if method in self.http_method_names:
             handler = getattr(self, method, self.http_method_not_allowed)
@@ -83,10 +87,11 @@ class URAResource(TemplateView):
                     status=400,
                     code='source_data_invalid'
                 )
-        except Exception:
+        except Exception as e:
             send_trigger_email(
                 'Ошибка в работе интеграции WIalon', extra_data={
-                    'POST': request.body
+                    'POST': request.body,
+                    'Exception': str(e)
                 }
             )
 
@@ -136,10 +141,11 @@ class URAResource(TemplateView):
                     )
                 raise
 
-            except Exception:
+            except Exception as e:
                 send_trigger_email(
                     'Ошибка в работе интеграции WIalon', extra_data={
-                        'POST': request.body
+                        'POST': request.body,
+                        'Exception': str(e)
                     }
                 )
 
@@ -155,6 +161,17 @@ class URAResource(TemplateView):
             status=400,
             code='attempts_limit'
         )
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        response = self.dispatch_method(request, *args, **kwargs)
+        UraJobLog.objects.create(
+            job=self.job,
+            request=self.request.body.decode('cp1251'),
+            response=response.rendered_content,
+            response_status=response.status_code
+        )
+        return response
 
     def authenticate(self, request):
         username, password = extract_token_from_request(request)
@@ -186,7 +203,7 @@ class URAResource(TemplateView):
         try:
             return etree.parse(BytesIO(request.body))
 
-        except ParseError as e:
+        except ParseError:
             raise APIParseError(
                 _('Отправлены неправильные данные'), code='invalid_request_body_received'
             )

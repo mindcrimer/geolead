@@ -7,7 +7,6 @@ from reports.utils import utc_to_local_time, parse_wialon_report_datetime
 from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.response import XMLResponse, error_response
-from ura.utils import log_job_request
 from ura.views.mixins import BaseUraRidesView
 
 
@@ -189,7 +188,6 @@ class URAMovingResource(BaseUraRidesView):
                 'Задача c unit_id=%s не найдена' % self.input_data['unit_id'], code='job_not_found'
             )
 
-        log_job_request(self.job, str(self.request.body))
         return self.job
 
     def post(self, request, **kwargs):

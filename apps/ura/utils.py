@@ -53,7 +53,3 @@ def parse_xml_input_data(request, mapping, element, preserve_tzinfo=False):
             )
 
     return data
-
-
-def log_job_request(job, xml_data):
-    UraJobLog.objects.create(job=job, request=xml_data)

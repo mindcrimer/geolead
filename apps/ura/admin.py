@@ -55,28 +55,38 @@ class ParkingTimeStandardFilterSpec(NullFilterSpec):
     parameter_name = 'parking_time_standard'
 
 
-class UraJobLogTabularInline(admin.TabularInline):
-    extra = 0
+@admin.register(models.UraJobLog)
+class UraJobLogAdmin(admin.ModelAdmin):
+    """Лог путевых листов"""
+    date_hierarchy = 'created'
     fields = models.UraJobLog().collect_fields()
-    model = models.UraJobLog
-    ordering = ('-created',)
-    readonly_fields = ('created', 'updated')
+    list_display = ('id', 'job_id', 'response_status', 'created')
+    list_display_links = ('id', 'job_id')
+    list_filter = ('response_status',)
+    readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
+    search_fields = ('=id', '=job__id', 'request', 'response', 'response_status')
 
     def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 
 @admin.register(models.UraJob)
 class UraJobAdmin(admin.ModelAdmin):
     """Заявки"""
+    date_hierarchy = 'date_begin'
     fields = models.UraJob().collect_fields()
-    inlines = (UraJobLogTabularInline,)
     list_display = ('id', 'name', 'driver_fio', 'date_begin', 'date_end')
     list_display_links = ('id', 'name')
-    readonly_fields = ('created', 'updated', 'execution_status')
+    readonly_fields = ('created', 'updated')
     search_fields = ('=id', 'name', 'unit_id', 'route_id', 'driver_id', 'driver_fio')
 
     def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 

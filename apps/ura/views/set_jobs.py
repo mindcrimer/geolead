@@ -3,7 +3,7 @@ from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
-from ura.utils import parse_xml_input_data, parse_datetime, log_job_request
+from ura.utils import parse_xml_input_data, parse_datetime
 
 
 class URASetJobsResource(URAResource):
@@ -33,9 +33,8 @@ class URASetJobsResource(URAResource):
                 if not name:
                     return error_response('Не указан параметр jobName', code='jobName_not_found')
 
-                job = self.model.objects.create(**data)
-                jobs.append(job)
-                log_job_request(job, str(request.body))
+                self.job = self.model.objects.create(**data)
+                jobs.append(self.job)
 
         context = self.get_context_data(**kwargs)
         context.update({

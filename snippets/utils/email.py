@@ -51,7 +51,7 @@ def send_email(template, emails, subject, params=None,  extra_headers=None, from
 
 
 def send_trigger_email(event, obj=None, fields=None, emails=None, from_email=None,
-                       extra_data=None, extra_headers=None, language=settings.DEFAULT_LANGUAGE):
+                       extra_data=None, extra_headers=None):
     """
     Отправка триггерного сообщения при новом событии:
     @:param obj - объект события
@@ -61,7 +61,7 @@ def send_trigger_email(event, obj=None, fields=None, emails=None, from_email=Non
         emails = [x[1] for x in settings.ADMINS]
 
     if from_email is None:
-        from_email = get_default_from_email()
+        from_email = get_default_from_email(force_system=True)
 
     if event is None:
         if obj:

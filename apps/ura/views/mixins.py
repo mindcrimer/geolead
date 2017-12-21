@@ -157,7 +157,7 @@ class BaseUraRidesView(URAResource):
         )
 
         # получаем название ДУТ
-        self.fuel_level_name = fuel_level_conf['p']
+        self.fuel_level_name = fuel_level_conf['p'].split('*')[0]
 
         return self.unit_settings
 

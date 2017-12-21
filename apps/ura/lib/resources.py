@@ -65,7 +65,11 @@ class URAResource(TemplateView):
 
             except AuthenticationFailed as e:
                 # обновлять токен не имеет смысла, он неправильный. Просим войти заново.
-                return error_response(str(e), status=403, code=getattr(e, 'code', None))
+                return error_response(
+                    str(e),
+                    status=403,
+                    code=getattr(e, 'code', None)
+                )
 
         try:
             self.pre_view_trigger(request, **kwargs)
@@ -79,7 +83,7 @@ class URAResource(TemplateView):
             if not settings.DEBUG:
                 try:
                     send_trigger_email(
-                        'Ошибка в работе интеграции WIalon', extra_data={
+                        'Ошибка в работе интеграции Wialon', extra_data={
                             'POST': request.body,
                             'Exception': str(e),
                             'Traceback': traceback.format_exc()
@@ -99,7 +103,7 @@ class URAResource(TemplateView):
         except Exception as e:
             try:
                 send_trigger_email(
-                    'Ошибка в работе интеграции WIalon', extra_data={
+                    'Ошибка в работе интеграции Wialon', extra_data={
                         'POST': request.body,
                         'Exception': str(e),
                         'Traceback': traceback.format_exc()
@@ -142,7 +146,7 @@ class URAResource(TemplateView):
                 if not settings.DEBUG:
                     try:
                         send_trigger_email(
-                            'Ошибка в работе интеграции WIalon', extra_data={
+                            'Ошибка в работе интеграции Wialon', extra_data={
                                 'POST': request.body,
                                 'Exception': str(e),
                                 'Traceback': traceback.format_exc()
@@ -162,7 +166,7 @@ class URAResource(TemplateView):
             except Exception as e:
                 try:
                     send_trigger_email(
-                        'Ошибка в работе интеграции WIalon', extra_data={
+                        'Ошибка в работе интеграции Wialon', extra_data={
                             'POST': request.body,
                             'Exception': str(e),
                             'Traceback': traceback.format_exc()
@@ -228,7 +232,7 @@ class URAResource(TemplateView):
 
         except ParseError:
             raise APIParseError(
-                _('Отправлены неправильные данные'), code='invalid_request_body_received'
+                _('Отправлены неправильные данные XML'), code='invalid_request_body_received'
             )
 
     def get_context_data(self, **kwargs):

@@ -86,7 +86,10 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
         if isinstance(dt_to, str):
             dt_to = local_to_utc_time(parse_wialon_report_datetime(dt_to), timezone)
     except ValueError:
-        raise ReportException('Ошибка получения данных. Повторите запрос.')
+        raise ReportException(
+            'Не удалось найти путевой лист для получения ФИО водителя. '
+            'Период: %s - %s, Название ТС: %s' % (dt_from, dt_to, unit_key)
+        )
 
     unit_ids = tuple(filter(lambda x: x['name'] == unit_key, units_list))
     if not unit_ids:
@@ -195,29 +198,36 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
         sess_id = get_wialon_session_key(user)
 
     if report_resource_id is None:
+        error = 'не выявлено'
         try:
             report_resource_id = get_wialon_report_resource_id(user)
-        except WialonException:
-            report_resource_id = None
+        except WialonException as e:
+            error = e
 
         if not report_resource_id:
             raise ReportException(
                 'Не удалось получить ID ресурса для пользователя %s '
-                '(наименование ресурса: %s' % (str(user), user.wialon_resource_name)
+                '(наименование ресурса: %s). Ошибка: %s' % (
+                    str(user),
+                    user.wialon_resource_name,
+                    error
+                )
             )
 
     if object_id is None:
+        error = 'не выявлено'
         try:
             object_id = get_wialon_report_object_id(user)
-        except WialonException:
-            object_id = None
+        except WialonException as e:
+            error = e
 
         if not object_id:
             raise ReportException(
                 'Не удалось получить ID группового объекта для пользователя %s '
-                '(наименование группового объекта: %s' % (
+                '(наименование группового объекта: %s). Ошибка: %s' % (
                     str(user),
-                    user.wialon_group_object_name
+                    user.wialon_group_object_name,
+                    error
                 )
             )
 
@@ -242,7 +252,7 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     result = r.json()
 
     if 'error' in result:
-        raise ReportException(WIALON_INTERNAL_EXCEPTION)
+        raise ReportException(WIALON_INTERNAL_EXCEPTION % result)
 
     return result
 
@@ -270,6 +280,6 @@ def get_report_rows(user, table_index, rows, level=0, sess_id=None):
     ).json()
 
     if 'error' in rows:
-        raise ReportException(WIALON_INTERNAL_EXCEPTION)
+        raise ReportException(WIALON_INTERNAL_EXCEPTION % rows)
 
     return rows

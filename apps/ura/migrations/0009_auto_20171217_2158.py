@@ -32,12 +32,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='standardjobtemplate',
             name='wialon_id',
-            field=models.CharField(max_length=64, unique=True, verbose_name='ID в WIalon'),
+            field=models.CharField(max_length=64, unique=True, verbose_name='ID в Wialon'),
         ),
         migrations.AlterField(
             model_name='standardpoint',
             name='wialon_id',
-            field=models.CharField(max_length=64, verbose_name='ID в WIalon'),
+            field=models.CharField(max_length=64, verbose_name='ID в Wialon'),
         ),
         migrations.RemoveField(
             model_name='standardpoint',

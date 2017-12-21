@@ -40,6 +40,7 @@ def login_wialon_via_token(user, token, attempt=0):
     try:
         sess_id = res['eid']
     except (KeyError, IndexError):
+        print('Новая попытка входа после неудачи. Пользователь: %s' % user)
         # неудачный вход. Сбиваем токен и пробуем получить новый токен, после чего повторяем вход
         user.wialon_token = None
         token = get_user_wialon_token(user)
@@ -47,7 +48,8 @@ def login_wialon_via_token(user, token, attempt=0):
             return login_wialon_via_token(user, token, attempt=attempt + 1)
 
         raise APIProcessError(
-            'Невозможно открыть сессию в Wialon. Возможно, пароль пользователя недействителен.',
+            'Невозможно открыть сессию в Wialon. Возможно, пароль пользователя недействителен. '
+            'Пользователь: %s' % user,
             code='password_invalid'
         )
 

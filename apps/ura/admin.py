@@ -60,7 +60,7 @@ class UraJobLogAdmin(admin.ModelAdmin):
     """Лог путевых листов"""
     date_hierarchy = 'created'
     fields = models.UraJobLog().collect_fields()
-    list_display = ('id', 'job_id', 'response_status', 'created')
+    list_display = ('id', 'job_id', 'user', 'response_status', 'created')
     list_display_links = ('id', 'job_id')
     list_filter = ('response_status', 'user')
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')

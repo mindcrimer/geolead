@@ -5,7 +5,7 @@ from collections import OrderedDict
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
-    get_wialon_report_template_id, local_to_utc_time
+    get_wialon_report_template_id
 from ura import FUEL_SENSOR_PREFIXES
 from ura.lib.resources import URAResource
 from ura.models import UraJobPoint
@@ -102,8 +102,10 @@ class BaseUraRidesView(URAResource):
                 object_id=self.unit_id,
                 sess_id=self.sess_id
             )
-        except ReportException:
-            raise WialonException('Не удалось получить в Wialon отчет о поездках')
+        except ReportException as e:
+            raise WialonException(
+                'Не удалось получить в Wialon отчет о поездках. Исходная ошибка: %s' % e
+            )
 
         for table_index, table_info in enumerate(r['reportResult']['tables']):
             if table_info['name'] not in self.report_data:
@@ -120,8 +122,10 @@ class BaseUraRidesView(URAResource):
 
                 self.report_data[table_info['name']] = rows
 
-            except ReportException:
-                raise WialonException('Не удалось получить в Wialon отчет о поездках')
+            except ReportException as e:
+                raise WialonException(
+                    'Не удалось получить в Wialon отчет о поездках. Исходная ошибка: %s' % e
+                )
 
     def get_object_settings(self):
         # получаем настройки объекта (машины)
@@ -137,7 +141,7 @@ class BaseUraRidesView(URAResource):
 
         if not fuel_level_conf:
             raise APIProcessError(
-                'Нет данных о настройках датчика уровня топлива (%s)' %
+                'Нет данных о настройках датчика уровня топлива для объекта %s' %
                 self.unit_settings.get('nm', '')
             )
 

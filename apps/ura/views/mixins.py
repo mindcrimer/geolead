@@ -243,7 +243,7 @@ class BaseUraRidesView(URAResource):
 
     def get_fuel_level(self, message):
         return get_fuel_level(
-            self.calibration_table, message['p'][self.fuel_level_name]
+            self.calibration_table, message['p'].get(self.fuel_level_name, 0)
         )
 
     def start_timer(self):

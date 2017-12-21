@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from snippets.models import LastModMixin, BasicModel
+from ura.enums import UraJobLogResolution
 
 
 class UraJob(BasicModel, LastModMixin):
@@ -28,12 +29,18 @@ class UraJobLog(BasicModel, LastModMixin):
     job = models.ForeignKey(
         'UraJob', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
     )
+    url = models.CharField(_('URL'), max_length=255, blank=True, null=True)
+
     request = models.TextField(_('Запрос'), blank=True, null=True)
     user = models.ForeignKey(
         'users.User', verbose_name=_('Пользователь'), blank=True, null=True, related_name='logs'
     )
     response = models.TextField(_('Ответ'), blank=True, null=True)
     response_status = models.PositiveSmallIntegerField(_('Статус ответа'), blank=True, null=True)
+    resolution = models.SmallIntegerField(
+        _('Резолюция ошибки'), choices=UraJobLogResolution.get_choices(),
+        default=UraJobLogResolution.default, null=True
+    )
 
     class Meta:
         verbose_name = _('Запись лога путевого листа')

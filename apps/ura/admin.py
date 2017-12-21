@@ -60,11 +60,11 @@ class UraJobLogAdmin(admin.ModelAdmin):
     """Лог путевых листов"""
     date_hierarchy = 'created'
     fields = models.UraJobLog().collect_fields()
-    list_display = ('id', 'job_id', 'user', 'response_status', 'created')
+    list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')
     list_display_links = ('id', 'job_id')
-    list_filter = ('response_status', 'user')
+    list_filter = ('response_status', 'user', 'resolution')
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
-    search_fields = ('=id', '=job__id', 'request', 'response', 'response_status')
+    search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')
 
     def has_add_permission(self, request):
         return False

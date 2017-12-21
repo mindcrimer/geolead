@@ -191,10 +191,13 @@ class URAResource(TemplateView):
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         response = self.dispatch_method(request, *args, **kwargs)
+        user = request.user if request.user.is_authenticated() else None
+
         UraJobLog.objects.create(
             job=self.job,
+            url=self.request.path_info,
             request=self.request.body.decode('cp1251'),
-            user=request.user,
+            user=user,
             response=response.rendered_content,
             response_status=response.status_code
         )

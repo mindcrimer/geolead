@@ -62,7 +62,7 @@ class UraJobLogAdmin(admin.ModelAdmin):
     fields = models.UraJobLog().collect_fields()
     list_display = ('id', 'job_id', 'response_status', 'created')
     list_display_links = ('id', 'job_id')
-    list_filter = ('response_status',)
+    list_filter = ('response_status', 'user')
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
     search_fields = ('=id', '=job__id', 'request', 'response', 'response_status')
 

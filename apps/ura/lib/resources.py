@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import traceback
+from smtplib import SMTPException
 from time import sleep
 
 from django.conf import settings
@@ -73,13 +75,18 @@ class URAResource(TemplateView):
                 status=e.http_status if e.http_status else None,
                 code=e.code
             )
-        except (ValueError, IndexError, KeyError, AttributeError, TypeError):
+        except (ValueError, IndexError, KeyError, AttributeError, TypeError) as e:
             if not settings.DEBUG:
-                send_trigger_email(
-                    'Ошибка в работе интеграции WIalon', extra_data={
-                        'POST': request.body
-                    }
-                )
+                try:
+                    send_trigger_email(
+                        'Ошибка в работе интеграции WIalon', extra_data={
+                            'POST': request.body,
+                            'Exception': str(e),
+                            'Traceback': traceback.format_exc()
+                        }
+                    )
+                except (ConnectionError, SMTPException):
+                    pass
 
                 return error_response(
                     'Ошибка входящих данных из источника данных. '
@@ -87,13 +94,19 @@ class URAResource(TemplateView):
                     status=400,
                     code='source_data_invalid'
                 )
+            raise
+
         except Exception as e:
-            send_trigger_email(
-                'Ошибка в работе интеграции WIalon', extra_data={
-                    'POST': request.body,
-                    'Exception': str(e)
-                }
-            )
+            try:
+                send_trigger_email(
+                    'Ошибка в работе интеграции WIalon', extra_data={
+                        'POST': request.body,
+                        'Exception': str(e),
+                        'Traceback': traceback.format_exc()
+                    }
+                )
+            except (ConnectionError, SMTPException):
+                pass
 
             return error_response(
                 'Внутренняя ошибка сервера',
@@ -125,13 +138,18 @@ class URAResource(TemplateView):
                 # после каждого падения Виалона ждет 5 секунд и повторяем попытку
                 sleep(.5)
 
-            except (ValueError, IndexError, KeyError, AttributeError, TypeError):
+            except (ValueError, IndexError, KeyError, AttributeError, TypeError) as e:
                 if not settings.DEBUG:
-                    send_trigger_email(
-                        'Ошибка в работе интеграции WIalon', extra_data={
-                            'POST': request.body
-                        }
-                    )
+                    try:
+                        send_trigger_email(
+                            'Ошибка в работе интеграции WIalon', extra_data={
+                                'POST': request.body,
+                                'Exception': str(e),
+                                'Traceback': traceback.format_exc()
+                            }
+                        )
+                    except (ConnectionError, SMTPException):
+                        pass
 
                     return error_response(
                         'Ошибка входящих данных из источника данных. '
@@ -142,12 +160,16 @@ class URAResource(TemplateView):
                 raise
 
             except Exception as e:
-                send_trigger_email(
-                    'Ошибка в работе интеграции WIalon', extra_data={
-                        'POST': request.body,
-                        'Exception': str(e)
-                    }
-                )
+                try:
+                    send_trigger_email(
+                        'Ошибка в работе интеграции WIalon', extra_data={
+                            'POST': request.body,
+                            'Exception': str(e),
+                            'Traceback': traceback.format_exc()
+                        }
+                    )
+                except (ConnectionError, SMTPException):
+                    pass
 
                 return error_response(
                     'Внутренняя ошибка сервера',

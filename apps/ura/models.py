@@ -29,6 +29,9 @@ class UraJobLog(BasicModel, LastModMixin):
         'UraJob', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
     )
     request = models.TextField(_('Запрос'), blank=True, null=True)
+    user = models.ForeignKey(
+        'users.User', verbose_name=_('Пользователь'), blank=True, null=True, related_name='logs'
+    )
     response = models.TextField(_('Ответ'), blank=True, null=True)
     response_status = models.PositiveSmallIntegerField(_('Статус ответа'), blank=True, null=True)
 

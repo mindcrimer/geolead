@@ -6,6 +6,7 @@ from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
     get_wialon_report_template_id, local_to_utc_time
+from ura import FUEL_SENSOR_PREFIXES
 from ura.lib.resources import URAResource
 from ura.models import UraJobPoint
 from ura.utils import parse_datetime, parse_xml_input_data
@@ -128,7 +129,9 @@ class BaseUraRidesView(URAResource):
 
         # получаем настройки ДУТ
         fuel_level_conf = list(filter(
-            lambda x: x['p'].startswith('rs485_'),
+            lambda x: any(
+                [x['p'].startswith(f) for f in FUEL_SENSOR_PREFIXES]
+            ),
             self.unit_settings['sens'].values()
         ))
 

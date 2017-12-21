@@ -7,6 +7,7 @@ from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_period, get_drivers_fio, utc_to_local_time, geocode
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from ura import FUEL_SENSOR_PREFIXES
 from users.models import User
 from wialon.api import get_messages, get_units
 from wialon.exceptions import WialonException
@@ -121,14 +122,14 @@ class MalfunctionsView(BaseReportView):
                             report_row['malfunctions'].append('неисправность Глонасс модуля')
 
                         fuel_levels = tuple(filter(
-                            lambda x: x[0].startswith('rs485_') and x[1] is not None,
+                            lambda x: any(
+                                [x[0].startswith(f) for f in FUEL_SENSOR_PREFIXES]
+                            ) and x[1] is not None,
                             params.items()
                         ))
 
                         if not fuel_levels:
-                            report_row['malfunctions'].append(
-                                'отсутствуют данные о ДУТ'
-                            )
+                            report_row['malfunctions'].append('отсутствуют данные о ДУТ')
                         else:
                             for param, value in fuel_levels:
                                 if value is not None and not 1 < value < 4096:

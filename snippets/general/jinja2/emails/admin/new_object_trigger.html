@@ -9,7 +9,7 @@
 
 {%- if extra_data -%}
 {%- for param, value in extra_data.items() %}
-{{ param|e }}: {{ value|e }}
+{{ param }}: {{ value }}
 {%- endfor -%}
 {%- endif %}
 

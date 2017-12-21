@@ -3,9 +3,18 @@ from django.contrib import admin
 from django.contrib.admin import TabularInline
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import ugettext_lazy as _
+
 from import_export.admin import ExportMixin
 
 from ura import models, import_export
+from ura.enums import UraJobLogResolution
+
+
+def approve_logs(modeladmin, request, queryset):
+    queryset.update(resolution=UraJobLogResolution.APPROVED)
+
+
+approve_logs.short_description = 'Подтвердить исправление'
 
 
 class NullFilterSpec(SimpleListFilter):
@@ -58,6 +67,7 @@ class ParkingTimeStandardFilterSpec(NullFilterSpec):
 @admin.register(models.UraJobLog)
 class UraJobLogAdmin(admin.ModelAdmin):
     """Лог путевых листов"""
+    actions = [approve_logs]
     date_hierarchy = 'created'
     fields = models.UraJobLog().collect_fields()
     list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')

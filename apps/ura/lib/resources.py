@@ -190,6 +190,7 @@ class URAResource(TemplateView):
         UraJobLog.objects.create(
             job=self.job,
             request=self.request.body.decode('cp1251'),
+            user=request.user,
             response=response.rendered_content,
             response_status=response.status_code
         )

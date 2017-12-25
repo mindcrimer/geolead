@@ -65,7 +65,7 @@ class ParkingTimeStandardFilterSpec(NullFilterSpec):
 
 
 @admin.register(models.UraJobLog)
-class UraJobLogAdmin(admin.ModelAdmin):
+class UraJobLogAdmin(ExportMixin, admin.ModelAdmin):
     """Лог путевых листов"""
     actions = [approve_logs]
     date_hierarchy = 'created'
@@ -74,6 +74,7 @@ class UraJobLogAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'job_id')
     list_filter = ('response_status', 'user', 'resolution')
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
+    resource_class = import_export.UraJobLogResource
     search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')
 
     def has_add_permission(self, request):

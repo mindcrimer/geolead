@@ -42,3 +42,16 @@ class StandardPointResource(resources.ModelResource):
     def dehydrate_space_overstatements_standard(obj):
         return obj.job_template.space_overstatements_standard\
             if obj.job_template.space_overstatements_standard else ''
+
+
+class UraJobLogResource(resources.ModelResource):
+
+    class Meta:
+        fields = ('job', 'url', 'request', 'user', 'response', 'response_status')
+        export_order = fields
+        model = models.UraJobLog
+        skip_unchanged = True
+
+    @staticmethod
+    def dehydrate_user(obj):
+        return obj.user.username if obj.user_id else ''

@@ -47,7 +47,7 @@ class StandardPointResource(resources.ModelResource):
 class UraJobLogResource(resources.ModelResource):
 
     class Meta:
-        fields = ('job', 'url', 'request', 'user', 'response', 'response_status')
+        fields = ('id', 'job', 'url', 'request', 'user', 'response', 'response_status', 'created')
         export_order = fields
         model = models.UraJobLog
         skip_unchanged = True

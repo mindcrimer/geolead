@@ -10,7 +10,7 @@ class StandardPointResource(resources.ModelResource):
     )
     space_overstatements_standard = fields.Field(
         attribute='space_overstatements_standard',
-        column_name='Норматив перепростоя вне плановых геозон, мин.'
+        column_name='Норматив перенахождения вне плановых геозон, мин.'
     )
     total_time_standard = fields.Field(
         attribute='total_time_standard',

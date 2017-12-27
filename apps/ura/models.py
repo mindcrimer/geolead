@@ -82,7 +82,7 @@ class StandardJobTemplate(BasicModel, LastModMixin):
     wialon_id = models.CharField(_('ID в Wialon'), max_length=64, unique=True)
     title = models.CharField(_('Заголовок'), max_length=255)
     space_overstatements_standard = models.PositiveIntegerField(
-        _('Норматив перепростоя вне плановых геозон, мин.'), null=True, blank=True
+        _('Норматив перенахождения вне плановых геозон, мин.'), null=True, blank=True
     )
 
     class Meta:

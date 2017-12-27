@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='Обновлено')),
                 ('wialon_id', models.IntegerField(verbose_name='ID в Wialon')),
                 ('title', models.CharField(max_length=255, verbose_name='Заголовок')),
-                ('space_overstatements_standard', models.PositiveIntegerField(blank=True, null=True, verbose_name='Норматив перепростоя вне плановых геозон, мин.')),
+                ('space_overstatements_standard', models.PositiveIntegerField(blank=True, null=True, verbose_name='Норматив перенахождения вне плановых геозон, мин.')),
             ],
             options={
                 'verbose_name': 'Маршрут Wialon',

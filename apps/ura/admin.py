@@ -40,7 +40,7 @@ class NullFilterSpec(SimpleListFilter):
 
 
 class SpaceOverstatementsStandardNullFilterSpec(NullFilterSpec):
-    title = 'Норматив перепростоя вне плановых геозон, мин.'
+    title = 'Норматив перенахождения вне плановых геозон, мин.'
     parameter_name = 'space_overstatements_standard'
 
 

@@ -81,7 +81,7 @@ class StandardJobTemplate(BasicModel, LastModMixin):
     )
     wialon_id = models.CharField(_('ID в Wialon'), max_length=64, unique=True)
     title = models.CharField(_('Заголовок'), max_length=255)
-    space_overstatements_standard = models.PositiveIntegerField(
+    space_overstatements_standard = models.FloatField(
         _('Норматив перенахождения вне плановых геозон, мин.'), null=True, blank=True
     )
 
@@ -100,10 +100,10 @@ class StandardPoint(BasicModel, LastModMixin):
     )
     wialon_id = models.CharField(_('ID в Wialon'), max_length=64)
     title = models.CharField(_('Заголовок'), max_length=255)
-    total_time_standard = models.PositiveIntegerField(
+    total_time_standard = models.FloatField(
         _('Норматив времени нахождения, мин.'), null=True, blank=True
     )
-    parking_time_standard = models.PositiveIntegerField(
+    parking_time_standard = models.FloatField(
         _('Норматив времени стоянок, мин.'), null=True, blank=True
     )
 

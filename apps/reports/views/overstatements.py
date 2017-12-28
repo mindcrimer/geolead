@@ -78,11 +78,14 @@ class OverstatementsView(BaseReportView):
 
                 standards = {
                     int(x.wialon_id): {
-                        'space_overstatements_standard': x.space_overstatements_standard,
+                        'space_overstatements_standard': x.space_overstatements_standard / 60.0
+                        if x.space_overstatements_standard is not None else None,
                         'points': {
                             p.title: {
-                                'total_time_standard': p.total_time_standard,
-                                'parking_time_standard': p.parking_time_standard
+                                'total_time_standard': p.total_time_standard / 60.0
+                                if p.total_time_standard is not None else None,
+                                'parking_time_standard': p.parking_time_standard / 60.0
+                                if p.parking_time_standard is not None else None
                             } for p in x.points_cache
                         }
                     } for x in standard_job_templates

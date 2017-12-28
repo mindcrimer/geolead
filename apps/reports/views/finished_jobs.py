@@ -94,6 +94,9 @@ class FinishedJobsView(BaseReportView):
                 for v in report_data.values():
                     v['ratio'] = round((v['finished'] / v['plan']) * 100, 2)
 
+                # убираем полностью завершенные
+                report_data = {x[0]: x[1] for x in report_data.items() if x[1]['ratio'] < 100}
+
         kwargs.update(
             stats=stats,
             report_data=report_data

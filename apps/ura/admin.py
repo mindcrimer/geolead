@@ -120,8 +120,7 @@ class StandardPointAdmin(ImportExportMixin, admin.ModelAdmin):
     """Геозоны"""
     fields = models.StandardPoint().collect_fields()
     list_display = (
-        'id', 'title', 'wialon_id', 'job_template', 'total_time_standard', 'parking_time_standard',
-        'created', 'updated'
+        'id', 'title', 'wialon_id', 'job_template', 'total_time_standard', 'parking_time_standard'
     )
     list_display_links = ('id', 'title')
     list_editable = ('total_time_standard', 'parking_time_standard')
@@ -147,9 +146,7 @@ class StandardJobTemplateAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
     fields = models.StandardJobTemplate().collect_fields()
     inlines = (StandardPointTabularInline,)
-    list_display = (
-        'id', 'title', 'wialon_id', 'space_overstatements_standard', 'created', 'updated'
-    )
+    list_display = ('id', 'title', 'wialon_id', 'space_overstatements_standard')
     list_display_links = ('id', 'title')
     list_editable = ('space_overstatements_standard',)
     list_filter = (

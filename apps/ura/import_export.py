@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
-from import_export import resources, fields
+from import_export import resources, fields, widgets
 
 from ura import models
+
+
+class NullIntegerWidget(widgets.IntegerWidget):
+    def clean(self, value, row=None, *args, **kwargs):
+        if not value:
+            return 0
+        return super(NullIntegerWidget, self).clean(value, row=None, *args, **kwargs)
 
 
 class StandardPointResource(resources.ModelResource):
@@ -10,15 +17,18 @@ class StandardPointResource(resources.ModelResource):
     )
     space_overstatements_standard = fields.Field(
         attribute='space_overstatements_standard',
-        column_name='Норматив перенахождения вне плановых геозон, мин.'
+        column_name='Норматив перенахождения вне плановых геозон, мин.',
+        widget=NullIntegerWidget()
     )
     total_time_standard = fields.Field(
         attribute='total_time_standard',
-        column_name='Норматив времени нахождения, мин.'
+        column_name='Норматив времени нахождения, мин.',
+        widget=NullIntegerWidget()
     )
     parking_time_standard = fields.Field(
         attribute='parking_time_standard',
-        column_name='Норматив времени стоянок, мин.'
+        column_name='Норматив времени стоянок, мин.',
+        widget=NullIntegerWidget()
     )
 
     class Meta:
@@ -29,6 +39,7 @@ class StandardPointResource(resources.ModelResource):
         )
         model = models.StandardPoint
         skip_unchanged = True
+        use_transactions = True
 
     @staticmethod
     def dehydrate_job_template(obj):

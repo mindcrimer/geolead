@@ -4,7 +4,7 @@ from django.contrib.admin import TabularInline
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import ugettext_lazy as _
 
-from import_export.admin import ExportMixin
+from import_export.admin import ImportExportMixin, ExportMixin
 
 from ura import models, import_export
 from ura.enums import UraJobLogResolution
@@ -116,11 +116,15 @@ class StandardPointTabularInline(TabularInline):
 
 
 @admin.register(models.StandardPoint)
-class StandardPointAdmin(ExportMixin, admin.ModelAdmin):
+class StandardPointAdmin(ImportExportMixin, admin.ModelAdmin):
     """Геозоны"""
     fields = models.StandardPoint().collect_fields()
-    list_display = ('id', 'title', 'wialon_id', 'job_template', 'created', 'updated')
+    list_display = (
+        'id', 'title', 'wialon_id', 'job_template', 'total_time_standard', 'parking_time_standard',
+        'created', 'updated'
+    )
     list_display_links = ('id', 'title')
+    list_editable = ('total_time_standard', 'parking_time_standard')
     list_filter = (
         TotalTimeStandardFilterSpec, ParkingTimeStandardFilterSpec, 'job_template__user'
     )
@@ -144,9 +148,10 @@ class StandardJobTemplateAdmin(admin.ModelAdmin):
     fields = models.StandardJobTemplate().collect_fields()
     inlines = (StandardPointTabularInline,)
     list_display = (
-        'id', 'title', 'wialon_id', 'created', 'updated'
+        'id', 'title', 'wialon_id', 'space_overstatements_standard', 'created', 'updated'
     )
     list_display_links = ('id', 'title')
+    list_editable = ('space_overstatements_standard',)
     list_filter = (
         SpaceOverstatementsStandardNullFilterSpec, PointsTotalTimeStandardFilterSpec,
         PointsParkingTimeStandardFilterSpec, 'user'

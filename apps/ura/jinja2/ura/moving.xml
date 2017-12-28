@@ -3,7 +3,7 @@
     {%- for unit in units %}
     <MovingUnit idUnit="{{ unit['id'] }}" dateBegin="{{ unit['date_begin']|date('d.m.Y H:i:s') }}" dateEnd="{{ unit['date_end']|date('d.m.Y H:i:s') }}">
         {%- for point in unit['points'] %}
-        <point namePoint="{{ point['name'] }}" timeIn="{{ point['time_in']|date('d.m.Y H:i:s') }}" timeOut="{{ point['time_out']|date('d.m.Y H:i:s') }}" type="{{ point['type'] }}">
+        <point namePoint="{{ point['name'] }}"{% if point.get('job_id') %} idJob="{{ point['job_id'] }}"{% endif %} timeIn="{{ point['time_in']|date('d.m.Y H:i:s') }}" timeOut="{{ point['time_out']|date('d.m.Y H:i:s') }}" type="{{ point['type'] }}">
             {%- for param, value in point['params'].items() %}
             <param name="{{ param }}" value="{{ value }}"/>
 			{%- endfor %}

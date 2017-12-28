@@ -23,6 +23,9 @@ class UraJob(BasicModel, LastModMixin):
         verbose_name = _('Путевой лист')
         verbose_name_plural = _('Путевые листы')
 
+    def __str__(self):
+        return str(self.pk)
+
 
 class UraJobLog(BasicModel, LastModMixin):
     """Журнал изменения и запроса данных по путевым листам"""

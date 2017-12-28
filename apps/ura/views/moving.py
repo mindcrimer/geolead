@@ -22,6 +22,13 @@ class URAMovingResource(BaseUraRidesView):
         }
 
     def report_post_processing(self, unit_info):
+        job_date_begin = utc_to_local_time(
+            self.job.date_begin.replace(tzinfo=None), self.request.user.ura_tz
+        )
+        job_date_end = utc_to_local_time(
+            self.job.date_end.replace(tzinfo=None), self.request.user.ura_tz
+        )
+
         for point in self.ride_points:
             point['time_in'] = utc_to_local_time(
                 datetime.datetime.utcfromtimestamp(point['time_in']),
@@ -31,6 +38,9 @@ class URAMovingResource(BaseUraRidesView):
                 datetime.datetime.utcfromtimestamp(point['time_out']),
                 self.request.user.ura_tz
             )
+
+            if point['time_in'] >= job_date_begin and point['time_out'] <= job_date_end:
+                point['job_id'] = self.job.pk
 
         self.print_time_needed('points utc_to_local')
 

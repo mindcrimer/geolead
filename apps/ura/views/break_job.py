@@ -10,9 +10,8 @@ class URABreakJobsResource(URAResource):
     model_mapping = {
         'date_begin': ('dateBegin', parse_datetime),
         'date_end': ('dateEnd', parse_datetime),
+        'new_date_end': ('newDateEnd', parse_datetime),
         'job_id': ('idJob', int),
-        'return_time': ('returnTime', parse_datetime),
-        'leave_time': ('leaveTime', parse_datetime)
     }
     model = models.UraJob
 
@@ -29,7 +28,7 @@ class URABreakJobsResource(URAResource):
                 if not job_id:
                     return error_response('Не указан параметр idJob', code='idJob_not_found')
 
-                if data['date_end'] <= data['date_begin']:
+                if data.get('new_date_end') and data['new_date_end'] <= data['date_begin']:
                     self.model.objects.filter(pk=job_id).delete()
                 else:
                     try:
@@ -40,6 +39,11 @@ class URABreakJobsResource(URAResource):
                         )
 
                     for k, v in data.iems():
+                        if k == 'new_date_end':
+                            k = 'date_end'
+                        elif k == 'date_end' and 'new_date_end' in data and data['new_date_end']:
+                            continue
+
                         setattr(self.job, k, v)
                         self.job.save()
                     jobs.append(self.job)

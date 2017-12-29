@@ -114,7 +114,7 @@ class InvalidJobStartEndView(BaseReportView):
                             job.date_begin.replace(tzinfo=None), user.wialon_tz
                         )
                         row['route_id'] = str(job.route_id)
-                        row['route_title'] = routes.get(job.route_id, {}).get('name', '')
+                        row['route_title'] = routes.get(int(job.route_id), {}).get('name', '')
                         row['route_fact_start'] = start_point.title
 
                         if start_point_name == 'space':
@@ -140,7 +140,7 @@ class InvalidJobStartEndView(BaseReportView):
                         job.date_end.replace(tzinfo=None), user.wialon_tz
                     )
                     row['route_id'] = str(job.route_id)
-                    row['route_title'] = routes.get(job.route_id, {}).get('name', '')
+                    row['route_title'] = routes.get(int(job.route_id), {}).get('name', '')
                     row['fact_end'] = utc_to_local_time(
                         end_point.enter_date_time.replace(tzinfo=None), user.wialon_tz
                     )

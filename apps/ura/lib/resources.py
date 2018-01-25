@@ -94,7 +94,7 @@ class URAResource(TemplateView):
 
                 return error_response(
                     'Ошибка входящих данных из источника данных. '
-                    'Попробуйте повторить запрос позже',
+                    'Попробуйте повторить запрос позже.',
                     status=400,
                     code='source_data_invalid'
                 )

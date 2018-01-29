@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import datetime
+import traceback
 from collections import OrderedDict
 
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
     get_wialon_report_template_id
+from snippets.utils.email import send_trigger_email
 from ura import FUEL_SENSOR_PREFIXES
 from ura.lib.resources import URAResource
 from ura.models import UraJobPoint
@@ -178,10 +180,19 @@ class BaseUraRidesView(URAResource):
         ))
 
         # удаляем геозоны, которые нас не интересуют
-        self.report_data['unit_zones_visit'] = tuple(filter(
-            lambda pr: pr[0].strip() in self.route_point_names,
-            self.report_data['unit_zones_visit']
-        ))
+        try:
+            self.report_data['unit_zones_visit'] = tuple(filter(
+                lambda pr: pr[0].strip() in self.route_point_names,
+                self.report_data['unit_zones_visit']
+            ))
+        except AttributeError as e:
+            send_trigger_email(
+                'Ошибка в работе интеграции Wialon', extra_data={
+                    'Exception': str(e),
+                    'Traceback': traceback.format_exc(),
+                    'data': self.report_data['unit_zones_visit']
+                }
+            )
 
         # пробегаемся по интервалам геозон и сглаживаем их
         self.unit_zones_visit = []

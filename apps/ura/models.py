@@ -36,7 +36,7 @@ class UraJobLog(BasicModel, LastModMixin):
     job = models.ForeignKey(
         'UraJob', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
     )
-    url = models.CharField(_('URL'), max_length=255, blank=True, null=True)
+    url = models.CharField(_('URL'), max_length=255, blank=True, null=True, db_index=True)
 
     request = models.TextField(_('Запрос'), blank=True, null=True)
     user = models.ForeignKey(

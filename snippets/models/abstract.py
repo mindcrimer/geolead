@@ -78,7 +78,7 @@ class BasicModel(models.Model):
 
 class LastModMixin(models.Model):
     """Base model for all models with created / updated fields"""
-    created = models.DateTimeField(CREATED_VERBOSE, auto_now_add=True, db_index=True)
+    created = models.DateTimeField(CREATED_VERBOSE, auto_now_add=True)
     updated = models.DateTimeField(UPDATED_VERBOSE, auto_now=True)
 
     class Meta:

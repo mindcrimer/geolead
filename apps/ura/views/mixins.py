@@ -4,18 +4,16 @@ import traceback
 from collections import OrderedDict
 
 from base.exceptions import ReportException, APIProcessError
-from base.utils import get_distance, get_point_type
+from base.utils import get_distance, get_point_type, parse_float
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
     get_wialon_report_template_id
 from snippets.utils.email import send_trigger_email
-from ura import FUEL_SENSOR_PREFIXES
 from ura.lib.resources import URAResource
 from ura.models import UraJobPoint
 from ura.utils import parse_datetime, parse_xml_input_data
-from wialon.api import get_routes, get_unit_settings, get_messages
+from wialon.api import get_routes, get_messages
 from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
-from wialon.utils import get_fuel_level
 
 
 class BaseUraRidesView(URAResource):
@@ -27,9 +25,7 @@ class BaseUraRidesView(URAResource):
 
     def __init__(self, **kwargs):
         super(BaseUraRidesView, self).__init__(**kwargs)
-        self.calibration_table = []
         self.current_distance = .0
-        self.fuel_level_name = None
         self.input_data = None
         self.job = None
         self.messages = []
@@ -37,12 +33,12 @@ class BaseUraRidesView(URAResource):
         self.request_dt_from = None
         self.request_dt_to = None
         self.report_data = {}
+        self.fuel_data = OrderedDict()
         self.route = None
         self.route_point_names = []
         self.script_time_from = None
         self.sess_id = None
         self.unit_id = None
-        self.unit_settings = {}
         self.unit_zones_visit = []
         self.ride_points = []
 
@@ -122,46 +118,19 @@ class BaseUraRidesView(URAResource):
                     sess_id=self.sess_id
                 )
 
-                self.report_data[table_info['name']] = rows
+                if table_info['name'] != 'unit_sensors_tracing':
+                    self.report_data[table_info['name']] = rows
+                else:
+                    self.fuel_data = OrderedDict(
+                        (row['c'][0]['v'], parse_float(row['c'][1]) or .0)
+                        for row in rows
+                        if row['c'][0]['v'] and row['c'][1]
+                    )
 
             except ReportException as e:
                 raise WialonException(
                     'Не удалось получить в Wialon отчет о поездках. Исходная ошибка: %s' % e
                 )
-
-    def get_object_settings(self):
-        # получаем настройки объекта (машины)
-        self.unit_settings = get_unit_settings(self.unit_id, sess_id=self.sess_id)
-
-        # получаем настройки ДУТ
-        fuel_level_conf = list(filter(
-            lambda x: any(
-                [x['p'].startswith(f) for f in FUEL_SENSOR_PREFIXES]
-            ),
-            self.unit_settings['sens'].values()
-        ))
-
-        if not fuel_level_conf:
-            raise APIProcessError(
-                'Нет данных о настройках датчика уровня топлива для объекта %s' %
-                self.unit_settings.get('nm', '')
-            )
-
-        def get_calibration_table_sort_key(item):
-            return item['x']
-
-        fuel_level_conf = fuel_level_conf[0]
-
-        # сортируем калибровочную таблицу расчета уровня топлива
-        self.calibration_table = sorted(
-            fuel_level_conf['tbl'],
-            key=get_calibration_table_sort_key
-        )
-
-        # получаем название ДУТ
-        self.fuel_level_name = fuel_level_conf['p'].split('*')[0]
-
-        return self.unit_settings
 
     def get_object_messages(self):
         self.messages = list(filter(
@@ -253,9 +222,20 @@ class BaseUraRidesView(URAResource):
                 self.unit_zones_visit[-1]['time_out'] = self.request_dt_to
 
     def get_fuel_level(self, message):
-        return get_fuel_level(
-            self.calibration_table, message['p'].get(self.fuel_level_name, 0)
-        )
+        timestamp = message['t']
+        if timestamp in self.fuel_data:
+            return self.fuel_data[timestamp]
+
+        t = 0
+        for t in self.fuel_data.keys():
+            if t >= timestamp:
+                return self.fuel_data[t]
+
+        # берем последнее известное
+        if t:
+            return self.fuel_data[t]
+
+        return .0
 
     def start_timer(self):
         self.script_time_from = datetime.datetime.now()

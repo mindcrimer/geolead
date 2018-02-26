@@ -18,7 +18,8 @@ class URAMovingResource(BaseUraRidesView):
             'unit_thefts': [],
             'unit_engine_hours': [],
             'unit_zones_visit': [],
-            'unit_chronology': []
+            'unit_chronology': [],
+            'unit_sensors_tracing': []
         }
 
     def report_post_processing(self, unit_info):
@@ -223,7 +224,6 @@ class URAMovingResource(BaseUraRidesView):
             self.get_job()
             self.get_route()
             self.get_report_data()
-            self.get_object_settings()
             self.get_object_messages()
 
             self.ride_points = []

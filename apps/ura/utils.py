@@ -5,7 +5,6 @@ from django.template.defaultfilters import floatformat
 
 from base.exceptions import APIProcessError, AuthenticationFailed
 from reports.utils import local_to_utc_time
-from ura.models import UraJobLog
 from users.models import User
 
 

@@ -121,11 +121,13 @@ class BaseUraRidesView(URAResource):
                 if table_info['name'] != 'unit_sensors_tracing':
                     self.report_data[table_info['name']] = rows
                 else:
-                    self.fuel_data = OrderedDict(
-                        (row['c'][0]['v'], parse_float(row['c'][1]) or .0)
-                        for row in rows
-                        if row['c'][0]['v'] and row['c'][1]
-                    )
+                    for row in rows:
+                        if isinstance(row['c'][0], dict):
+                            key = row['c'][0]['v']
+                        else:
+                            key = parse_datetime(row['c'][0], self.request.user.wialon_tz)
+                        if key and row['c'][1]:
+                            self.fuel_data[key] = parse_float(row['c'][1]) or .0
 
             except ReportException as e:
                 raise WialonException(

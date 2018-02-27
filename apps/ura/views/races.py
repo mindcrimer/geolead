@@ -31,7 +31,8 @@ class URARacesResource(BaseUraRidesView, URAResource):
         self.report_data = {
             'unit_trips': [],
             'unit_chronology': [],
-            'unit_zones_visit': []
+            'unit_zones_visit': [],
+            'unit_sensors_tracing': []
         }
 
     def get_job(self):
@@ -277,7 +278,6 @@ class URARacesResource(BaseUraRidesView, URAResource):
             self.points_dict_by_name = {x['name']: x['id'] for x in self.route['points']}
 
             self.get_report_data()
-            self.get_object_settings()
             self.get_object_messages()
             self.start_timer()
             self.prepare_geozones_visits()

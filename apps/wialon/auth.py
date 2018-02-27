@@ -12,7 +12,7 @@ import requests
 from base.exceptions import APIProcessError
 
 
-SESSION_TIMEOUT = 60 * 5
+SESSION_TIMEOUT = 60 * 4.5
 
 
 def get_wialon_session_key(user):

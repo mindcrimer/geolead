@@ -10,7 +10,7 @@ from reports import forms
 from reports.jinjaglobals import date
 from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.models import UraJob, StandardJobTemplate, StandardPoint
+from ura.models import Job, StandardJobTemplate, StandardPoint
 from users.models import User
 from wialon.api import get_routes, get_units
 
@@ -92,7 +92,7 @@ class OverstatementsView(BaseReportView):
                     if x.space_overstatements_standard is not None or x.points_cache
                 }
 
-                jobs = UraJob.objects.filter(
+                jobs = Job.objects.filter(
                     date_begin__gte=dt_from,
                     date_end__lte=dt_to,
                     route_id__in=list(routes.keys())

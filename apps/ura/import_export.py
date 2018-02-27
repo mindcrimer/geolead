@@ -55,12 +55,12 @@ class StandardPointResource(resources.ModelResource):
             if obj.job_template.space_overstatements_standard else ''
 
 
-class UraJobLogResource(resources.ModelResource):
+class JobLogResource(resources.ModelResource):
 
     class Meta:
         fields = ('id', 'job', 'url', 'request', 'user', 'response', 'response_status', 'created')
         export_order = fields
-        model = models.UraJobLog
+        model = models.JobLog
         skip_unchanged = True
 
     @staticmethod

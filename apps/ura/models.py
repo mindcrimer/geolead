@@ -3,21 +3,29 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from snippets.models import LastModMixin, BasicModel
-from ura.enums import UraJobLogResolution
+from ura.enums import JobLogResolution
 
 
-class UraJob(BasicModel, LastModMixin):
+class Job(BasicModel, LastModMixin):
     """Путевые листы"""
     name = models.CharField(_('Название'), max_length=255)
-    unit_id = models.CharField(_('idUnit'), max_length=255)
-    route_id = models.CharField(_('idRoute'), max_length=255)
-    driver_id = models.CharField(_('idDriver'), max_length=255, blank=True, null=True)
+
+    unit_id = models.CharField(_('ID объекта (ТС)'), max_length=100)
+    unit_title = models.CharField(
+        _('Название объекта (ТС)'), max_length=255, blank=True, null=True
+    )
+
+    route_id = models.CharField(_('ID маршрута'), max_length=100)
+    route_title = models.CharField(_('Название маршрута'), max_length=255, blank=True, null=True)
+
+    driver_id = models.CharField(_('ID водителя'), max_length=100, blank=True, null=True)
     driver_fio = models.CharField(_('ФИО водителя'), max_length=255, blank=True, null=True)
 
-    date_begin = models.DateTimeField(_('Дата/время начала'))
-    date_end = models.DateTimeField(_('Дата/время конца'))
-    return_time = models.DateTimeField(_('Дата/время return'), blank=True, null=True)
-    leave_time = models.DateTimeField(_('Дата/время leave'), blank=True, null=True)
+    date_begin = models.DateTimeField(_('Время начала ПЛ'))
+    date_end = models.DateTimeField(_('Время окончания ПЛ'))
+
+    leave_time = models.DateTimeField(_('Время выезда'), blank=True, null=True)
+    return_time = models.DateTimeField(_('Время заезда'), blank=True, null=True)
 
     user = models.ForeignKey(
         'users.User', verbose_name=_('Организация'), blank=True, null=True, related_name='jobs'
@@ -31,10 +39,10 @@ class UraJob(BasicModel, LastModMixin):
         return str(self.pk)
 
 
-class UraJobLog(BasicModel, LastModMixin):
+class JobLog(BasicModel, LastModMixin):
     """Журнал изменения и запроса данных по путевым листам"""
     job = models.ForeignKey(
-        'UraJob', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
+        'Job', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
     )
     url = models.CharField(_('URL'), max_length=255, blank=True, null=True, db_index=True)
 
@@ -45,8 +53,8 @@ class UraJobLog(BasicModel, LastModMixin):
     response = models.TextField(_('Ответ'), blank=True, null=True)
     response_status = models.PositiveSmallIntegerField(_('Статус ответа'), blank=True, null=True)
     resolution = models.SmallIntegerField(
-        _('Резолюция ошибки'), choices=UraJobLogResolution.get_choices(),
-        default=UraJobLogResolution.default, null=True
+        _('Резолюция ошибки'), choices=JobLogResolution.get_choices(),
+        default=JobLogResolution.default, null=True
     )
 
     class Meta:
@@ -57,9 +65,9 @@ class UraJobLog(BasicModel, LastModMixin):
         return '%s (%s)' % (self.pk, self.response_status)
 
 
-class UraJobPoint(BasicModel, LastModMixin):
+class JobPoint(BasicModel, LastModMixin):
     """Точки (геозоны путевого листа по мере прохождения"""
-    job = models.ForeignKey('UraJob', verbose_name=_('Путевой лист'), related_name='points')
+    job = models.ForeignKey('Job', verbose_name=_('Путевой лист'), related_name='points')
 
     title = models.CharField(_('Заголовок'), max_length=255, blank=True, null=True)
     point_type = models.PositiveIntegerField(_('Тип геозоны'), blank=True, null=True)

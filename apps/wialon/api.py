@@ -6,7 +6,7 @@ from django.core.cache import cache
 
 import requests
 
-from wialon import WIALON_ENTIRE_ERROR, DEFAULT_CACHE_TIMEOUT
+from wialon import DEFAULT_CACHE_TIMEOUT
 from wialon.exceptions import WialonException
 from wialon.auth import get_wialon_session_key
 

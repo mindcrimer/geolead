@@ -187,7 +187,7 @@ class URAMovingResource(BaseUraRidesView):
             point['params']['odoMeter'] = round(point['params']['odoMeter'], 2)
 
     def get_job(self):
-        self.job = models.UraJob.objects.filter(
+        self.job = models.Job.objects.filter(
             date_begin__gte=self.input_data.get('date_begin'),
             date_end__lte=self.input_data.get('date_end'),
             unit_id=self.unit_id

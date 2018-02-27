@@ -36,8 +36,8 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
     def get_job(self):
         try:
-            self.job = models.UraJob.objects.get(pk=self.input_data.get('job_id'))
-        except models.UraJob.DoesNotExist:
+            self.job = models.Job.objects.get(pk=self.input_data.get('job_id'))
+        except models.Job.DoesNotExist:
             raise APIProcessError(
                 'Задача c job_id=%s не найдена' % self.input_data['job_id'], code='job_not_found'
             )

@@ -10,7 +10,7 @@ from reports.utils import get_period, cleanup_and_request_report, exec_report, g
 from snippets.utils.email import send_trigger_email
 from ura import FUEL_SENSOR_PREFIXES
 from ura.lib.resources import URAResource
-from ura.models import UraJobPoint
+from ura.models import JobPoint
 from ura.utils import parse_datetime, parse_xml_input_data
 from wialon.api import get_routes, get_unit_settings, get_messages
 from wialon.auth import get_wialon_session_key
@@ -329,7 +329,7 @@ class BaseUraRidesView(URAResource):
             time_in = point['time_in']
             time_out = point['time_out']
 
-            jp = UraJobPoint(
+            jp = JobPoint(
                 job=self.job,
                 title=point['name'],
                 point_type=get_point_type(point['name']),

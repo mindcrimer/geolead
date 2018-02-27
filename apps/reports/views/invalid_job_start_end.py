@@ -6,7 +6,7 @@ from base.exceptions import ReportException
 from reports import forms
 from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.models import UraJob
+from ura.models import Job
 from users.models import User
 from wialon.api import get_routes, get_units
 
@@ -69,7 +69,7 @@ class InvalidJobStartEndView(BaseReportView):
                 }
                 units_dict = {x['id']: x for x in get_units(user=user, sess_id=sess_id)}
 
-                jobs = UraJob.objects.filter(
+                jobs = Job.objects.filter(
                     date_begin__gte=dt_from,
                     date_end__lte=dt_to,
                     route_id__in=list(routes.keys())

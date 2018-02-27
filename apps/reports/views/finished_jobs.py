@@ -4,9 +4,9 @@ import datetime
 
 from base.exceptions import ReportException
 from reports import forms
-from reports.utils import get_period, local_to_utc_time
+from reports.utils import local_to_utc_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.models import UraJob
+from ura.models import Job
 from users.models import User
 from wialon.api import get_routes
 
@@ -57,7 +57,7 @@ class FinishedJobsView(BaseReportView):
                     x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
                 }
 
-                jobs = UraJob.objects\
+                jobs = Job.objects\
                     .filter(
                         date_begin__gte=dt_from,
                         date_end__lte=dt_to,

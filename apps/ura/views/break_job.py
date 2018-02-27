@@ -13,7 +13,7 @@ class URABreakJobsResource(URAResource):
         'new_date_end': ('newDateEnd', parse_datetime),
         'job_id': ('idJob', int),
     }
-    model = models.UraJob
+    model = models.Job
 
     def post(self, request, *args, **kwargs):
         jobs = []

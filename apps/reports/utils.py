@@ -11,7 +11,7 @@ import requests
 
 from base.exceptions import ReportException
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
-from ura.models import UraJob
+from ura.models import Job
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
 from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
@@ -95,7 +95,7 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
     if not unit_ids:
         return None
 
-    qs = UraJob.objects.filter(
+    qs = Job.objects.filter(
         unit_id=unit_ids[0]['id'],
         date_begin__gte=dt_from,
         date_end__lte=dt_to

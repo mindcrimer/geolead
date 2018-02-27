@@ -7,11 +7,11 @@ from django.utils.translation import ugettext_lazy as _
 from import_export.admin import ImportExportMixin, ExportMixin
 
 from ura import models, import_export
-from ura.enums import UraJobLogResolution
+from ura.enums import JobLogResolution
 
 
 def approve_logs(modeladmin, request, queryset):
-    queryset.update(resolution=UraJobLogResolution.APPROVED)
+    queryset.update(resolution=JobLogResolution.APPROVED)
 
 
 approve_logs.short_description = 'Подтвердить исправление'
@@ -64,17 +64,18 @@ class ParkingTimeStandardFilterSpec(NullFilterSpec):
     parameter_name = 'parking_time_standard'
 
 
-@admin.register(models.UraJobLog)
-class UraJobLogAdmin(ExportMixin, admin.ModelAdmin):
+@admin.register(models.JobLog)
+class JobLogAdmin(ExportMixin, admin.ModelAdmin):
     """Лог путевых листов"""
     actions = [approve_logs]
     date_hierarchy = 'created'
-    fields = models.UraJobLog().collect_fields()
+    fields = models.JobLog().collect_fields()
     list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')
     list_display_links = ('id', 'job_id')
     list_filter = ('response_status', 'user', 'resolution')
+    list_select_related = True
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
-    resource_class = import_export.UraJobLogResource
+    resource_class = import_export.JobLogResource
     search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')
 
     def has_add_permission(self, request):
@@ -84,16 +85,39 @@ class UraJobLogAdmin(ExportMixin, admin.ModelAdmin):
         return False
 
 
-@admin.register(models.UraJob)
-class UraJobAdmin(admin.ModelAdmin):
+class JobPointInline(admin.TabularInline):
+    """Геозоны путевого листа"""
+    extra = 0
+    fields = models.JobPoint().collect_fields()
+    readonly_fields = list(fields)
+    readonly_fields.remove('job')
+    model = models.JobPoint
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(models.Job)
+class JobAdmin(admin.ModelAdmin):
     """Путевые листы"""
     date_hierarchy = 'date_begin'
-    fields = models.UraJob().collect_fields()
-    list_display = ('id', 'name', 'driver_fio', 'user', 'date_begin', 'date_end')
+    fields = models.Job().collect_fields()
+    inlines = (JobPointInline,)
+    list_display = (
+        'id', 'name', 'driver_fio', 'route_title', 'unit_title', 'user', 'date_begin', 'date_end'
+    )
     list_display_links = ('id', 'name')
     list_filter = ('user',)
+    list_select_related = True
+    list_per_page = 50
     readonly_fields = ('created', 'updated')
-    search_fields = ('=id', 'name', 'unit_id', 'route_id', 'driver_id', 'driver_fio')
+    search_fields = (
+        '=id', 'name', 'unit_title', 'driver_fio', 'route_title', 'unit_id', 'route_id',
+        'driver_id'
+    )
 
     def has_add_permission(self, request):
         return False

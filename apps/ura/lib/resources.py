@@ -19,7 +19,7 @@ from base.exceptions import APIParseError, AuthenticationFailed, APIValidationEr
 from snippets.utils.email import send_trigger_email
 from ura.lib.response import error_response, validation_error_response
 from ura.lib.utils import extract_token_from_request, authenticate_credentials
-from ura.models import UraJobLog
+from ura.models import JobLog
 from ura.utils import get_organization_user
 from wialon.exceptions import WialonException
 
@@ -193,7 +193,7 @@ class URAResource(TemplateView):
         response = self.dispatch_method(request, *args, **kwargs)
         user = request.user if request.user.is_authenticated() else None
 
-        UraJobLog.objects.create(
+        JobLog.objects.create(
             job=self.job,
             url=self.request.path_info,
             request=self.request.body.decode('cp1251'),

@@ -4,7 +4,7 @@ from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
 from ura.utils import parse_xml_input_data, parse_datetime
-from wialon.api import get_routes
+from wialon.api import get_routes, get_units
 
 
 class URASetJobsResource(URAResource):
@@ -19,7 +19,7 @@ class URASetJobsResource(URAResource):
         'return_time': ('returnTime', parse_datetime),
         'leave_time': ('leaveTime', parse_datetime)
     }
-    model = models.UraJob
+    model = models.Job
 
     def post(self, request, *args, **kwargs):
         jobs = []
@@ -42,6 +42,26 @@ class URASetJobsResource(URAResource):
                     )
 
                 data['user'] = request.user
+
+                units = get_units(user=request.user)
+                routes = get_routes(user=request.user)
+
+                units_cache = {
+                    u['id']: '%s (%s) [%s]' % (u['name'], u['number'], u['vin'])
+                    for u in units
+                }
+                routes_cache = {r['id']: r['name'] for r in routes}
+
+                try:
+                    data['unit_title'] = units_cache.get(int(data['unit_id']))
+                except (ValueError, TypeError, AttributeError):
+                    pass
+
+                try:
+                    data['route_title'] = routes_cache.get(int(data['route_id']))
+                except (ValueError, TypeError, AttributeError):
+                    pass
+
                 self.job = self.model.objects.create(**data)
                 jobs.append(self.job)
 

@@ -6,7 +6,7 @@ from collections import OrderedDict
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type, parse_float
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
-    get_wialon_report_template_id
+    get_wialon_report_template_id, parse_wialon_report_datetime, local_to_utc_time
 from snippets.utils.email import send_trigger_email
 from ura.lib.resources import URAResource
 from ura.models import JobPoint
@@ -125,7 +125,10 @@ class BaseUraRidesView(URAResource):
                         if isinstance(row['c'][0], dict):
                             key = row['c'][0]['v']
                         else:
-                            key = parse_datetime(row['c'][0], self.request.user.wialon_tz)
+                            key = parse_wialon_report_datetime(row['c'][0])
+                            key = int(
+                                local_to_utc_time(key, self.request.user.wialon_tz).timestamp()
+                            )
                         if key and row['c'][1]:
                             self.fuel_data[key] = parse_float(row['c'][1]) or .0
 

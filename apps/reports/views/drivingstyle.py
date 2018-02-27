@@ -2,14 +2,15 @@
 from collections import OrderedDict
 import datetime
 
+from django.utils.timezone import utc
+
 from base.exceptions import ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_drivers_fio, parse_wialon_report_datetime, \
     get_wialon_report_template_id, get_period, cleanup_and_request_report, \
     exec_report, get_report_rows
-from reports.views.base import BaseReportView, WIALON_INTERNAL_EXCEPTION, \
-    WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from users.models import User
 from wialon.api import get_units
 from wialon.exceptions import WialonException
@@ -20,6 +21,13 @@ class DrivingStyleView(BaseReportView):
     form = forms.DrivingStyleForm
     template_name = 'reports/driving_style.html'
     report_name = 'Отчет нарушений ПДД и инструкции по эксплуатации техники'
+
+    def get_default_form(self):
+        data = self.request.POST if self.request.method == 'POST' else {
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
+        }
+        return self.form(data)
 
     @staticmethod
     def get_new_grouping():

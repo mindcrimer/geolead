@@ -196,7 +196,8 @@ DATETIME_INPUT_FORMATS = (
 DEFAULT_FROM_EMAIL = 'robot@geolead.ru'
 EMAIL_BATCH_SIZE = 100
 
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 SUIT_CONFIG = {
     # 'SEARCH_URL': 'admin:catalog_product_changelist',

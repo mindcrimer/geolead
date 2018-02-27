@@ -5,7 +5,7 @@ from reports.views.discharge import DischargeView
 from reports.views.drivingstyle import DrivingStyleView
 from reports.views.finished_jobs import FinishedJobsView
 from reports.views.invalid_job_start_end import InvalidJobStartEndView
-from reports.views.malfunctions import MalfunctionsView
+from reports.views.faults import FaultsView
 from reports.views.overstatements import OverstatementsView
 
 
@@ -27,8 +27,8 @@ urlpatterns = (
         InvalidJobStartEndView.as_view(), name='invalid_job_start_end'
     ),
     url(
-        r'^malfunctions/$',
-        MalfunctionsView.as_view(), name='malfunctions'
+        r'^faults/$',
+        FaultsView.as_view(), name='faults'
     ),
     url(
         r'^overstatements/$',

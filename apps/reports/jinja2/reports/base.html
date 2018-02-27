@@ -40,9 +40,11 @@
 		<div class="uk-margin">
 			<a href="" class="uk-button uk-button-default">Назад</a>
 
-{#			<a href="?download=xls" class="uk-button uk-button-primary btn-xls" style="float: right">#}
-{#				<span class="fa fa-file-excel-o"></span> Скачать#}
-{#			</a>#}
+            {%- if can_download %}
+			<a href="?download=xls" class="uk-button uk-button-primary btn-xls" style="float: right">
+				<span class="fa fa-file-excel-o"></span> Скачать
+			</a>
+            {%- endif -%}
 		</div>
 	</div>
 

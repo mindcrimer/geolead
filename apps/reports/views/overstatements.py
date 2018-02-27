@@ -3,6 +3,7 @@ from collections import OrderedDict
 import datetime
 
 from django.db.models import Prefetch, Q
+from django.utils.timezone import utc
 
 from base.exceptions import ReportException
 from base.utils import get_point_type
@@ -20,6 +21,13 @@ class OverstatementsView(BaseReportView):
     form = forms.DrivingStyleForm
     template_name = 'reports/overstatements.html'
     report_name = 'Отчет о сверхнормативных простоях'
+
+    def get_default_form(self):
+        data = self.request.POST if self.request.method == 'POST' else {
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
+        }
+        return self.form(data)
 
     @staticmethod
     def get_new_grouping():

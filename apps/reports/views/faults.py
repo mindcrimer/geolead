@@ -2,6 +2,8 @@
 from collections import OrderedDict
 import datetime
 
+from django.utils.timezone import utc
+
 from base.exceptions import ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
@@ -13,11 +15,18 @@ from wialon.api import get_messages, get_units
 from wialon.exceptions import WialonException
 
 
-class MalfunctionsView(BaseReportView):
+class FaultsView(BaseReportView):
     """Отчет по неисправностям"""
     form = forms.DrivingStyleForm
-    template_name = 'reports/malfunctions.html'
+    template_name = 'reports/faults.html'
     report_name = 'Отчет по неисправностям'
+
+    def get_default_form(self):
+        data = self.request.POST if self.request.method == 'POST' else {
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
+        }
+        return self.form(data)
 
     @staticmethod
     def get_new_grouping():
@@ -26,11 +35,11 @@ class MalfunctionsView(BaseReportView):
             'place': '',
             'dt': '',
             'driver_name': '',
-            'malfunctions': []
+            'faults': []
         }
 
     def get_context_data(self, **kwargs):
-        kwargs = super(MalfunctionsView, self).get_context_data(**kwargs)
+        kwargs = super(FaultsView, self).get_context_data(**kwargs)
         report_data = None
         form = kwargs['form']
         kwargs['today'] = datetime.date.today()
@@ -88,7 +97,7 @@ class MalfunctionsView(BaseReportView):
 
                     messages = tuple(reversed(messages))[:1]
                     if not messages:
-                        report_row['malfunctions'].append('нет данных за выбранный интервал')
+                        report_row['faults'].append('нет данных за выбранный интервал')
                     else:
                         message = messages[0]
 
@@ -107,19 +116,19 @@ class MalfunctionsView(BaseReportView):
                         hdop = params.get('hdop')
 
                         if pwr_ext is None:
-                            report_row['malfunctions'].append(
+                            report_row['faults'].append(
                                 'отсутствуют данные о внешнем питании'
                             )
 
                         elif pwr_ext < 10:
-                            report_row['malfunctions'].append('отсутствует внешнее питание')
+                            report_row['faults'].append('отсутствует внешнее питание')
 
                         if hdop is None:
-                            report_row['malfunctions'].append(
+                            report_row['faults'].append(
                                 'отсутствуют данные о Глонасс модуле'
                             )
                         elif params.get('hdop', 100) > 1:
-                            report_row['malfunctions'].append('неисправность Глонасс модуля')
+                            report_row['faults'].append('неисправность Глонасс модуля')
 
                         fuel_levels = tuple(filter(
                             lambda x: any(
@@ -129,14 +138,14 @@ class MalfunctionsView(BaseReportView):
                         ))
 
                         if not fuel_levels:
-                            report_row['malfunctions'].append('отсутствуют данные о ДУТ')
+                            report_row['faults'].append('отсутствуют данные о ДУТ')
                         else:
                             for param, value in fuel_levels:
                                 if value is not None and not 1 < value < 4096:
-                                    report_row['malfunctions'].append('неисправность ДУТ')
+                                    report_row['faults'].append('неисправность ДУТ')
                                     break
 
-                    if report_row['malfunctions']:
+                    if report_row['faults']:
                         stats['broken'] += 1
 
         kwargs.update(

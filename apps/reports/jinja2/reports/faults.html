@@ -55,7 +55,7 @@
 					<td>{{ row['place'] }}</td>
 					<td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
 					<td class="nowrap">{{ row['driver_name'] }}</td>
-					<td>{{ '<br/>'.join(row['malfunctions']) }}</td>
+					<td>{{ '<br/>'.join(row['faults']) }}</td>
 				</tr>
 			</tbody>
 		{%- endfor -%}

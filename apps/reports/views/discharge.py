@@ -2,6 +2,8 @@
 from collections import OrderedDict, defaultdict
 import datetime
 
+from django.utils.timezone import utc
+
 from base.exceptions import ReportException
 from base.utils import parse_float
 from reports import forms
@@ -19,6 +21,13 @@ class DischargeView(BaseReportView):
     form = forms.FuelDischargeForm
     template_name = 'reports/discharge.html'
     report_name = 'Отчет по перерасходу топлива'
+
+    def get_default_form(self):
+        data = self.request.POST if self.request.method == 'POST' else {
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
+        }
+        return self.form(data)
 
     @staticmethod
     def get_new_grouping():
@@ -277,3 +286,8 @@ class DischargeView(BaseReportView):
         )
 
         return kwargs
+
+    def write_xls_data(self, worksheet, context):
+        worksheet = super(DischargeView, self).write_xls_data(worksheet, context)
+
+        return worksheet

@@ -2,6 +2,8 @@
 from collections import OrderedDict
 import datetime
 
+from django.utils.timezone import utc
+
 from base.exceptions import ReportException
 from reports import forms
 from reports.utils import local_to_utc_time, utc_to_local_time
@@ -16,6 +18,13 @@ class InvalidJobStartEndView(BaseReportView):
     form = forms.DrivingStyleForm
     template_name = 'reports/invalid_job_start_end.html'
     report_name = 'Отчет о несвоевременном начале и окончании выполнения задания'
+
+    def get_default_form(self):
+        data = self.request.POST if self.request.method == 'POST' else {
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
+        }
+        return self.form(data)
 
     @staticmethod
     def get_new_start_grouping():

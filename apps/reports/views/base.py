@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
-import datetime
 import time
 
 import xlwt
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.http import HttpResponse
-from django.utils.timezone import utc
-
-import ujson
 
 from base.exceptions import ReportException
 from snippets.views import BaseTemplateView
@@ -30,9 +26,15 @@ class BaseReportView(BaseTemplateView):
     form = None
     report_name = ''
     context_dump_fields = ('report_data',)
+    can_download = False
+
+    def get_default_form(self):
+        data = self.request.POST if self.request.method == 'POST' else {}
+        return self.form(data)
 
     def get_default_context_data(self, **kwargs):
         context = {
+            'can_download': self.can_download,
             'None': None,
             'report_data': None,
             'report_name': self.report_name,
@@ -41,17 +43,16 @@ class BaseReportView(BaseTemplateView):
             'user': self.request.session.get('user', '')
         }
 
-        data = self.request.POST if self.request.method == 'POST' else {
-            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
-            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
-        }
-        form = self.form(data)
+        form = self.get_default_form()
 
         context['form'] = form
 
         return context
 
     def get(self, request, *args, **kwargs):
+        if 'download' in request.GET:
+            return self.download_xls(request, *args, **kwargs)
+
         try:
             return super(BaseReportView, self).get(request, *args, **kwargs)
         except ReportException as e:
@@ -61,14 +62,13 @@ class BaseReportView(BaseTemplateView):
             return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        if 'download' in request.GET:
-            return self.download_xls(request, *args, **kwargs)
         try:
             context = self.get_context_data(**kwargs)
-            # if context['report_data']:
-            #     key = 'context_%s' % self.report_name
-            #     dump_context = self.get_dump_context(context)
-            #     request.session[key] = ujson.dumps(dump_context)
+            if 'report_data' in context:
+                dump_context = self.get_dump_context(context)
+                dump_context['cleaned_data'] = context['form'].cleaned_data
+                dump_context['stats'] = context.get('stats', {})
+                request.session[self.get_session_key()] = dump_context
 
         except (ReportException, WialonException) as e:
             messages.error(request, str(e))
@@ -78,28 +78,28 @@ class BaseReportView(BaseTemplateView):
 
         return self.render_to_response(context)
 
+    def get_session_key(self):
+        return 'context_%s' % self.report_name
+
     def get_dump_context(self, context):
         return {x: y for x, y in context.items() if x in self.context_dump_fields}
 
     def download_xls(self, request, *args, **kwargs):
-        key = 'context_%s' % self.report_name
-
-        context = request.session.get(key)
+        context = request.session.get(self.get_session_key())
         if not context:
-            messages.error(request, 'Данные отчета не найдены')
+            messages.error(request, 'Данные отчета не найдены. Сначала выполните отчет')
             context = super(BaseReportView, self).get_context_data(**kwargs)
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
-        context = ujson.loads(context)
-        filename = '%s_%s.xls' % (self.report_name, int(time.time()))
+        filename = 'report_%s.xls' % int(time.time())
 
         workbook = xlwt.Workbook()
         worksheet = workbook.add_sheet('Отчет')
 
         self.write_xls_data(worksheet, context)
 
-        response = HttpResponse(mimetype="application/ms-excel")
+        response = HttpResponse(content_type='application/vnd.ms-excel')
         response['Content-Disposition'] = 'attachment; filename=%s' % filename
         workbook.save(response)
         return response

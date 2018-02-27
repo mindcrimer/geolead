@@ -66,3 +66,19 @@ class JobLogResource(resources.ModelResource):
     @staticmethod
     def dehydrate_user(obj):
         return obj.user.username if obj.user_id else ''
+
+
+class JobResource(resources.ModelResource):
+
+    class Meta:
+        fields = (
+            'id', 'unit_id', 'unit_title', 'route_id', 'route_title', 'driver_id', 'driver_fio',
+            'date_begin', 'date_end', 'leave_time', 'return_time', 'user', 'created'
+        )
+        export_order = fields
+        model = models.Job
+        skip_unchanged = True
+
+    @staticmethod
+    def dehydrate_user(obj):
+        return obj.user.username if obj.user_id else ''

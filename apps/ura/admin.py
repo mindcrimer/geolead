@@ -64,27 +64,6 @@ class ParkingTimeStandardFilterSpec(NullFilterSpec):
     parameter_name = 'parking_time_standard'
 
 
-@admin.register(models.JobLog)
-class JobLogAdmin(ExportMixin, admin.ModelAdmin):
-    """Лог путевых листов"""
-    actions = [approve_logs]
-    date_hierarchy = 'created'
-    fields = models.JobLog().collect_fields()
-    list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')
-    list_display_links = ('id', 'job_id')
-    list_filter = ('response_status', 'user', 'resolution')
-    list_select_related = True
-    readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
-    resource_class = import_export.JobLogResource
-    search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
 class JobPointInline(admin.TabularInline):
     """Геозоны путевого листа"""
     extra = 0
@@ -101,7 +80,7 @@ class JobPointInline(admin.TabularInline):
 
 
 @admin.register(models.Job)
-class JobAdmin(admin.ModelAdmin):
+class JobAdmin(ExportMixin, admin.ModelAdmin):
     """Путевые листы"""
     date_hierarchy = 'date_begin'
     fields = models.Job().collect_fields()
@@ -114,10 +93,32 @@ class JobAdmin(admin.ModelAdmin):
     list_select_related = True
     list_per_page = 50
     readonly_fields = ('created', 'updated')
+    resource_class = import_export.JobResource
     search_fields = (
         '=id', 'name', 'unit_title', 'driver_fio', 'route_title', 'unit_id', 'route_id',
         'driver_id'
     )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(models.JobLog)
+class JobLogAdmin(ExportMixin, admin.ModelAdmin):
+    """Лог путевых листов"""
+    actions = [approve_logs]
+    date_hierarchy = 'created'
+    fields = models.JobLog().collect_fields()
+    list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')
+    list_display_links = ('id', 'job_id')
+    list_filter = ('response_status', 'user', 'resolution')
+    list_select_related = True
+    readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
+    resource_class = import_export.JobLogResource
+    search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')
 
     def has_add_permission(self, request):
         return False

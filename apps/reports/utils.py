@@ -11,7 +11,7 @@ import requests
 
 from base.exceptions import ReportException
 from reports.models import ReportLog
-from reports.views.base import WIALON_INTERNAL_EXCEPTION
+from reports.views.base import WIALON_INTERNAL_EXCEPTION, WIALON_SESSION_EXPIRED
 from snippets.utils.datetime import utcnow
 from ura.models import Job
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
@@ -210,7 +210,7 @@ def throttle_report(user):
         """
         since_dt = utcnow() - datetime.timedelta(seconds=60 + 5)
         count = ReportLog.objects.filter(user=for_user, created__gte=since_dt).count()
-        print('Reports since %s count: %s' % (since_dt, count))
+        # print('Reports since %s count: %s' % (since_dt, count))
         return count
 
     while attempts > 0 \
@@ -289,6 +289,8 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     result = r.json()
 
     if 'error' in result:
+        if result['error'] == 1:
+            raise ReportException(WIALON_SESSION_EXPIRED)
         raise ReportException(WIALON_INTERNAL_EXCEPTION % result)
 
     return result
@@ -317,6 +319,8 @@ def get_report_rows(user, table_index, rows, level=0, sess_id=None):
     ).json()
 
     if 'error' in rows:
+        if rows['error'] == 1:
+            raise ReportException(WIALON_SESSION_EXPIRED)
         raise ReportException(WIALON_INTERNAL_EXCEPTION % rows)
 
     return rows

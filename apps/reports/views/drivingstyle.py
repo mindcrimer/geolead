@@ -132,9 +132,6 @@ class DrivingStyleView(BaseReportView):
                         sess_id=sess_id
                     )
 
-                    if 'error' in rows:
-                        raise ReportException(WIALON_INTERNAL_EXCEPTION % rows)
-
                     for row in rows:
                         data = row['c']
 

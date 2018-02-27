@@ -11,6 +11,15 @@ from wialon.exceptions import WialonException
 from wialon.auth import get_wialon_session_key
 
 
+def process_error(result, error):
+    if 'error' in result:
+        if result['error'] == 1:
+            raise WialonException(
+                error + ' Ошибка: ваша сессия устарела. Зайдите заново в приложение через APPS.'
+            )
+        raise WialonException(error + (' Ошибка: %s' % result))
+
+
 def get_drivers(user=None, sess_id=None):
     """Получает список водителей"""
     assert user or sess_id
@@ -44,8 +53,7 @@ def get_drivers(user=None, sess_id=None):
     )
     res = r.json()
 
-    if 'error' in res:
-        raise WialonException('Не удалось извлечь из Wialon список водителей. Ошибка: %s' % res)
+    process_error(res, 'Не удалось извлечь из Wialon список водителей.')
 
     drivers = []
     for item in res['items']:
@@ -88,44 +96,16 @@ def get_group_object_id(name, user=None, sess_id=None):
     )
     res = r.json()
 
-    if 'error' in res or 'items' not in res or len(res['items']) == 0:
-        extra = ''
-        if user:
-            extra = 'Проверьте правильность имени группового объекта в настройках интеграции ' \
-                    'у пользователя "%s".' % user
-        if 'error' in res:
-            extra += ' Ошибка: %s' % res
+    error = 'Не найден ID группового объекта.'
+    if user:
+        error += ' Проверьте правильность имени группового объекта в настройках интеграции ' \
+                'у пользователя "%s".' % user
+    process_error(res, error)
 
-        raise WialonException('Не найден ID группового объекта.%s' % extra)
+    if 'items' not in res or len(res['items']) == 0:
+        raise WialonException(error)
 
     return res['items'][0]['id']
-
-
-def get_intersected_geozones(lon, lat, user=None, sess_id=None, zones=None):
-    """Получает геозоны, пересекаемые c указанной координатой"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
-    if zones is None:
-        zones = {x['id']: [] for x in get_resources(user, sess_id)}
-
-    request_params = json.dumps({
-        'spec': {
-            'zoneId': zones,
-            'lat': lat,
-            'lon': lon
-        }
-    })
-    r = requests.get(
-        settings.WIALON_BASE_URL + (
-            '?svc=resource/get_zones_by_point&params=%s&sid=%s' % (request_params, sess_id)
-        )
-    )
-    res = r.json()
-
-    return res
 
 
 def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
@@ -155,13 +135,7 @@ def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
         )
     )
     res = r.json()
-
-    if 'error' in res:
-        raise WialonException(
-            'Не удалось извлечь список сообщений из Wialon. ID объекта: %s. Ошибка: %s' % (
-                item_id, res
-            )
-        )
+    process_error(res, 'Не удалось извлечь список сообщений из Wialon. ID объекта: %s.' % item_id)
 
     return res
 
@@ -199,8 +173,7 @@ def get_points(user=None, sess_id=None):
     )
     res = r.json()
 
-    if 'error' in res:
-        raise WialonException('Не удалось извлечь из Wialon список геозон. Ошибка: %s' % res)
+    process_error(res, 'Не удалось извлечь из Wialon список геозон.')
 
     points = []
     for item in res['items']:
@@ -249,8 +222,7 @@ def get_resources(user=None, sess_id=None):
     )
     res = r.json()
 
-    if 'error' in res:
-        raise WialonException('Не удалось извлечь из Wialon список ресурсов. Ошибка: %s' % res)
+    process_error(res, 'Не удалось извлечь из Wialon список ресурсов.')
 
     resources = []
     for item in res['items']:
@@ -292,14 +264,14 @@ def get_resource_id(name, user=None, sess_id=None):
     )
     res = r.json()
 
-    if 'error' in res or 'items' not in res or len(res['items']) == 0:
-        extra = ''
-        if user:
-            extra = ' Проверьте правильность имени ресурса пользователя в настройках интеграции ' \
-                    'у пользователя "%s".' % user
-        if 'error' in res:
-            extra += ' Ошибка: %s' % res
-        raise WialonException('Не найден ID ресурса.%s' % extra)
+    error = 'Не найден ID ресурса.'
+    if user:
+        error += ' Проверьте правильность имени ресурса пользователя в настройках интеграции ' \
+                 'у пользователя "%s".' % user
+    process_error(res, error)
+
+    if 'items' not in res or len(res['items']) == 0:
+        raise WialonException(error)
 
     return res['items'][0]['id']
 
@@ -331,17 +303,15 @@ def get_report_template_id(name, user=None, sess_id=None):
     )
     res = r.json()
 
-    if 'error' in res or 'items' not in res or len(res['items']) == 0 \
+    error = 'Не найден ID шаблона отчета "%s"' % name
+    if user:
+        error += ' Проверьте правильность имени шаблона отчета в настройках интеграции ' \
+                 'у пользователя "%s".' % user
+    process_error(res, error)
+
+    if 'items' not in res or len(res['items']) == 0 \
             or 'rep' not in res['items'][0] or len(res['items'][0]['rep']) == 0:
-        extra = ''
-        if user:
-            extra = ' Проверьте правильность имени шаблона отчета в настройках интеграции ' \
-                    'у пользователя "%s".' % user
-        if 'error' in res:
-            extra += ' Ошибка: %s' % res
-        raise WialonException(
-            'Не найден ID шаблона отчета "%s".%s' % (name, extra)
-        )
+        raise WialonException(error)
 
     reports = list(filter(lambda x: x['n'].strip() == name, res['items'][0]['rep'].values()))
     if reports:
@@ -387,8 +357,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
     )
     res = r.json()
 
-    if 'error' in res:
-        raise WialonException('Не удалось извлечь из Wialon список маршрутов. Ошибка %s' % res)
+    process_error(res, 'Не удалось извлечь из Wialon список маршрутов.')
 
     routes = []
     for r in res['items']:
@@ -444,11 +413,7 @@ def get_units(user=None, sess_id=None, extra_fields=False):
         )
     )
     res = r.json()
-
-    if 'error' in res:
-        raise WialonException(
-            'Не удалось извлечь из Wialon список объектов (ТС). Ошибка: %s' % res
-        )
+    process_error(res, 'Не удалось извлечь из Wialon список объектов (ТС).')
 
     units = []
     for item in res['items']:

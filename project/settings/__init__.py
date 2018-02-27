@@ -291,6 +291,7 @@ WIALON_DEFAULT_TEMPLATE_NAMES = {
 }
 
 WIALON_CACHE_TIMEOUT = 45
+WIALON_REPORTS_PER_MINUTE_LIMIT = 30
 
 try:
     from project.settings.settings_local import *  # NOQA

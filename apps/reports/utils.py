@@ -10,7 +10,9 @@ from django.utils.timezone import utc
 import requests
 
 from base.exceptions import ReportException
+from reports.models import ReportLog
 from reports.views.base import WIALON_INTERNAL_EXCEPTION
+from snippets.utils.datetime import utcnow
 from ura.models import Job
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
 from wialon.auth import get_wialon_session_key
@@ -192,6 +194,38 @@ def cleanup_and_request_report(user, template_id, item_id=None, sess_id=None):
     )
 
 
+def throttle_report(user):
+    """
+    Замедление выполнения отчета для прохождения лимита
+    Ждем пока высвободится лимит отчетов, либо через 1 минуту выполняем в любом случае
+    """
+    attempts = 20
+    throttle_delta = 3
+    throttle_delta_cumulatime = 0
+
+    def get_executed_reports_count(for_user):
+        """
+        Изучаем сколько запросов сделано за минуту
+        (и на всякий случай добавим еще 5 минут)
+        """
+        since_dt = utcnow() - datetime.timedelta(seconds=60 + 5)
+        count = ReportLog.objects.filter(user=for_user, created__gte=since_dt).count()
+        print('Reports since %s count: %s' % (since_dt, count))
+        return count
+
+    while attempts > 0 \
+            and get_executed_reports_count(user) >= settings.WIALON_REPORTS_PER_MINUTE_LIMIT:
+        throttle_delta_cumulatime += throttle_delta
+        print('Report of user %s throttled for %s sec (attempts: %s)' % (
+            user.username, throttle_delta_cumulatime, attempts
+        ))
+        time.sleep(throttle_delta)
+        attempts -= 1
+
+    ReportLog.objects.create(user=user)
+    return True
+
+
 def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, object_id=None,
                 sess_id=None):
     if sess_id is None:
@@ -230,6 +264,9 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
                     error
                 )
             )
+
+    # замедляем в случае чего, для прохождения лимита
+    throttle_report(user)
 
     r = requests.post(
         settings.WIALON_BASE_URL + '?svc=report/exec_report&sid=' + sess_id, {

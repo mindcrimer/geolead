@@ -65,7 +65,9 @@ class FinishedJobsView(BaseReportView):
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
-                dt_to = local_to_utc_time(form.cleaned_data['dt_to'], user.wialon_tz)
+                dt_to = local_to_utc_time(
+                    form.cleaned_data['dt_to'].replace(second=59), user.wialon_tz
+                )
 
                 routes = {
                     x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)

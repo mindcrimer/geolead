@@ -80,7 +80,7 @@ class DischargeView(BaseReportView):
 
                 dt_from, dt_to = get_period(
                     form.cleaned_data['dt_from'],
-                    form.cleaned_data['dt_to'],
+                    form.cleaned_data['dt_to'].replace(second=59),
                     user.wialon_tz
                 )
 

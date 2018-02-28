@@ -11,10 +11,10 @@ class DrivingStyleForm(forms.Form):
 
 
 class FaultsForm(forms.Form):
-    """Форма отчета по неисправностям"""
+    """Форма отчета о состоянии оборудования ССМТ"""
     dt = forms.DateField(label=_('На дату'))
     job_extra_period = forms.IntegerField(
-        label=_('Время оценки работоспособности до и после ПЛ'), min_value=0, max_value=99,
+        label=_('Дополнительное время до и после ПЛ, ч'), min_value=0, max_value=99,
         initial=2, required=True
     )
 

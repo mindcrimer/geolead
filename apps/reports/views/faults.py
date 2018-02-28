@@ -16,10 +16,10 @@ from wialon.exceptions import WialonException
 
 
 class FaultsView(BaseReportView):
-    """Отчет по неисправностям"""
+    """Отчет о состоянии оборудования ССМТ"""
     form = forms.FaultsForm
     template_name = 'reports/faults.html'
-    report_name = 'Отчет по неисправностям'
+    report_name = 'Отчет о состоянии оборудования ССМТ'
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {

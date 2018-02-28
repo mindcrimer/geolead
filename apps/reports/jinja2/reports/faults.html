@@ -2,9 +2,8 @@
 
 {%- block REPORT_HEADING -%}
 	<div class="report__heading-row uk-margin">
-		Период:
-		{{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
-		{{ form.cleaned_data.dt_to|date('d.m.Y H:i') -}}
+		На дату:&nbsp;
+		{{- form.cleaned_data.dt|date('d.m.Y H:i') -}}
 	</div>
 
 	<div class="report__heading-row uk-margin">
@@ -91,16 +90,25 @@
 
 		<div class="form-controls">
 			<div class="uk-margin">
-				<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
-							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+                <label class="uk-form-label" for="report_dt">На дату</label>
+				<input class="uk-input date-input" name="dt" placeholder="С" id="report_dt"
+							 value="{{ form.cleaned_data['dt']|date('d.m.Y') if form.cleaned_data and form.cleaned_data.get('dt') else '' }}">
+				<div class="errors">{{ form.errors.get('dt', '') }}</div>
 			</div>
 
-			<div class="uk-margin">
-				<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
-							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-			</div>
+            <div class="uk-margin">
+                <label class="uk-form-label" for="report_job_extra_period">Дополнительное время до и после ПЛ, ч</label>
+                <input class="uk-input" name="job_extra_period"
+                       id="report_job_extra_period"
+                       type="number" step="1" min="1" max="99"
+                       value="{{ form.cleaned_data.get('job_extra_period') }}">
+				<div class="errors">{{ form.errors.get('job_extra_period', '') }}</div>
+                <div class="hint">
+                    Указывается время в часах, которое добавляется до и после периода путевого листа
+                    при анализе работоспособности оборудования ССМТ. Данное значение не влияет на расчет
+                    суммарного рабочего времени неисправности.
+                </div>
+            </div>
 
 			<div class="uk-margin">
 				<button class="uk-button uk-button-primary">Создать</button>

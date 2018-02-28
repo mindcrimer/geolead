@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import time
-
 import xlwt
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.http import HttpResponse
 
 from base.exceptions import ReportException
+from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
 from wialon.exceptions import WialonException
 
@@ -92,7 +91,7 @@ class BaseReportView(BaseTemplateView):
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
-        filename = 'report_%s.xls' % int(time.time())
+        filename = 'report_%s.xls' % utcnow().strftime('%Y%m%d_%H%M%S')
 
         workbook = xlwt.Workbook()
         worksheet = workbook.add_sheet('Отчет')
@@ -100,7 +99,7 @@ class BaseReportView(BaseTemplateView):
         self.write_xls_data(worksheet, context)
 
         response = HttpResponse(content_type='application/vnd.ms-excel')
-        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        response['Content-Disposition'] = 'attachment; filename="%s"' % filename
         workbook.save(response)
         return response
 

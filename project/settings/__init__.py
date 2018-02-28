@@ -120,7 +120,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'snippets.middlewares.language.LanguageMiddleware',
-    'snippets.seo.middleware.SEOMiddleware',
+    # 'snippets.seo.middleware.SEOMiddleware',
     # 'snippets.middlewares.compress.CompressMiddleware'
 )
 
@@ -146,7 +146,7 @@ INSTALLED_APPS = (
     'import_export',
     # базовые компоненты проекта (переопределяет контрибы веб-студии)
     'snippets.general',
-    'snippets.seo',
+    # 'snippets.seo',
     'base',
     # приложения проекта
     'core',
@@ -204,8 +204,6 @@ SUIT_CONFIG = {
     'ADMIN_NAME': 'Интеграция УРА-Wialon',
     'MENU_OPEN_FIRST_CHILD': True,
     'MENU': [
-        'core',
-        'general',
         'reports',
         'ura',
         'users'
@@ -288,7 +286,8 @@ WIALON_DEFAULT_TEMPLATE_NAMES = {
     'discharge': 'Ресурс перерасход топлива',
     'driving_style': 'Ресурс БВ',
     'geozones': 'Ресурс Геозоны',
-    'kmu': 'Работа крановой установки'
+    'kmu': 'Работа крановой установки',
+    'sensors': 'Ресурс неисправности'
 }
 
 WIALON_CACHE_TIMEOUT = 45

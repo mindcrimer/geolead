@@ -1,20 +1,11 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin, GroupAdmin as DjangoGroupAdmin
-from django.contrib.auth.models import Group
+from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import ugettext_lazy as _
 
 from snippets.admin import activate_action, deactivate_action
 from users.forms import UserAdminForm, UserCreationForm
 from users import models
-
-
-admin.site.unregister(Group)
-
-
-@admin.register(Group)
-class GroupAdmin(DjangoGroupAdmin):
-    pass
 
 
 @admin.register(models.User)
@@ -40,7 +31,9 @@ class UserAdmin(UserAdmin):
                 'wialon_group_object_name', 'wialon_resource_name',
                 'wialon_discharge_report_template_name',
                 'wialon_driving_style_report_template_name',
-                'wialon_geozones_report_template_name', 'wialon_kmu_report_template_name'
+                'wialon_geozones_report_template_name',
+                'wialon_kmu_report_template_name',
+                'wialon_sensors_report_template_name'
             )
         }),
         (_('УРА'), {
@@ -52,7 +45,7 @@ class UserAdmin(UserAdmin):
     list_display = (
         'username', 'organization_name', 'wialon_username', 'supervisor', 'is_active', 'is_staff'
     )
-    list_editable = ('is_active', 'supervisor')
+    list_editable = ('is_active',)
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     readonly_fields = ('last_login', 'date_joined', 'wialon_token', 'created', 'updated')
     search_fields = (

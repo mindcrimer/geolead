@@ -15,7 +15,7 @@
 </ul>
 {%- endif -%}
 
-{%- if report_data -%}
+{%- if report_data != None -%}
 	<div class="report">
 		<div class="report-export-wrapper">
 			<h1>{% block REPORT_NAME %}{{ report_name|e }}{% endblock %}</h1>
@@ -60,14 +60,14 @@
 		</div>
 	</div>
 
-{%- else -%}
-<div class="report">
-	<h3>Данные за указанный период не найдены</h3>
-
-	<div class="uk-margin-top">
-		<a href="" class="uk-button uk-button-default">Назад</a>
-	</div>
-</div>
+{#{%- else -%}#}
+{#<div class="report">#}
+{#	<h3>Данные за указанный период не найдены</h3>#}
+{##}
+{#	<div class="uk-margin-top">#}
+{#		<a href="" class="uk-button uk-button-default">Назад</a>#}
+{#	</div>#}
+{#</div>#}
 {%- endif -%}
 
 {%- endblock -%}

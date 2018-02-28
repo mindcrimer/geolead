@@ -62,9 +62,18 @@ class FaultsView(BaseReportView):
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
+                report_date = form.cleaned_data['dt']
+
+                dt_from = datetime.datetime.combine(
+                    report_date, datetime.time(0, 0, 0)
+                ).replace(tzinfo=user.wialon_tz)
+                dt_to = datetime.datetime.combine(
+                    report_date, datetime.time(23, 59, 59)
+                ).replace(tzinfo=user.wialon_tz)
+
                 dt_from, dt_to = get_period(
-                    form.cleaned_data['dt_from'],
-                    form.cleaned_data['dt_to'],
+                    dt_from,
+                    dt_to,
                     user.wialon_tz
                 )
 

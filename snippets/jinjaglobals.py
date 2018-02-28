@@ -278,7 +278,7 @@ def site_url():
 
 
 @jinjaglobal
-def static_with_mtime(file_path):
+def static(file_path):
     filemtime = int(
         os.path.getmtime(os.path.join(settings.STATIC_ROOT, file_path))
     )

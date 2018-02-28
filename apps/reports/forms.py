@@ -18,7 +18,8 @@ class DrivingStyleForm(forms.Form):
 
 class FinishedJobsForm(forms.Form):
     """Форма отчета Актуальность шаблонов заданий" """
-    dt = forms.DateField(label=_('За дату'))
+    dt_from = forms.DateTimeField(label=_('С'))
+    dt_to = forms.DateTimeField(label=_('По'))
     non_actual_param = forms.IntegerField(
         label=_('Условие неактуальности, %'), min_value=1, max_value=99, initial=20, required=True
     )

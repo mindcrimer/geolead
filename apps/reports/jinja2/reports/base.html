@@ -3,7 +3,7 @@
 {%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
 
 {%- block EXTRA_HEAD -%}
-	<link rel="stylesheet" media="print" href="{{ static_with_mtime('css/print.css') }}">
+	<link rel="stylesheet" media="print" href="{{ static('css/print.css') }}">
 {%- endblock -%}
 
 {%- block PAGE_CONTENT -%}

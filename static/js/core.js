@@ -3,11 +3,12 @@ $(document).ready(function() {
 
   $('.dt-input').datetimepicker({
     startDate: '+1971/05/01',
-    format: 'd.m.Y H:i:s'
+    format: 'd.m.Y H:i'
   });
 
   $('.date-input').datetimepicker({
     startDate: '+1971/05/01',
-    format: 'd.m.Y'
+    format: 'd.m.Y',
+    timepicker: false
   });
 });

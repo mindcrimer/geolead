@@ -2,10 +2,13 @@
 from collections import OrderedDict
 import datetime
 
+from django.utils.timezone import utc
+
 import xlwt
 
 from base.exceptions import ReportException
 from reports import forms
+from reports.utils import local_to_utc_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from snippets.jinjaglobals import date as date_format
 from ura.models import Job
@@ -22,7 +25,8 @@ class FinishedJobsView(BaseReportView):
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
-            'dt': datetime.date.today(),
+            'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
             'non_actual_param': 20
         }
         return self.form(data)
@@ -60,14 +64,8 @@ class FinishedJobsView(BaseReportView):
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                report_date = form.cleaned_data['dt']
-
-                dt_from = datetime.datetime.combine(
-                    report_date, datetime.time(0, 0, 0)
-                ).replace(tzinfo=user.wialon_tz)
-                dt_to = datetime.datetime.combine(
-                    report_date, datetime.time(23, 59, 59)
-                ).replace(tzinfo=user.wialon_tz)
+                dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
+                dt_to = local_to_utc_time(form.cleaned_data['dt_to'], user.wialon_tz)
 
                 routes = {
                     x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
@@ -145,8 +143,9 @@ class FinishedJobsView(BaseReportView):
 
         # header
         worksheet.write_merge(
-            1, 1, 0, 3, 'За дату: %s' % (
-                date_format(context['cleaned_data']['dt'], 'd.m.Y'),
+            1, 1, 0, 3, 'За период: %s - %s' % (
+                date_format(context['cleaned_data']['dt_from'], 'd.m.Y H:i'),
+                date_format(context['cleaned_data']['dt_to'], 'd.m.Y H:i')
             )
         )
         worksheet.row(1).height = 340

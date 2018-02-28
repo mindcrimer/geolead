@@ -1,13 +1,14 @@
 $(document).ready(function() {
   $.datetimepicker.setLocale('ru');
 
-  $('.dt-input').datetimepicker({
-    startDate: '+1971/05/01',
-    format: 'd.m.Y H:i'
+  $('.dt-input').each(function () {
+    $(this).datetimepicker({
+      format: 'd.m.Y H:i',
+      value: $(this).val()
+    });
   });
 
   $('.date-input').datetimepicker({
-    startDate: '+1971/05/01',
     format: 'd.m.Y',
     timepicker: false
   });

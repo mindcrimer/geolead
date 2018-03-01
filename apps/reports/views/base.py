@@ -119,6 +119,10 @@ class BaseReportView(BaseTemplateView):
                 'borders: bottom thin, left thin, right thin, top thin;'
                 'align: wrap on, vert centre, horiz left'
             ),
+            'border_center_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz centre'
+            ),
             'border_right_style': xlwt.easyxf(
                 'borders: bottom thin, left thin, right thin, top thin;'
                 'align: wrap on, vert centre, horiz right'

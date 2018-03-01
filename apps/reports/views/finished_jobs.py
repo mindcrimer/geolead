@@ -172,6 +172,7 @@ class FinishedJobsView(BaseReportView):
         for i in range(1, 7):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
 
+        # body
         for i, row in enumerate(context['report_data'].values(), 7):
             worksheet.write(i, 0, row['key'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['plan'], style=self.styles['border_right_style'])

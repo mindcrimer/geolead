@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+import ujson
 from django.utils.timezone import utc
 
 from base.exceptions import ReportException
@@ -14,7 +15,7 @@ from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_N
 from snippets.jinjaglobals import date as date_format
 from ura.models import Job
 from users.models import User
-from wialon.api import get_units
+from wialon.api import get_units, get_unit_settings
 
 
 class FaultsView(BaseReportView):
@@ -26,22 +27,22 @@ class FaultsView(BaseReportView):
 
     def __init__(self, *args, **kwargs):
         super(FaultsView, self).__init__(*args, **kwargs)
+        self.last_data = {}
         self.report_data = None
         self.sensors_report_data = {}
-        self.last_data = {}
         self.stats = {
             'total': set(),
             'broken': set()
         }
-        self.mapping = {
-            'ВСЕ': {},
-            'Геолокация': {},
-            'Свет фар': {},
-            'Ремень': {},
-            'Зажигание': {},
-            'ДУТ': {},
-            'Напряжение АКБ': {}
-        }
+        self.known_sensors = (
+            'ВСЕ',
+            'Ближний свет фар',
+            'Ремень',
+            'Зажигание',
+            'Датчик уровня топлива',
+            'Напряжение АКБ'
+        )
+        self.unit_sensors_cache = {}
         self.user = None
 
     def get_default_form(self):
@@ -167,22 +168,22 @@ class FaultsView(BaseReportView):
                         )
                         continue
 
-                    for field in self.mapping.keys():
-                        if field == 'ВСЕ':
+                    for field in self.known_sensors:
+                        if field not in report_tables and field != 'ВСЕ':
+                            # проверим, возможно датчик и не настроен
+                            unit_sensors = self.get_unit_sensors(int(job.unit_id), sess_id=sess_id)
+                            if field.lower() in unit_sensors:
+                                self.add_report_row(
+                                    job, unit_name, 'Нет данных по датчику "%s"' % field
+                                )
                             continue
 
-                        if field not in report_tables:
-                            self.add_report_row(
-                                job, unit_name, 'Нет данных по датчику "%s"' % field
-                            )
-                            continue
-
+                        # перебираем сначала более маленькие выборки, с целью ускорения работы
                         attempts = (10, 100, max(report_tables[field]['rows'], 10000))
                         for attempt, rows_limit in enumerate(attempts):
                             rows = get_report_rows(
                                 self.user,
                                 report_tables[field]['index'],
-                                # для всех датчиков достаточно и 10 записей
                                 rows_limit,
                                 level=1,
                                 sess_id=sess_id
@@ -190,14 +191,38 @@ class FaultsView(BaseReportView):
 
                             data = [r['c'] for r in rows]
 
-                            if self.analyze_sensor_data(field, data):
+                            analyze_result = self.analyze_sensor_data(field, data)
+                            if analyze_result in (None, True):
+                                if analyze_result:
+                                    # все отлично, данные меняются и они есть
+                                    pass
+
+                                elif analyze_result is None:
+                                    # данных никаких нет!
+                                    # Снова проверяем на наличие датчика в настройках
+                                    # проверим, возможно датчик и не настроен
+                                    unit_sensors = self.get_unit_sensors(
+                                        int(job.unit_id), sess_id=sess_id
+                                    )
+                                    if field == 'ВСЕ' or field.lower() in unit_sensors:
+                                        sensor = field
+                                        if field == 'ВСЕ':
+                                            sensor = 'Антенна GPS'
+                                        self.add_report_row(
+                                            job, unit_name, 'Нет данных по датчику "%s"' % sensor
+                                        )
+
                                 break
-                            # если в последней попытке тоже не нашел
-                            elif attempt == len(attempts) - 1:
+                            # если в последней попытке тоже не нашел различающиеся данные
+                            elif analyze_result is False and attempt == len(attempts) - 1:
+                                sensor = field
+                                if field == 'ВСЕ':
+                                    sensor = 'Антенна GPS'
+
                                 self.add_report_row(
                                     job, unit_name,
                                     'Датчик "%s" отправляет одни и те же '
-                                    'данные в течение смены' % field
+                                    'данные в течение смены' % sensor
                                 )
 
         self.stats['total'] = len(self.stats['total'])
@@ -211,28 +236,49 @@ class FaultsView(BaseReportView):
 
         return kwargs
 
+    def get_unit_sensors(self, unit_id, sess_id=None):
+        if unit_id not in self.unit_sensors_cache:
+            unit_settings = get_unit_settings(unit_id, user=self.user, sess_id=sess_id)
+            sensors = unit_settings['sens']
+
+            for sensor in sensors.values():
+                sensor['c'] = ujson.loads(sensor['c'])
+
+            sensors = list(map(
+                lambda x: x['n'].lower(),
+                filter(lambda s: s['c']['appear_in_popup'], sensors.values())
+            ))
+
+            self.unit_sensors_cache[unit_id] = sensors
+        return self.unit_sensors_cache[unit_id]
+
     @staticmethod
     def analyze_sensor_data(label, data):
         """Ищем корректность датчика"""
         # print(label)
-        if label == 'Геолокация':
+        if label == 'ВСЕ':  # смотрим данные геолокации (GPS)
             values = set(
-                map(
-                    lambda x: x[4]['t'] if (
-                        x[4] and isinstance(x[4], dict) and 't' in x[4]
-                    ) else '',
-                    data)
+                filter(None, map(
+                    lambda x: ('%s,%s' % (x[3]['x'], x[3]['y'])) if (
+                        x[3] and isinstance(x[3], dict) and 'x' in x[3] and 'y' in x[3]
+                    ) else None,
+                    data
+                ))
             )
+
         else:
             values = set(map(lambda x: x[3], data))
 
-        if len(values) > 1:
-            return True
+        if not values:
+            return None
+
+        return len(values) > 1
 
     def add_report_row(self, job, unit_name, fault, place=None, dt=None,
                        sum_broken_work_time=None):
         report_row = self.get_new_grouping()
         self.stats['broken'].add(unit_name)
+        print(fault)
 
         if place is None and dt is None:
             dt, place = self.get_last_data(unit_name)
@@ -342,13 +388,17 @@ class FaultsView(BaseReportView):
         worksheet.write(6, 1, ' Место/геозона', style=self.styles['border_left_style'])
         worksheet.write(6, 2, ' Время', style=self.styles['border_left_style'])
 
-        for i in range(1, 7):
+        for i in range(6):
+            worksheet.write(7, i, str(i + 1), style=self.styles['border_center_style'])
+
+        for i in range(1, 8):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
         worksheet.row(5).height = REPORT_ROW_HEIGHT + 100
         worksheet.row(6).height = REPORT_ROW_HEIGHT + 100
         worksheet.row(4).height = REPORT_ROW_HEIGHT * 2
 
-        for i, row in enumerate(context['report_data'], start=7):
+        # body
+        for i, row in enumerate(context['report_data'], start=8):
             worksheet.write(i, 0, row['unit'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['place'], style=self.styles['border_left_style'])
             worksheet.write(
@@ -356,7 +406,7 @@ class FaultsView(BaseReportView):
             )
             worksheet.write(i, 3, row['driver_name'], style=self.styles['border_left_style'])
             worksheet.write(
-                i, 4, row['sum_broken_work_time'], style=self.styles['border_left_style']
+                i, 4, row['sum_broken_work_time'], style=self.styles['border_right_style']
             )
             worksheet.write(i, 5, row['fault'], style=self.styles['border_left_style'])
             worksheet.row(i).height = 520

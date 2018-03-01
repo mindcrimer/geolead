@@ -285,6 +285,7 @@ WIALON_DEFAULT_GROUP_OBJECT_NAME = 'Ресурс'
 WIALON_DEFAULT_TEMPLATE_NAMES = {
     'discharge': 'Ресурс перерасход топлива',
     'driving_style': 'Ресурс БВ',
+    'driving_style_individual': 'Ресурс БВ индивидуальный',
     'geozones': 'Ресурс Геозоны',
     'kmu': 'Работа крановой установки',
     'sensors': 'Ресурс неисправности',

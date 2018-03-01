@@ -43,8 +43,13 @@ class User(AbstractUser, LastModMixin, BasicModel):
         _('Наименование отчета "Перерасход топлива"'), max_length=255, blank=True, null=True
     )
     wialon_driving_style_report_template_name = models.CharField(
-        _('Наименование отчета "Стиль вождения (ПДД)"'), max_length=255, blank=True, null=True
+        _('Наименование отчета "Качество вождения (БДД)"'), max_length=255, blank=True, null=True
     )
+    wialon_driving_style_individual_report_template_name = models.CharField(
+        _('Наименование отчета "Качество вождения индивидуальный (БДД)"'), max_length=255,
+        blank=True, null=True
+    )
+
     wialon_geozones_report_template_name = models.CharField(
         _('Наименование отчета "Геозоны"'), max_length=255, blank=True, null=True
     )

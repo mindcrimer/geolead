@@ -54,6 +54,9 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_sensors_report_template_name = models.CharField(
         _('Наименование отчета "Неисправности"'), max_length=255, blank=True, null=True
     )
+    wialon_last_data_report_template_name = models.CharField(
+        _('Наименование отчета "Последние данные"'), max_length=255, blank=True, null=True
+    )
 
     wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
 

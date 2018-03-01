@@ -3,6 +3,7 @@ import datetime
 
 from django.utils.timezone import utc
 
+
 from base.exceptions import ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
@@ -20,14 +21,25 @@ class FaultsView(BaseReportView):
     form = forms.FaultsForm
     template_name = 'reports/faults.html'
     report_name = 'Отчет о состоянии оборудования ССМТ'
+    can_download = True
 
     def __init__(self, *args, **kwargs):
         super(FaultsView, self).__init__(*args, **kwargs)
         self.report_data = None
         self.sensors_report_data = {}
+        self.last_data = {}
         self.stats = {
             'total': set(),
             'broken': set()
+        }
+        self.mapping = {
+            'ВСЕ': {},
+            'Геолокация': {},
+            'Свет фар': {},
+            'Ремень': {},
+            'Зажигание': {},
+            'ДУТ': {},
+            'Напряжение АКБ': {}
         }
         self.user = None
 
@@ -48,37 +60,6 @@ class FaultsView(BaseReportView):
             'sum_broken_work_time': '',
             'fault': ''
         }
-
-    def add_report_row(self, unit_name, fault, place='', dt='', driver_name='',
-                       sum_broken_work_time=''):
-        report_row = self.get_new_grouping()
-        self.stats['broken'].add(unit_name)
-        report_row.update(
-            unit=unit_name,
-            fault=fault,
-            place=place,
-            dt=dt,
-            driver_name=driver_name,
-            sum_broken_work_time=sum_broken_work_time
-        )
-
-    def get_last_data(self, unit):
-        data = self.sensors_report_data['unit_group_location'].get(unit)
-        if data and len(data) > 1:
-            dt, place = data[0], data[1]
-
-            if isinstance(dt, dict):
-                dt = datetime.datetime.utcfromtimestamp(dt['v'])
-                dt = utc_to_local_time(dt, self.user.wialon_tz)
-            else:
-                dt = parse_wialon_report_datetime(dt)
-
-            if isinstance(place, dict) and 't' in place:
-                place = place['t']
-
-            return dt, place
-
-        return '', ''
 
     def get_context_data(self, **kwargs):
         kwargs = super(FaultsView, self).get_context_data(**kwargs)
@@ -109,45 +90,36 @@ class FaultsView(BaseReportView):
 
                 dt_from_local = datetime.datetime.combine(report_date, datetime.time(0, 0, 0))
                 dt_to_local = datetime.datetime.combine(report_date, datetime.time(23, 59, 59))
-
                 dt_from_utc = local_to_utc_time(dt_from_local, self.user.wialon_tz)
                 dt_to_utc = local_to_utc_time(dt_to_local, self.user.wialon_tz)
 
-                dt_from_offset = dt_from_local - job_extra_offset
-                dt_to_offset = dt_to_local + job_extra_offset
+                sensors_template_id = get_wialon_report_template_id('sensors', self.user)
+                last_data_template_id = get_wialon_report_template_id('last_data', self.user)
 
-                dt_from, dt_to = get_period(dt_from_offset, dt_to_offset, self.user.wialon_tz)
-
-                template_id = get_wialon_report_template_id('sensors', self.user)
-
-                cleanup_and_request_report(self.user, template_id, sess_id=sess_id)
-                r = exec_report(self.user, template_id, dt_from, dt_to, sess_id=sess_id)
-
-                jobs = Job.objects.filter(
-                    user=self.user, date_begin__lt=dt_to_utc, date_end__gte=dt_from_utc
+                dt_from, dt_to = get_period(
+                    dt_from_local, dt_to_local, self.user.wialon_tz
                 )
+                cleanup_and_request_report(self.user, last_data_template_id, sess_id=sess_id)
+                r = exec_report(self.user, last_data_template_id, dt_from, dt_to, sess_id=sess_id)
 
                 for table_index, table_info in enumerate(r['reportResult']['tables']):
                     rows = get_report_rows(
                         self.user,
                         table_index,
                         table_info['rows'],
-                        level=2 if table_info['name'] == 'unit_group_sensors_tracing' else 1,
+                        level=1,
                         sess_id=sess_id
                     )
 
-                    if table_info['name'] == 'unit_group_sensors_tracing':
-                        self.sensors_report_data[table_info['name']] = {
-                            r['c'][0]: [x['c'] for x in r['r']] for r in rows
-                        }
-                    else:
-                        self.sensors_report_data[table_info['name']] = {
-                            r['c'][0]: r['c'][1:] for r in rows
-                        }
+                    if table_info['name'] == 'unit_group_location':
+                        self.last_data = {r['c'][0]: r['c'][1:] for r in rows}
+                        break
 
-                    del rows
+                jobs = Job.objects.filter(
+                    user=self.user, date_begin__lt=dt_to_utc, date_end__gte=dt_from_utc
+                )
 
-                for job in jobs:
+                for i, job in enumerate(jobs):
                     try:
                         unit_name = units_cache.get(int(job.unit_id))
                     except (ValueError, AttributeError, TypeError):
@@ -157,21 +129,78 @@ class FaultsView(BaseReportView):
                         print('ТС не найден! %s' % job.unit_id)
                         continue
 
+                    if unit_name != 'FUCHS MHL 350 66СК9907':
+                        continue
+
+                    print('%s) %s' % (i, unit_name))
                     self.stats['total'].add(unit_name)
 
-                    messages = self.sensors_report_data['unit_group_sensors_tracing'].get(
-                        unit_name
+                    job_local_date_begin = utc_to_local_time(
+                        job.date_begin - job_extra_offset, self.user.wialon_tz
+                    )
+                    job_local_date_to = utc_to_local_time(
+                        job.date_end + job_extra_offset, self.user.wialon_tz
+                    )
+                    dt_from, dt_to = get_period(
+                        job_local_date_begin, job_local_date_to, self.user.wialon_tz
+                    )
+                    self.sensors_report_data = {}
+                    cleanup_and_request_report(self.user, sensors_template_id, sess_id=sess_id)
+                    r = exec_report(
+                        self.user, sensors_template_id, dt_from, dt_to,
+                        sess_id=sess_id, object_id=int(job.unit_id)
                     )
 
-                    # когда вообще нет сообщений
-                    if not messages:
-                        dt, place = self.get_last_data(unit_name)
+                    report_tables = {}
+                    for table_index, table_info in enumerate(r['reportResult']['tables']):
+                        label = table_info['label'].split('(')[0].strip()
+
+                        if table_info['name'] != 'unit_sensors_tracing':
+                            continue
+
+                        report_tables[label] = {
+                            'index': table_index,
+                            'rows': table_info['rows']
+                        }
+
+                    if 'ВСЕ' not in report_tables:
                         self.add_report_row(
-                            unit_name, 'Нет данных от блока мониторинга',
-                            place=place,
-                            dt=dt
+                            job, unit_name, 'Нет данных от блока мониторинга'
                         )
                         continue
+
+                    for field in self.mapping.keys():
+                        if field == 'ВСЕ':
+                            continue
+
+                        if field not in report_tables:
+                            self.add_report_row(
+                                job, unit_name, 'Нет данных по датчику "%s"' % field
+                            )
+                            continue
+
+                        attempts = (10, 100, max(report_tables[field]['rows'], 10000))
+                        for attempt, rows_limit in enumerate(attempts):
+                            rows = get_report_rows(
+                                self.user,
+                                report_tables[field]['index'],
+                                # для всех датчиков достаточно и 10 записей
+                                rows_limit,
+                                level=1,
+                                sess_id=sess_id
+                            )
+
+                            data = [r['c'] for r in rows]
+
+                            if self.analyze_sensor_data(field, data):
+                                break
+                            # если в последней попытке тоже не нашел
+                            elif attempt == len(attempts) - 1:
+                                self.add_report_row(
+                                    job, unit_name,
+                                    'Датчик "%s" отправляет одни и те же '
+                                    'данные в течение смены' % field
+                                )
 
         self.stats['total'] = len(self.stats['total'])
         self.stats['broken'] = len(self.stats['broken'])
@@ -183,3 +212,79 @@ class FaultsView(BaseReportView):
         )
 
         return kwargs
+
+    @staticmethod
+    def analyze_sensor_data(label, data):
+        """Ищем корректность датчика"""
+        print(label)
+        if label == 'Геолокация':
+            values = set(
+                map(
+                    lambda x: x[4]['t'] if (
+                        x[4] and isinstance(x[4], dict) and 't' in x[4]
+                    ) else '',
+                    data)
+            )
+        else:
+            values = set(map(lambda x: x[3], data))
+
+        if len(values) > 1:
+            return True
+
+    def add_report_row(self, job, unit_name, fault, place=None, dt=None,
+                       sum_broken_work_time=None):
+        report_row = self.get_new_grouping()
+        self.stats['broken'].add(unit_name)
+
+        if place is None and dt is None:
+            dt, place = self.get_last_data(unit_name)
+
+        report_row.update(
+            unit=unit_name,
+            fault=fault,
+            place=place,
+            dt=dt,
+            driver_name=job.driver_fio
+        )
+
+        if sum_broken_work_time is None:
+            report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
+                job.unit_id,
+                local_to_utc_time(dt, self.user.wialon_tz), job.date_end
+            )
+
+        self.report_data.append(report_row)
+
+    def get_last_data(self, unit_name):
+        data = self.last_data.get(unit_name)
+        if data and len(data) > 1:
+            dt, place = data[0], data[2]
+
+            if isinstance(dt, dict):
+                dt = datetime.datetime.utcfromtimestamp(dt['v'])
+                dt = utc_to_local_time(dt, self.user.wialon_tz)
+            else:
+                dt = parse_wialon_report_datetime(dt)
+
+            if isinstance(place, dict) and 't' in place:
+                place = place['t']
+
+            return dt, place
+
+        return '', ''
+
+    def get_sum_broken_work_time(self, unit_id, dt_from, dt_to):
+        if not dt_from or not dt_to:
+            return None
+
+        sum_broken_work_time = 0
+        jobs = Job.objects.filter(
+            user=self.user, unit_id=unit_id, date_begin__lt=dt_to, date_end__gte=dt_from
+        )
+
+        for job in jobs:
+            intersects_period = max(dt_from, job.date_begin), min(dt_to, job.date_end)
+            sum_broken_work_time += (intersects_period[1] - intersects_period[0]).seconds
+
+        if sum_broken_work_time:
+            return round(sum_broken_work_time / 3600.0, 2)

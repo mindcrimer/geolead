@@ -36,12 +36,12 @@
                     <td colspan="2">Последняя полученная информация</td>
                     <td rowspan="2">ФИО водителя</td>
                     <td rowspan="2">
-                        Наименование возможно<br/>
-                        неисправного оборудования (ДУТ, ...)
-                    </td>
-                    <td rowspan="2">
                         Суммарное неисправное<br/>
                         рабочее время, ч
+                    </td>
+                    <td rowspan="2">
+                        Наименование возможно<br/>
+                        неисправного оборудования (ДУТ, ...)
                     </td>
                 </tr>
 
@@ -55,12 +55,12 @@
                 {%- for row in report_data -%}
                     <tbody>
                     <tr>
-                        <td>{{ row['key'] }}</td>
-                        <td>{{ row['place'] }}</td>
+                        <td>{{ row['unit'] }}</td>
+                        <td>{{ row['place'] or '' }}</td>
                         <td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
-                        <td class="nowrap">{{ row['driver_name'] }}</td>
-                        <td>{{ row['sum_broken_work_time'] }}</td>
-                        <td>{{ row['fault'] }}</td>
+                        <td class="nowrap">{{ row['driver_name'] or '' }}</td>
+                        <td class="tright">{{ row['sum_broken_work_time'] or '' }}</td>
+                        <td>{{ row['fault'] or '' }}</td>
                     </tr>
                     </tbody>
                 {%- endfor -%}
@@ -102,7 +102,7 @@
             <div class="form-controls">
                 <div class="uk-margin">
                     <label class="uk-form-label" for="report_dt">На дату</label>
-                    <input class="uk-input date-input" name="dt" placeholder="С" id="report_dt"
+                    <input class="uk-input date-input" name="dt" id="report_dt"
                            value="{{ form.cleaned_data['dt']|date('d.m.Y') if form.cleaned_data and form.cleaned_data.get('dt') else '' }}">
                     <div class="errors">{{ form.errors.get('dt', '') }}</div>
                 </div>

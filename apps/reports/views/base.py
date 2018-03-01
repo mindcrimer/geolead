@@ -27,6 +27,10 @@ class BaseReportView(BaseTemplateView):
     context_dump_fields = ('report_data',)
     can_download = False
 
+    def __init__(self, *args, **kwargs):
+        super(BaseReportView, self).__init__(*args, **kwargs)
+        self.styles = {}
+
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {}
         return self.form(data)
@@ -104,6 +108,21 @@ class BaseReportView(BaseTemplateView):
         return response
 
     def write_xls_data(self, worksheet, context):
+        self.styles = {
+            'heading_style': xlwt.easyxf('font: bold 1, height 340'),
+            'bottom_border_style': xlwt.easyxf('borders: bottom thin'),
+            'left_center_style': xlwt.easyxf('align: vert centre, horiz left'),
+            'right_center_style': xlwt.easyxf('align: vert centre, horiz right'),
+            'border_left_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz left'
+            ),
+            'border_right_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz right'
+            )
+        }
+
         return worksheet
 
     def get_context_data(self, **kwargs):

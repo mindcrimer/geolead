@@ -4,8 +4,6 @@ import datetime
 
 from django.utils.timezone import utc
 
-import xlwt
-
 from base.exceptions import ReportException
 from reports import forms
 from reports.utils import local_to_utc_time
@@ -129,19 +127,12 @@ class FinishedJobsView(BaseReportView):
     def write_xls_data(self, worksheet, context):
         worksheet = super(FinishedJobsView, self).write_xls_data(worksheet, context)
 
-        heading_style = xlwt.easyxf('font: bold 1,height 340')
-        bottom_border_style = xlwt.easyxf('borders: bottom thin')
-        left_center_style = xlwt.easyxf('align: vert centre, horiz left')
-        right_center_style = xlwt.easyxf('align: vert centre, horiz right')
-
-        worksheet.write_merge(0, 0, 0, 3, self.report_name, style=heading_style)
+        worksheet.write_merge(0, 0, 0, 3, self.report_name, style=self.styles['heading_style'])
         worksheet.row(0).height_mismatch = True
         worksheet.row(0).height = 500
 
-        worksheet.col(0).width = 5000
-        worksheet.col(1).width = 5000
-        worksheet.col(2).width = 5000
-        worksheet.col(3).width = 5000
+        for col in range(4):
+            worksheet.col(col).width = 5000
 
         # header
         worksheet.write_merge(
@@ -153,49 +144,47 @@ class FinishedJobsView(BaseReportView):
         worksheet.row(1).height = 340
 
         worksheet.write_merge(
-            2, 2, 0, 1, 'ФИО ответственного за корректировку:', style=left_center_style
+            2, 2, 0, 1, 'ФИО ответственного за корректировку:',
+            style=self.styles['left_center_style']
         )
         worksheet.row(2).height = 340
 
-        worksheet.write_merge(2, 2, 2, 3, '', style=bottom_border_style)
+        worksheet.write_merge(2, 2, 2, 3, '', style=self.styles['bottom_border_style'])
 
         worksheet.write_merge(
             3, 3, 0, 3, 'Всего шаблонов заданий в базе ССМТ: %s' % context['stats']['total'],
-            style=right_center_style
+            style=self.styles['right_center_style']
         )
         worksheet.row(3).height = 340
 
         worksheet.write_merge(
             4, 4, 0, 3, 'Из них неактуальных заданий: %s' % context['stats']['non_actual'],
-            style=right_center_style
+            style=self.styles['right_center_style']
         )
         worksheet.row(4).height = 340
 
-        border_left_style = xlwt.easyxf(
-            'borders: bottom thin, left thin, right thin, top thin;'
-            'align: wrap on, vert centre, horiz left'
-        )
-        border_right_style = xlwt.easyxf(
-            'borders: bottom thin, left thin, right thin, top thin;'
-            'align: wrap on, vert centre, horiz right'
-        )
-
         # head
-        worksheet.write_merge(5, 6, 0, 0, ' № шаблона задания\nиз ССМТ', style=border_left_style)
-        worksheet.write_merge(5, 5, 1, 2, ' Кол-во путевых листов', style=border_left_style)
-        worksheet.write_merge(5, 6, 3, 3, ' Актуальность, %', style=border_left_style)
-        worksheet.write(6, 1, ' Заявлено', style=border_left_style)
-        worksheet.write(6, 2, ' Исполнялось*', style=border_left_style)
+        worksheet.write_merge(
+            5, 6, 0, 0, ' № шаблона задания\nиз ССМТ', style=self.styles['border_left_style']
+        )
+        worksheet.write_merge(
+            5, 5, 1, 2, ' Кол-во путевых листов', style=self.styles['border_left_style']
+        )
+        worksheet.write_merge(
+            5, 6, 3, 3, ' Актуальность, %', style=self.styles['border_left_style']
+        )
+        worksheet.write(6, 1, ' Заявлено', style=self.styles['border_left_style'])
+        worksheet.write(6, 2, ' Исполнялось*', style=self.styles['border_left_style'])
 
         worksheet.row(5).height = 340
         worksheet.row(6).height = 340
 
         i = 7
         for row in context['report_data'].values():
-            worksheet.write(i, 0, row['key'], style=border_left_style)
-            worksheet.write(i, 1, row['plan'], style=border_right_style)
-            worksheet.write(i, 2, row['finished'], style=border_right_style)
-            worksheet.write(i, 3, row['ratio'], style=border_right_style)
+            worksheet.write(i, 0, row['key'], style=self.styles['border_left_style'])
+            worksheet.write(i, 1, row['plan'], style=self.styles['border_right_style'])
+            worksheet.write(i, 2, row['finished'], style=self.styles['border_right_style'])
+            worksheet.write(i, 3, row['ratio'], style=self.styles['border_right_style'])
             worksheet.row(i).height = 340
             i += 1
 

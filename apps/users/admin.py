@@ -33,7 +33,8 @@ class UserAdmin(UserAdmin):
                 'wialon_driving_style_report_template_name',
                 'wialon_geozones_report_template_name',
                 'wialon_kmu_report_template_name',
-                'wialon_sensors_report_template_name'
+                'wialon_sensors_report_template_name',
+                'wialon_last_data_report_template_name'
             )
         }),
         (_('УРА'), {

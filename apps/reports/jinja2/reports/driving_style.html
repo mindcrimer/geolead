@@ -3,8 +3,8 @@
 {%- block REPORT_HEADING -%}
 	<div class="report__heading-row uk-margin">
 		Период:
-		{{ form.cleaned_data.dt_from|date('d.m.Y H:i:s') }}&nbsp;&mdash;
-		{{ form.cleaned_data.dt_to|date('d.m.Y H:i:s') }}
+		{{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
+		{{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
 	</div>
 	<div class="report__heading-row uk-margin">
 		ФИО ответственного за разбор событий:
@@ -144,15 +144,8 @@
 				<b>Условия расчета количества случаев, 1 случаем считать:</b>
 			</td>
 			<td>
-				Скорость - с момента превышения заданной отметки <span class="red">+10км/ч</span>
-				до снижения скорости ниже заданной отметки;<br/>
-				Свет - с момента неактивности во время движения в течение более
-				<span class="red">15 секунд</span> до момента выключения зажигания или активации
-				света;<br/>
-				Ремень - с момента неактивности во время движения в течение более
-				<span class="red">15 секунд</span> до момента выключения зажигания или активации ремня;<br/>
-				Оборудование - с момента если датчик был активен при скорости
-				<span class="red">5 км/ч</span> и до момента когда датчик станет неактивен.
+				Показатели скорости, ремня или оборудования, которые были установлены в настройках
+                транспортного средства (Вкладка "Качество вождения")
 			</td>
 		</tr>
 	</table>
@@ -169,14 +162,16 @@
 
 		<div class="form-controls">
 			<div class="uk-margin">
-				<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
-							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i:s') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
+                <label class="uk-form-label" for="report_from">С</label>
+				<input class="uk-input dt-input" name="dt_from" id="report_from"
+							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
 			</div>
 
 			<div class="uk-margin">
-				<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
-							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i:s') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
+                <label class="uk-form-label" for="report_to">По</label>
+				<input class="uk-input dt-input" name="dt_to" id="report_to"
+							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
 			</div>
 

@@ -5,7 +5,7 @@ from snippets.admin import BaseModelAdmin, SuperUserDeletableAdminMixin
 from snippets.general import models
 
 
-@admin.register(models.DbConfig)
+# @admin.register(models.DbConfig)
 class DbConfigAdmin(SuperUserDeletableAdminMixin, BaseModelAdmin):
     """Переменные шаблонов"""
     fields = models.DbConfig().collect_fields()
@@ -23,7 +23,7 @@ class MenuItemInline(admin.StackedInline):
     raw_id_fields = ('parent_item',)
 
 
-@admin.register(models.Menu)
+# @admin.register(models.Menu)
 class MenuAdmin(SuperUserDeletableAdminMixin, BaseModelAdmin):
     """Меню"""
     fields = models.Menu().collect_fields()
@@ -34,7 +34,7 @@ class MenuAdmin(SuperUserDeletableAdminMixin, BaseModelAdmin):
     search_fields = ['=id', 'slug', 'title']
 
 
-@admin.register(models.MenuItem)
+# @admin.register(models.MenuItem)
 class MenuItemAdmin(SuperUserDeletableAdminMixin, BaseModelAdmin):
     """Пункты меню"""
     fields = models.MenuItem().collect_fields()

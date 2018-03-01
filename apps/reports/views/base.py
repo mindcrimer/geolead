@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import time
-
 import xlwt
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.http import HttpResponse
 
 from base.exceptions import ReportException
+from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
 from wialon.exceptions import WialonException
 
@@ -20,6 +19,8 @@ WIALON_NOT_LOGINED = 'Вы не выполнили вход через Wialon'
 WIALON_USER_NOT_FOUND = 'Не передан идентификатор пользователя'
 WIALON_FORM_ERRORS = 'Обнаружены ошибки формы'
 
+REPORT_ROW_HEIGHT = 340
+
 
 class BaseReportView(BaseTemplateView):
     """Базовый класс отчета"""
@@ -27,6 +28,10 @@ class BaseReportView(BaseTemplateView):
     report_name = ''
     context_dump_fields = ('report_data',)
     can_download = False
+
+    def __init__(self, *args, **kwargs):
+        super(BaseReportView, self).__init__(*args, **kwargs)
+        self.styles = {}
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {}
@@ -92,7 +97,7 @@ class BaseReportView(BaseTemplateView):
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
-        filename = 'report_%s.xls' % int(time.time())
+        filename = 'report_%s.xls' % utcnow().strftime('%Y%m%d_%H%M%S')
 
         workbook = xlwt.Workbook()
         worksheet = workbook.add_sheet('Отчет')
@@ -100,11 +105,30 @@ class BaseReportView(BaseTemplateView):
         self.write_xls_data(worksheet, context)
 
         response = HttpResponse(content_type='application/vnd.ms-excel')
-        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        response['Content-Disposition'] = 'attachment; filename="%s"' % filename
         workbook.save(response)
         return response
 
     def write_xls_data(self, worksheet, context):
+        self.styles = {
+            'heading_style': xlwt.easyxf('font: bold 1, height 340'),
+            'bottom_border_style': xlwt.easyxf('borders: bottom thin'),
+            'left_center_style': xlwt.easyxf('align: vert centre, horiz left'),
+            'right_center_style': xlwt.easyxf('align: wrap on, vert centre, horiz right'),
+            'border_left_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz left'
+            ),
+            'border_right_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz right'
+            )
+        }
+
+        worksheet.write_merge(0, 0, 0, 3, self.report_name, style=self.styles['heading_style'])
+        worksheet.row(0).height_mismatch = True
+        worksheet.row(0).height = 500
+
         return worksheet
 
     def get_context_data(self, **kwargs):

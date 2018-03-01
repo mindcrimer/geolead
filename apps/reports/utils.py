@@ -108,22 +108,6 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
     return ''
 
 
-def geocode(lat, lng):
-    r = requests.get(
-        'https://geocode-maps.yandex.ru/1.x/?geocode=%s,%s&sco=latlong&format=json&'
-        'results=1&kind=house' % (lat, lng)
-    )
-
-    result = r.json()
-
-    try:
-        address = result['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
-    except (KeyError, IndexError, TypeError):
-        return None
-
-    return '%s, %s' % (address['name'], address['description'])
-
-
 def parse_wialon_report_datetime(str_date):
     if '-----' in str_date:
         return None
@@ -137,6 +121,9 @@ def utc_to_local_time(dt, timezone):
     if dt is None:
         return None
 
+    if dt.tzinfo is not None:
+        dt = dt.replace(tzinfo=None)
+
     local_dt = dt + timezone.utcoffset(dt)
     if local_dt.tzinfo is None:
         local_dt = timezone.localize(local_dt)
@@ -148,8 +135,8 @@ def local_to_utc_time(dt, timezone):
         return None
 
     utc_dt = dt - timezone.utcoffset(datetime.datetime.now())
-    if utc_dt.tzinfo is None:
-        utc_dt = utc_dt.replace(tzinfo=utc)
+    # if utc_dt.tzinfo is None:
+    utc_dt = utc_dt.replace(tzinfo=utc)
     return utc_dt
 
 
@@ -199,8 +186,7 @@ def throttle_report(user):
     Замедление выполнения отчета для прохождения лимита
     Ждем пока высвободится лимит отчетов, либо через 1 минуту выполняем в любом случае
     """
-    attempts = 20
-    throttle_delta = 3
+    attempts = settings.WIALON_REPORTS_EXECUTE_ANYWAY_AFTER / settings.WIALON_REPORTS_THROTTLE_TIME
     throttle_delta_cumulatime = 0
 
     def get_executed_reports_count(for_user):
@@ -215,11 +201,11 @@ def throttle_report(user):
 
     while attempts > 0 \
             and get_executed_reports_count(user) >= settings.WIALON_REPORTS_PER_MINUTE_LIMIT:
-        throttle_delta_cumulatime += throttle_delta
+        throttle_delta_cumulatime += settings.WIALON_REPORTS_THROTTLE_TIME
         print('Report of user %s throttled for %s sec (attempts: %s)' % (
             user.username, throttle_delta_cumulatime, attempts
         ))
-        time.sleep(throttle_delta)
+        time.sleep(settings.WIALON_REPORTS_THROTTLE_TIME)
         attempts -= 1
 
     ReportLog.objects.create(user=user)
@@ -227,7 +213,7 @@ def throttle_report(user):
 
 
 def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, object_id=None,
-                sess_id=None):
+                sess_id=None, attempts=3):
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
@@ -289,14 +275,25 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     result = r.json()
 
     if 'error' in result:
+        # сессия неожиданно устарела (такое очень редко и необъяснимо бывает) - отправляем еще раз
         if result['error'] == 1:
+            if attempts > 1:
+                # генерируем новую сессию
+                sess_id = get_wialon_session_key(user, invalidate=True)
+                return exec_report(
+                    user, template_id, dt_from, dt_to,
+                    report_resource_id=report_resource_id,
+                    object_id=object_id,
+                    sess_id=sess_id,
+                    attempts=attempts - 1
+                )
             raise ReportException(WIALON_SESSION_EXPIRED)
         raise ReportException(WIALON_INTERNAL_EXCEPTION % result)
 
     return result
 
 
-def get_report_rows(user, table_index, rows, level=0, sess_id=None):
+def get_report_rows(user, table_index, rows, offset=0, level=0, sess_id=None):
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
@@ -308,7 +305,7 @@ def get_report_rows(user, table_index, rows, level=0, sess_id=None):
                 'config': {
                     'type': 'range',
                     'data': {
-                        'from': 0,
+                        'from': offset,
                         'to': rows - 1,
                         'level': level
                     }

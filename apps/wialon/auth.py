@@ -15,12 +15,12 @@ from base.exceptions import APIProcessError
 SESSION_TIMEOUT = 60 * 4.5
 
 
-def get_wialon_session_key(user):
+def get_wialon_session_key(user, invalidate=False):
     """Возвращает идентификатор сессии пользователя Wialon"""
     cache_key = 'sessid:%s' % user.id
     sess_id = cache.get(cache_key)
 
-    if not sess_id:
+    if not sess_id or invalidate:
         token = get_user_wialon_token(user)
         sess_id = login_wialon_via_token(user, token)
 

@@ -11,6 +11,10 @@
   color: red; }
 .form-controls {
   max-width: 100%; }
+.form .hint {
+  color: #aaa;
+  font-size: 13px;
+  line-height: 17px; }
 
 .messages {
   list-style: none;

@@ -171,6 +171,12 @@ class StandardPointAdmin(ImportExportMixin, admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def get_queryset(self, request):
+        qs = super(StandardPointAdmin, self).get_queryset(request)
+        if request.user.ura_standards_for_user_id:
+            qs = qs.filter(job_template__user=request.user.ura_standards_for_user)
+        return qs
+
 
 @admin.register(models.StandardJobTemplate)
 class StandardJobTemplateAdmin(admin.ModelAdmin):
@@ -194,3 +200,9 @@ class StandardJobTemplateAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_queryset(self, request):
+        qs = super(StandardJobTemplateAdmin, self).get_queryset(request)
+        if request.user.ura_standards_for_user_id:
+            qs = qs.filter(user=request.user.ura_standards_for_user)
+        return qs

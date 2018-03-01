@@ -39,7 +39,7 @@ class UserAdmin(UserAdmin):
         }),
         (_('УРА'), {
             'classes': ('suit-tab', 'suit-tab-ura'),
-            'fields': ('ura_tz', 'organization_name', 'supervisor')
+            'fields': ('ura_tz', 'organization_name', 'supervisor', 'ura_standards_for_user')
         })
     )
     form = UserAdminForm

@@ -3,14 +3,15 @@ import datetime
 
 from django.utils.timezone import utc
 
-
 from base.exceptions import ReportException
 from reports import forms
 from reports.jinjaglobals import render_background
 from reports.utils import get_period, local_to_utc_time, cleanup_and_request_report, \
     get_wialon_report_template_id, exec_report, get_report_rows, utc_to_local_time, \
     parse_wialon_report_datetime
-from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
+    REPORT_ROW_HEIGHT
+from snippets.jinjaglobals import date as date_format
 from ura.models import Job
 from users.models import User
 from wialon.api import get_units
@@ -129,9 +130,6 @@ class FaultsView(BaseReportView):
                         print('ТС не найден! %s' % job.unit_id)
                         continue
 
-                    if unit_name != 'FUCHS MHL 350 66СК9907':
-                        continue
-
                     print('%s) %s' % (i, unit_name))
                     self.stats['total'].add(unit_name)
 
@@ -216,7 +214,7 @@ class FaultsView(BaseReportView):
     @staticmethod
     def analyze_sensor_data(label, data):
         """Ищем корректность датчика"""
-        print(label)
+        # print(label)
         if label == 'Геолокация':
             values = set(
                 map(
@@ -288,3 +286,79 @@ class FaultsView(BaseReportView):
 
         if sum_broken_work_time:
             return round(sum_broken_work_time / 3600.0, 2)
+
+    def write_xls_data(self, worksheet, context):
+        worksheet = super(FaultsView, self).write_xls_data(worksheet, context)
+        worksheet.set_portrait(False)
+        worksheet.set_print_scaling(80)
+
+        for col in range(4):
+            worksheet.col(col).width = 6000
+        worksheet.col(1).width = 10000
+        worksheet.col(2).width = 4800
+        worksheet.col(4).width = 4200
+        worksheet.col(5).width = 10000
+
+        # header
+        worksheet.write_merge(
+            1, 1, 0, 3, 'На дату: %s' % date_format(context['cleaned_data']['dt'], 'd.m.Y'),
+        )
+
+        worksheet.write_merge(
+            2, 2, 0, 1, 'ФИО ответственного за устранение неполадок:',
+            style=self.styles['left_center_style']
+        )
+
+        worksheet.write_merge(2, 2, 2, 5, '', style=self.styles['bottom_border_style'])
+
+        worksheet.write_merge(
+            3, 3, 0, 5,
+            'Всего оборудованных транспортных объектов ССМТ: %s' % context['stats']['total'],
+            style=self.styles['right_center_style']
+        )
+
+        worksheet.write_merge(
+            4, 4, 0, 5, 'Из них*: исправных %s\nВозможно неисправных %s' % (
+                context['stats']['total'] - context['stats']['broken'],
+                context['stats']['broken'],
+            ),
+            style=self.styles['right_center_style']
+        )
+
+        # head
+        worksheet.write_merge(5, 6, 0, 0, ' Гос№ ТС', style=self.styles['border_left_style'])
+        worksheet.write_merge(
+            5, 5, 1, 2, ' Последняя полученная информация', style=self.styles['border_left_style']
+        )
+        worksheet.write_merge(5, 6, 3, 3, ' ФИО водителя', style=self.styles['border_left_style'])
+        worksheet.write_merge(
+            5, 6, 4, 4, ' Суммарное\nнеисправное\nрабочее время, ч',
+            style=self.styles['border_left_style']
+        )
+        worksheet.write_merge(
+            5, 6, 5, 5, ' Наименование возможно\nнеисправного оборудования (ДУТ, ...)',
+            style=self.styles['border_left_style']
+        )
+        worksheet.write(6, 1, ' Место/геозона', style=self.styles['border_left_style'])
+        worksheet.write(6, 2, ' Время', style=self.styles['border_left_style'])
+
+        for i in range(1, 7):
+            worksheet.row(i).height = REPORT_ROW_HEIGHT
+        worksheet.row(5).height = REPORT_ROW_HEIGHT + 100
+        worksheet.row(6).height = REPORT_ROW_HEIGHT + 100
+        worksheet.row(4).height = REPORT_ROW_HEIGHT * 2
+
+        for i, row in enumerate(context['report_data'], start=7):
+            worksheet.write(i, 0, row['unit'], style=self.styles['border_left_style'])
+            worksheet.write(i, 1, row['place'], style=self.styles['border_left_style'])
+            worksheet.write(
+                i, 2, date_format(row['dt'], 'Y-m-d H:i:s'), style=self.styles['border_left_style']
+            )
+            worksheet.write(i, 3, row['driver_name'], style=self.styles['border_left_style'])
+            worksheet.write(
+                i, 4, row['sum_broken_work_time'], style=self.styles['border_left_style']
+            )
+            worksheet.write(i, 5, row['fault'], style=self.styles['border_left_style'])
+            worksheet.row(i).height = 520
+
+        return worksheet

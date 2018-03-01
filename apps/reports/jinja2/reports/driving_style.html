@@ -162,13 +162,15 @@
 
 		<div class="form-controls">
 			<div class="uk-margin">
-				<input class="uk-input dt-input" name="dt_from" placeholder="С" id="report_from"
+                <label class="uk-form-label" for="report_from">С</label>
+				<input class="uk-input dt-input" name="dt_from" id="report_from"
 							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
 			</div>
 
 			<div class="uk-margin">
-				<input class="uk-input dt-input" name="dt_to" placeholder="По" id="report_to"
+                <label class="uk-form-label" for="report_to">По</label>
+				<input class="uk-input dt-input" name="dt_to" id="report_to"
 							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
 			</div>

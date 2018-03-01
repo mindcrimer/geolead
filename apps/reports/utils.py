@@ -196,7 +196,7 @@ def throttle_report(user):
         """
         since_dt = utcnow() - datetime.timedelta(seconds=60 + 5)
         count = ReportLog.objects.filter(user=for_user, created__gte=since_dt).count()
-        print('Reports since %s count: %s' % (since_dt, count))
+        # print('Reports since %s count: %s' % (since_dt, count))
         return count
 
     while attempts > 0 \
@@ -213,7 +213,7 @@ def throttle_report(user):
 
 
 def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, object_id=None,
-                sess_id=None):
+                sess_id=None, attempts=3):
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
@@ -275,7 +275,18 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     result = r.json()
 
     if 'error' in result:
+        # сессия неожиданно устарела (такое очень редко и необъяснимо бывает) - отправляем еще раз
         if result['error'] == 1:
+            if attempts > 1:
+                # генерируем новую сессию
+                sess_id = get_wialon_session_key(user, invalidate=True)
+                return exec_report(
+                    user, template_id, dt_from, dt_to,
+                    report_resource_id=report_resource_id,
+                    object_id=object_id,
+                    sess_id=sess_id,
+                    attempts=attempts - 1
+                )
             raise ReportException(WIALON_SESSION_EXPIRED)
         raise ReportException(WIALON_INTERNAL_EXCEPTION % result)
 

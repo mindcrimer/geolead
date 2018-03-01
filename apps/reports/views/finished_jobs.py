@@ -7,7 +7,8 @@ from django.utils.timezone import utc
 from base.exceptions import ReportException
 from reports import forms
 from reports.utils import local_to_utc_time
-from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
+from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
+    REPORT_ROW_HEIGHT
 from snippets.jinjaglobals import date as date_format
 from ura.models import Job
 from users.models import User
@@ -127,10 +128,6 @@ class FinishedJobsView(BaseReportView):
     def write_xls_data(self, worksheet, context):
         worksheet = super(FinishedJobsView, self).write_xls_data(worksheet, context)
 
-        worksheet.write_merge(0, 0, 0, 3, self.report_name, style=self.styles['heading_style'])
-        worksheet.row(0).height_mismatch = True
-        worksheet.row(0).height = 500
-
         for col in range(4):
             worksheet.col(col).width = 5000
 
@@ -141,13 +138,11 @@ class FinishedJobsView(BaseReportView):
                 date_format(context['cleaned_data']['dt_to'], 'd.m.Y H:i')
             )
         )
-        worksheet.row(1).height = 340
 
         worksheet.write_merge(
             2, 2, 0, 1, 'ФИО ответственного за корректировку:',
             style=self.styles['left_center_style']
         )
-        worksheet.row(2).height = 340
 
         worksheet.write_merge(2, 2, 2, 3, '', style=self.styles['bottom_border_style'])
 
@@ -155,13 +150,11 @@ class FinishedJobsView(BaseReportView):
             3, 3, 0, 3, 'Всего шаблонов заданий в базе ССМТ: %s' % context['stats']['total'],
             style=self.styles['right_center_style']
         )
-        worksheet.row(3).height = 340
 
         worksheet.write_merge(
             4, 4, 0, 3, 'Из них неактуальных заданий: %s' % context['stats']['non_actual'],
             style=self.styles['right_center_style']
         )
-        worksheet.row(4).height = 340
 
         # head
         worksheet.write_merge(
@@ -176,16 +169,14 @@ class FinishedJobsView(BaseReportView):
         worksheet.write(6, 1, ' Заявлено', style=self.styles['border_left_style'])
         worksheet.write(6, 2, ' Исполнялось*', style=self.styles['border_left_style'])
 
-        worksheet.row(5).height = 340
-        worksheet.row(6).height = 340
+        for i in range(1, 7):
+            worksheet.row(i).height = REPORT_ROW_HEIGHT
 
-        i = 7
-        for row in context['report_data'].values():
+        for i, row in enumerate(context['report_data'].values(), 7):
             worksheet.write(i, 0, row['key'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['plan'], style=self.styles['border_right_style'])
             worksheet.write(i, 2, row['finished'], style=self.styles['border_right_style'])
             worksheet.write(i, 3, row['ratio'], style=self.styles['border_right_style'])
-            worksheet.row(i).height = 340
-            i += 1
+            worksheet.row(i).height = REPORT_ROW_HEIGHT
 
         return worksheet

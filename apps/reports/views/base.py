@@ -19,6 +19,8 @@ WIALON_NOT_LOGINED = 'Вы не выполнили вход через Wialon'
 WIALON_USER_NOT_FOUND = 'Не передан идентификатор пользователя'
 WIALON_FORM_ERRORS = 'Обнаружены ошибки формы'
 
+REPORT_ROW_HEIGHT = 340
+
 
 class BaseReportView(BaseTemplateView):
     """Базовый класс отчета"""
@@ -112,7 +114,7 @@ class BaseReportView(BaseTemplateView):
             'heading_style': xlwt.easyxf('font: bold 1, height 340'),
             'bottom_border_style': xlwt.easyxf('borders: bottom thin'),
             'left_center_style': xlwt.easyxf('align: vert centre, horiz left'),
-            'right_center_style': xlwt.easyxf('align: vert centre, horiz right'),
+            'right_center_style': xlwt.easyxf('align: wrap on, vert centre, horiz right'),
             'border_left_style': xlwt.easyxf(
                 'borders: bottom thin, left thin, right thin, top thin;'
                 'align: wrap on, vert centre, horiz left'
@@ -122,6 +124,10 @@ class BaseReportView(BaseTemplateView):
                 'align: wrap on, vert centre, horiz right'
             )
         }
+
+        worksheet.write_merge(0, 0, 0, 3, self.report_name, style=self.styles['heading_style'])
+        worksheet.row(0).height_mismatch = True
+        worksheet.row(0).height = 500
 
         return worksheet
 

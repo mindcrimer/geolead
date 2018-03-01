@@ -24,7 +24,7 @@ class FinishedJobsForm(forms.Form):
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
     non_actual_param = forms.IntegerField(
-        label=_('Условие неактуальности, %'), min_value=1, max_value=99, initial=20, required=True
+        label=_('Условие неактуальности, %'), min_value=0, max_value=99, initial=20, required=True
     )
 
 

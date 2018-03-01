@@ -104,7 +104,7 @@
                 <label class="uk-form-label" for="report_non_actual_param">Условие неактуальности, более, %</label>
 				<input class="uk-input" name="non_actual_param"
                        id="report_non_actual_param"
-                       type="number" step="1" min="1" max="99"
+                       type="number" step="1" min="0" max="99"
                        value="{{ form.cleaned_data.get('non_actual_param') }}">
 				<div class="errors">{{ form.errors.get('non_actual_param', '') }}</div>
 

@@ -98,29 +98,36 @@ class FaultsView(BaseReportView):
                 sensors_template_id = get_wialon_report_template_id('sensors', self.user)
                 last_data_template_id = get_wialon_report_template_id('last_data', self.user)
 
-                dt_from, dt_to = get_period(
-                    dt_from_local, dt_to_local, self.user.wialon_tz
-                )
-                cleanup_and_request_report(self.user, last_data_template_id, sess_id=sess_id)
-                r = exec_report(self.user, last_data_template_id, dt_from, dt_to, sess_id=sess_id)
-
-                for table_index, table_info in enumerate(r['reportResult']['tables']):
-                    rows = get_report_rows(
-                        self.user,
-                        table_index,
-                        table_info['rows'],
-                        level=1,
-                        sess_id=sess_id
-                    )
-
-                    if table_info['name'] == 'unit_group_location':
-                        self.last_data = {r['c'][0]: r['c'][1:] for r in rows}
-                        break
-
                 jobs = Job.objects.filter(
                     user=self.user, date_begin__lt=dt_to_utc, date_end__gte=dt_from_utc
                 )
 
+                if jobs:
+                    dt_from, dt_to = get_period(
+                        dt_from_local, dt_to_local, self.user.wialon_tz
+                    )
+                    cleanup_and_request_report(self.user, last_data_template_id, sess_id=sess_id)
+                    r = exec_report(
+                        self.user,
+                        last_data_template_id,
+                        dt_from, dt_to,
+                        sess_id=sess_id
+                    )
+
+                    for table_index, table_info in enumerate(r['reportResult']['tables']):
+                        rows = get_report_rows(
+                            self.user,
+                            table_index,
+                            table_info['rows'],
+                            level=1,
+                            sess_id=sess_id
+                        )
+
+                        if table_info['name'] == 'unit_group_location':
+                            self.last_data = {r['c'][0]: r['c'][1:] for r in rows}
+                            break
+
+                print('Всего ПЛ при анализе состояния оборудования: %s' % len(jobs))
                 for i, job in enumerate(jobs):
                     try:
                         unit_name = units_cache.get(int(job.unit_id))
@@ -291,7 +298,7 @@ class FaultsView(BaseReportView):
             driver_name=job.driver_fio
         )
 
-        if sum_broken_work_time is None:
+        if sum_broken_work_time is None and dt:
             report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
                 job.unit_id,
                 local_to_utc_time(dt, self.user.wialon_tz), job.date_end
@@ -315,7 +322,7 @@ class FaultsView(BaseReportView):
 
             return dt, place
 
-        return '', ''
+        return None, None
 
     def get_sum_broken_work_time(self, unit_id, dt_from, dt_to):
         if not dt_from or not dt_to:

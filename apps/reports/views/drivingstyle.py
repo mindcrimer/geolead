@@ -254,8 +254,6 @@ class DrivingStyleView(BaseReportView):
                             viol_key = ''
 
                         if viol_key:
-                            print(viol_key)
-
                             if detail_data:
                                 detail_data['dt'] = parse_wialon_report_datetime(
                                     row['c'][8]['t']

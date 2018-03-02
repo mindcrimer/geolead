@@ -293,7 +293,7 @@ WIALON_DEFAULT_TEMPLATE_NAMES = {
 }
 
 WIALON_CACHE_TIMEOUT = 45  # время жизни кэша данных из Wialon, сек
-WIALON_REPORTS_PER_MINUTE_LIMIT = 30  # лимит запросов отчетов в минуту в Wialon
+WIALON_REPORTS_PER_MINUTE_LIMIT = 29  # лимит запросов отчетов в минуту в Wialon
 WIALON_REPORTS_THROTTLE_TIME = 3  # время ожидания при переполнении лимита
 WIALON_REPORTS_EXECUTE_ANYWAY_AFTER = 60 * 3  # общее время ожидания, сек,
 # после которого запрос выполняем в любом случае

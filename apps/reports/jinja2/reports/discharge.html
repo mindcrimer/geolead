@@ -55,10 +55,10 @@
 
 		{%- for key, row in report_data.items() -%}
 			<tbody>
-				<tr{% if row['discharge']['volume'] and not row['details'] %} class="detailed"{% endif %}>
+				<tr{% if row['discharge']['volume'] and row['details'] %} class="grouping collapsed" data-rel="{{ key }}"{% endif %}>
 					<td>
 						{%- if row['details'] -%}
-						&nbsp;
+						<span class="icon-expand"></span>
 						{%- else -%}
 						{{- row['discharge']['dt']|date('Y-m-d H:i:s') -}}
 						{%- endif -%}
@@ -76,7 +76,7 @@
 				</tr>
 
 				{%- for detail in row['details'] -%}
-					<tr class="detailed">
+					<tr class="detailed hidden" data-rel="{{ key }}">
 						<td>{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
 						<td>{{ key }}</td>
 						<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
@@ -99,7 +99,7 @@
 
 {%- block REPORT_HINT -%}
 <div class="hint uk-margin-top">
-	* В случае превышения фактического расхода топлива на нормативы более чем на 5%<br/>
+	* В случае превышения фактического расхода топлива на нормативы более чем на {{ form.cleaned_data['overspanding_percentage'] }}%<br/>
 	** исходя из нормативов л/100км, с добавочным коэффициентом на работу оборудования<br/>
 	*** исходя из нормативов л/час при заведенном двигателе на холостых оборотах,
 	с добавочным коэффициентом на работу оборудования
@@ -127,6 +127,17 @@
 				<input class="uk-input dt-input" name="dt_to" id="report_to"
 							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
 				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+			</div>
+
+            <div class="uk-margin">
+                <label class="uk-form-label" for="report_overspanding_percentage">
+                    Показатель превышения фактического расхода топлива на нормативы, %
+                </label>
+				<input class="uk-input" name="overspanding_percentage"
+                       id="report_overspanding_percentage"
+                       type="number" step="1" min="0" max="99"
+                       value="{{ form.cleaned_data.get('overspanding_percentage', 5) }}">
+				<div class="errors">{{ form.errors.get('overspanding_percentage', '') }}</div>
 			</div>
 
 			<div class="uk-margin">

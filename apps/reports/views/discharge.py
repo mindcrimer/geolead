@@ -25,7 +25,8 @@ class DischargeView(BaseReportView):
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
-            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
+            'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
+            'overspanding_percentage': 5
         }
         return self.form_class(data)
 
@@ -133,6 +134,8 @@ class DischargeView(BaseReportView):
 
                 r = exec_report(user, template_id, dt_from, dt_to, sess_id=sess_id)
 
+                normal_ratio = 1 + (form.cleaned_data['overspanding_percentage'] / 100)
+
                 for table_index, table_info in enumerate(r['reportResult']['tables']):
                     rows = get_report_rows(
                         user,
@@ -185,36 +188,35 @@ class DischargeView(BaseReportView):
                                 overspanding_count += int(data[4])
 
                             details = row['r']
-                            if len(details) > 1:
-                                for detail in details:
-                                    detail_data = detail['c']
-                                    try:
-                                        detail_volume = float(detail_data[3].split(' ')[0])\
-                                            if detail_data[3] else ''
-                                    except ValueError:
-                                        detail_volume = .0
+                            for detail in details:
+                                detail_data = detail['c']
+                                try:
+                                    detail_volume = float(detail_data[3].split(' ')[0])\
+                                        if detail_data[3] else ''
+                                except ValueError:
+                                    detail_volume = .0
 
-                                    detail_place = ''
-                                    if detail_data[1]:
-                                        if isinstance(detail_data[1], dict):
-                                            detail_place = detail_data[1]['t']
-                                        else:
-                                            detail_place = detail_data[1]
+                                detail_place = ''
+                                if detail_data[1]:
+                                    if isinstance(detail_data[1], dict):
+                                        detail_place = detail_data[1]['t']
+                                    else:
+                                        detail_place = detail_data[1]
 
-                                    detail_dt = ''
-                                    if detail_data[2]:
-                                        if isinstance(detail_data[2], dict):
-                                            detail_dt = detail_data[2]['t']
-                                        else:
-                                            detail_dt = detail_data[2]
+                                detail_dt = ''
+                                if detail_data[2]:
+                                    if isinstance(detail_data[2], dict):
+                                        detail_dt = detail_data[2]['t']
+                                    else:
+                                        detail_dt = detail_data[2]
 
-                                        detail_dt = parse_wialon_report_datetime(detail_dt)
+                                    detail_dt = parse_wialon_report_datetime(detail_dt)
 
-                                    report_row['details'].append({
-                                        'place': detail_place,
-                                        'dt':  detail_dt,
-                                        'volume': detail_volume
-                                    })
+                                report_row['details'].append({
+                                    'place': detail_place,
+                                    'dt':  detail_dt,
+                                    'volume': detail_volume
+                                })
 
                         elif table_info['name'] == 'unit_group_trips':
                             if len(data) > 4 and data[4]:
@@ -268,14 +270,24 @@ class DischargeView(BaseReportView):
                                 report_row['consumption']['standard_extra_device'] = \
                                     kmu_hours * extras_value
 
-                            overspanding = report_row['consumption']['fact_dut'] \
-                                - report_row['consumption']['standard_extra_device'] \
-                                - report_row['consumption']['standard_worktime'] \
-                                - report_row['consumption']['standard_mileage']
+                            total_standards = report_row['consumption']['standard_extra_device'] \
+                                + report_row['consumption']['standard_worktime'] \
+                                + report_row['consumption']['standard_mileage']
 
-                            if overspanding > 0:
-                                report_row['overspanding'] = overspanding
-                                overspanding_total += overspanding
+                            if total_standards:
+                                ratio = report_row['consumption']['fact_dut'] / total_standards
+                                if ratio >= normal_ratio:
+                                    overspanding = report_row['consumption']['fact_dut'] \
+                                       - total_standards
+
+                                    report_row['overspanding'] = overspanding
+                                    overspanding_total += overspanding
+
+                if report_data:
+                    report_data = OrderedDict(
+                        (k, v) for k, v in report_data.items()
+                        if v['discharge']['volume'] > .0 or v['overspanding'] > 0
+                    )
 
         kwargs.update(
             report_data=report_data,

@@ -15,7 +15,7 @@ from wialon.api import get_routes, get_units
 
 class InvalidJobStartEndView(BaseReportView):
     """Отчет о несвоевременном начале и окончании выполнения задания"""
-    form = forms.InvalidJobStartEndForm
+    form_class = forms.InvalidJobStartEndForm
     template_name = 'reports/invalid_job_start_end.html'
     report_name = 'Отчет о несвоевременном начале и окончании выполнения задания'
 
@@ -24,7 +24,7 @@ class InvalidJobStartEndView(BaseReportView):
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
         }
-        return self.form(data)
+        return self.form_class(data)
 
     @staticmethod
     def get_new_start_grouping():

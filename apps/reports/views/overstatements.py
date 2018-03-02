@@ -18,7 +18,7 @@ from wialon.api import get_routes, get_units
 
 class OverstatementsView(BaseReportView):
     """Отчет о сверхнормативных простоях"""
-    form = forms.OverstatementsForm
+    form_class = forms.OverstatementsForm
     template_name = 'reports/overstatements.html'
     report_name = 'Отчет о сверхнормативных простоях'
 
@@ -27,7 +27,7 @@ class OverstatementsView(BaseReportView):
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
         }
-        return self.form(data)
+        return self.form_class(data)
 
     @staticmethod
     def get_new_grouping():

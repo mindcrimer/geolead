@@ -8,6 +8,26 @@ class DrivingStyleForm(forms.Form):
     """Форма отчета "Стиль вождения" """
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
+    normal_rating = forms.IntegerField(
+        label=_('Процент нарушений, при котором требуется профилактическая беседа'), min_value=0,
+        max_value=99, initial=10, required=True
+    )
+    bad_rating = forms.IntegerField(
+        label=_(
+            'Процент нарушений, при котором требуется профилактическая беседа '
+            'с возможным лишением части премии'
+        ), min_value=0, max_value=99, initial=30, required=True
+    )
+
+    def clean(self):
+        cleaned_data = self.cleaned_data
+        if cleaned_data.get('bad_rating', 0) <= cleaned_data.get('normal_rating', 0):
+            self.add_error(
+                'bad_rating',
+                'Рейтинг с возможностью лишения премии должен быть выше '
+                'рейтинга, при котором требуется только профилактическая беседа'
+            )
+        return cleaned_data
 
 
 class FaultsForm(forms.Form):

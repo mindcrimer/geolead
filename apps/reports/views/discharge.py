@@ -18,7 +18,7 @@ from wialon.exceptions import WialonException
 
 class DischargeView(BaseReportView):
     """Перерасход топлива"""
-    form = forms.FuelDischargeForm
+    form_class = forms.FuelDischargeForm
     template_name = 'reports/discharge.html'
     report_name = 'Отчет по перерасходу топлива'
 
@@ -27,7 +27,7 @@ class DischargeView(BaseReportView):
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc)
         }
-        return self.form(data)
+        return self.form_class(data)
 
     @staticmethod
     def get_new_grouping():

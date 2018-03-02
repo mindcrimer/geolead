@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import xlwt
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.http import HttpResponse
+
+import xlwt
 
 from base.exceptions import ReportException
 from snippets.utils.datetime import utcnow
@@ -24,7 +25,7 @@ REPORT_ROW_HEIGHT = 340
 
 class BaseReportView(BaseTemplateView):
     """Базовый класс отчета"""
-    form = None
+    form_class = None
     report_name = ''
     context_dump_fields = ('report_data',)
     can_download = False
@@ -35,7 +36,7 @@ class BaseReportView(BaseTemplateView):
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {}
-        return self.form(data)
+        return self.form_class(data)
 
     def get_default_context_data(self, **kwargs):
         context = {

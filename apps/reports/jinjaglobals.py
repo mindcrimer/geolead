@@ -63,23 +63,9 @@ def render_timedelta(value):
                 result = result.replace('day', 'дня')
 
             else:
-                result = result.replace('days', 'дней')
+                result = result.replace('day', 'дней')
 
     return result
-
-
-@jinjafilter
-def render_background(value):
-    if value is None:
-        return '#FFF'
-
-    if value < 10:
-        return '#90EE90'
-
-    elif value < 30:
-        return '#FFFF00'
-
-    return '#FF4500'
 
 
 @jinjafilter

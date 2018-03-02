@@ -6,7 +6,6 @@ from django.utils.timezone import utc
 
 from base.exceptions import ReportException
 from reports import forms
-from reports.jinjaglobals import render_background
 from reports.utils import get_period, local_to_utc_time, cleanup_and_request_report, \
     get_wialon_report_template_id, exec_report, get_report_rows, utc_to_local_time, \
     parse_wialon_report_datetime
@@ -20,7 +19,7 @@ from wialon.api import get_units, get_unit_settings
 
 class FaultsView(BaseReportView):
     """Отчет о состоянии оборудования ССМТ"""
-    form = forms.FaultsForm
+    form_class = forms.FaultsForm
     template_name = 'reports/faults.html'
     report_name = 'Отчет о состоянии оборудования ССМТ'
     can_download = True
@@ -50,7 +49,7 @@ class FaultsView(BaseReportView):
             'dt': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'job_extra_offset': 2
         }
-        return self.form(data)
+        return self.form_class(data)
 
     @staticmethod
     def get_new_grouping():
@@ -99,7 +98,7 @@ class FaultsView(BaseReportView):
                 last_data_template_id = get_wialon_report_template_id('last_data', self.user)
 
                 jobs = Job.objects.filter(
-                    user=self.user, date_begin__lt=dt_to_utc, date_end__gte=dt_from_utc
+                    user=self.user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
                 )
 
                 if jobs:
@@ -237,8 +236,7 @@ class FaultsView(BaseReportView):
 
         kwargs.update(
             stats=self.stats,
-            report_data=self.report_data,
-            render_background=render_background
+            report_data=self.report_data
         )
 
         return kwargs
@@ -330,7 +328,7 @@ class FaultsView(BaseReportView):
 
         sum_broken_work_time = 0
         jobs = Job.objects.filter(
-            user=self.user, unit_id=unit_id, date_begin__lt=dt_to, date_end__gte=dt_from
+            user=self.user, unit_id=unit_id, date_begin__lt=dt_to, date_end__gt=dt_from
         )
 
         for job in jobs:

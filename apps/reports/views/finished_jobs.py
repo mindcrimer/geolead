@@ -17,7 +17,7 @@ from wialon.api import get_routes
 
 class FinishedJobsView(BaseReportView):
     """Отчет по актуальности шаблонов заданий"""
-    form = forms.FinishedJobsForm
+    form_class = forms.FinishedJobsForm
     template_name = 'reports/finished_jobs.html'
     report_name = 'Отчет по актуальности шаблонов заданий'
     can_download = True
@@ -29,7 +29,7 @@ class FinishedJobsView(BaseReportView):
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
             'non_actual_param': 20
         }
-        return self.form(data)
+        return self.form_class(data)
 
     @staticmethod
     def get_new_grouping():

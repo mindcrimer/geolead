@@ -186,7 +186,9 @@ def throttle_report(user):
     Замедление выполнения отчета для прохождения лимита
     Ждем пока высвободится лимит отчетов, либо через 1 минуту выполняем в любом случае
     """
-    attempts = settings.WIALON_REPORTS_EXECUTE_ANYWAY_AFTER / settings.WIALON_REPORTS_THROTTLE_TIME
+    attempts = int(
+        settings.WIALON_REPORTS_EXECUTE_ANYWAY_AFTER / settings.WIALON_REPORTS_THROTTLE_TIME
+    )
     throttle_delta_cumulatime = 0
 
     def get_executed_reports_count(for_user):

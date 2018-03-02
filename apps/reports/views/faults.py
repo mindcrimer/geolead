@@ -97,8 +97,9 @@ class FaultsView(BaseReportView):
                 sensors_template_id = get_wialon_report_template_id('sensors', self.user)
                 last_data_template_id = get_wialon_report_template_id('last_data', self.user)
 
+                ura_user = self.user.ura_user if self.user.ura_user_id else self.user
                 jobs = Job.objects.filter(
-                    user=self.user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
+                    user=ura_user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
                 )
 
                 if jobs:
@@ -327,8 +328,9 @@ class FaultsView(BaseReportView):
             return None
 
         sum_broken_work_time = 0
+        ura_user = self.user.ura_user if self.user.ura_user_id else self.user
         jobs = Job.objects.filter(
-            user=self.user, unit_id=unit_id, date_begin__lt=dt_to, date_end__gt=dt_from
+            user=ura_user, unit_id=unit_id, date_begin__lt=dt_to, date_end__gt=dt_from
         )
 
         for job in jobs:

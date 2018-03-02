@@ -69,10 +69,14 @@ class User(AbstractUser, LastModMixin, BasicModel):
     organization_name = models.CharField(
         _('Название организации в УРА'), blank=True, null=False, max_length=255
     )
-    ura_standards_for_user = models.ForeignKey(
-        'self', verbose_name=_('Просмотр нормативов от лица пользователя'), blank=True, null=True,
-        related_name='supervisored_users_for_standards',
-        help_text=_('В случае отсутствия будет показывать все нормативы')
+    ura_user = models.ForeignKey(
+        'self', verbose_name=_('Просмотр данных УРА от лица пользователя УРА'),
+        blank=True, null=True,
+        related_name='ura_subordinates',
+        help_text=_(
+            'В случае отсутствия будет показывать все данные УРА (ПЛ, нормативы). При задании '
+            'позволяет операторам получать отчеты от лица головной учетной записи'
+        )
     )
     supervisor = models.ForeignKey(
         'self', blank=True, null=True, verbose_name=_('Супервайзер'),

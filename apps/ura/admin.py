@@ -173,8 +173,8 @@ class StandardPointAdmin(ImportExportMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(StandardPointAdmin, self).get_queryset(request)
-        if request.user.ura_standards_for_user_id:
-            qs = qs.filter(job_template__user=request.user.ura_standards_for_user)
+        if request.user.ura_user_id:
+            qs = qs.filter(job_template__user=request.user.ura_user)
         return qs
 
 
@@ -203,6 +203,6 @@ class StandardJobTemplateAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(StandardJobTemplateAdmin, self).get_queryset(request)
-        if request.user.ura_standards_for_user_id:
-            qs = qs.filter(user=request.user.ura_standards_for_user)
+        if request.user.ura_user_id:
+            qs = qs.filter(user=request.user.ura_user)
         return qs

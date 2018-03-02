@@ -73,8 +73,10 @@ class FinishedJobsView(BaseReportView):
                     x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
                 }
 
+                ura_user = user.ura_user if user.ura_user_id else user
                 jobs = Job.objects\
                     .filter(
+                        user=ura_user,
                         date_begin__gte=dt_from,
                         date_end__lte=dt_to,
                         route_id__in=list(routes.keys())

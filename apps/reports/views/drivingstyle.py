@@ -142,8 +142,9 @@ class DrivingStyleView(BaseReportView):
                     self.form.cleaned_data['dt_to'].replace(second=59), user.wialon_tz
                 )
 
+                ura_user = user.ura_user if user.ura_user_id else user
                 jobs = Job.objects.filter(
-                    user=user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
+                    user=ura_user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
                 ).order_by('date_begin', 'date_end')
 
                 jobs_cache = defaultdict(list)

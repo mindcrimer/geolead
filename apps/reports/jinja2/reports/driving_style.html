@@ -55,11 +55,14 @@
 			</tr>
 		</thead>
 
-		{%- for row in report_data.values() -%}
-            {%- for period in row['periods'] -%}
+		{%- for r, row in enumerate(report_data.values()) -%}
+            {%- for p, period in enumerate(row['periods']) -%}
 			<tbody>
-				<tr>
-					<td class="td-small">{{ period['dt_from']|date('Y-m-d H:i:s') }} - {{ period['dt_to']|date('Y-m-d H:i:s') }}</td>
+				<tr class="grouping collapsed" data-rel="{{ r }},{{ p }}">
+					<td class="td-small">
+                        <span class="icon-expand"></span>
+                        {{ period['dt_from']|date('Y-m-d H:i:s') }} - {{ period['dt_to']|date('Y-m-d H:i:s') }}
+                    </td>
 					<td class="td-small">{{ period['job'].driver_fio if period.get('job') else '' }}</td>
 					<td class="td-small">{{ row['unit_name'] }}</td>
 					<td class="td-small">{{ period['total_time']|render_timedelta }}</td>
@@ -86,7 +89,7 @@
 					<td class="td-small">{{ period['rating']|floatcomma(-2) }}</td>
 				</tr>
                 {%- for detail in period['details'] -%}
-                    <tr class="detailed">
+                    <tr class="detailed hidden" data-rel="{{ r }},{{ p }}">
                         <td class="td-small">{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
                         <td class="td-small">{{ period['job'].driver_fio if period.get('job') else '' }}</td>
                         <td class="td-small">{{ row['unit_name'] }}</td>

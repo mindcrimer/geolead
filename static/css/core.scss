@@ -145,6 +145,10 @@
       background-color: #eee !important;
       -webkit-print-color-adjust: exact;
     }
+
+    &.hidden {
+      display: none;
+    }
   }
 
   .report-table {
@@ -166,6 +170,37 @@
         font-size: 11px;
       }
 
+    }
+  }
+
+  .grouping {
+    cursor: pointer;
+
+    .icon-expand {
+      cursor: pointer;
+      width: 16px;
+      display: inline-block;
+
+      &:before {
+        content: '';
+        font-size: 16px;
+      }
+    }
+
+    &.collapsed {
+      .icon-expand {
+        &:before {
+          content: '+';
+        }
+      }
+    }
+
+    &.expanded {
+      .icon-expand {
+        &:before {
+          content: '-';
+        }
+      }
     }
   }
 }

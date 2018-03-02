@@ -12,4 +12,9 @@ $(document).ready(function() {
     format: 'd.m.Y',
     timepicker: false
   });
+
+  $('.grouping').click(function () {
+    $(this).toggleClass('collapsed').toggleClass('expanded');
+    $(this).parents('table').find('tr.detailed[data-rel="' + $(this).data('rel') + '"]').toggleClass('hidden');
+  });
 });

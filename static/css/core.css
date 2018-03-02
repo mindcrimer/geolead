@@ -106,6 +106,8 @@
       .report .detailed {
         background-color: #eee !important;
         -webkit-print-color-adjust: exact; } }
+    .report .detailed.hidden {
+      display: none; }
   .report .report-table {
     width: 100%;
     border-collapse: collapse; }
@@ -117,6 +119,19 @@
       padding: 4px 6px; }
       .report .report-table td.td-small {
         font-size: 11px; }
+  .report .grouping {
+    cursor: pointer; }
+    .report .grouping .icon-expand {
+      cursor: pointer;
+      width: 16px;
+      display: inline-block; }
+      .report .grouping .icon-expand:before {
+        content: '';
+        font-size: 16px; }
+    .report .grouping.collapsed .icon-expand:before {
+      content: '+'; }
+    .report .grouping.expanded .icon-expand:before {
+      content: '-'; }
 
 .red {
   color: red; }

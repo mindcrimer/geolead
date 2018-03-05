@@ -3,71 +3,71 @@
 {%- block PAGE_TITLE %}{{ report_name|e }}{% endblock -%}
 
 {%- block EXTRA_HEAD -%}
-	<link rel="stylesheet" media="print" href="{{ static('css/print.css') }}">
+  <link rel="stylesheet" media="print" href="{{ static('css/print.css') }}">
 {%- endblock -%}
 
 {%- block PAGE_CONTENT -%}
-{%- if messages -%}
-<ul class="messages">
-    {%- for message in messages -%}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {%- endfor -%}
-</ul>
-{%- endif -%}
+  {%- if messages -%}
+    <ul class="messages">
+      {%- for message in messages -%}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {%- endfor -%}
+    </ul>
+  {%- endif -%}
 
-{%- if report_data != None -%}
-	<div class="report">
-		<div class="report-export-wrapper">
-			<h1>{% block REPORT_NAME %}{{ report_name|e }}{% endblock %}</h1>
+  {%- if report_data != None -%}
+    <div class="report">
+      <div class="report-export-wrapper">
+        <h1>{% block REPORT_NAME %}{{ report_name|e }}{% endblock %}</h1>
 
-			<div class="report__heading">
-				{%- block REPORT_HEADING %}{% endblock -%}
-			</div>
+        <div class="report__heading">
+          {%- block REPORT_HEADING %}{% endblock -%}
+        </div>
 
-			<div class="uk-margin" style="text-align:right">
-				{%- block REPORT_HEAD_RIGHT %}{% endblock -%}
-			</div>
+        <div class="uk-margin" style="text-align:right">
+          {%- block REPORT_HEAD_RIGHT %}{% endblock -%}
+        </div>
 
-			<div class="table-wrapper">
-				{%- block REPORT_TABLE %}{% endblock -%}
-			</div>
+        <div class="table-wrapper">
+          {%- block REPORT_TABLE %}{% endblock -%}
+        </div>
 
-			<p>&nbsp;</p>
+        <p>&nbsp;</p>
 
-			{%- block REPORT_HINT %}{% endblock -%}
-		</div>
+        {%- block REPORT_HINT %}{% endblock -%}
+      </div>
 
-		<div class="uk-margin">
-			<a href="" class="uk-button uk-button-default">Назад</a>
+      <div class="uk-margin">
+        <a href="" class="uk-button uk-button-default">Назад</a>
 
-            {%- if can_download %}
-			<a href="?download=xls" class="uk-button uk-button-primary btn-xls" style="float: right">
-				<span class="fa fa-file-excel-o"></span> Скачать
-			</a>
-            {%- endif -%}
-		</div>
-	</div>
+        {%- if can_download %}
+          <a href="?download=xls" class="uk-button uk-button-primary btn-xls" style="float: right">
+            <span class="fa fa-file-excel-o"></span> Скачать
+          </a>
+        {%- endif -%}
+      </div>
+    </div>
 
-{%- elif report_data == None -%}
-	<div class="report-settings">
+  {%- elif report_data == None -%}
+    <div class="report-settings">
 
-		<div class="inner">
-			{%- block FORM %}{% endblock -%}
+      <div class="inner">
+        {%- block FORM %}{% endblock -%}
 
-			<div class="uk-margin">
-				<a href="{{ url('core:home') }}" class="uk-button uk-button-default">Назад</a>
-			</div>
-		</div>
-	</div>
+        <div class="uk-margin">
+          <a href="{{ url('core:home') }}" class="uk-button uk-button-default">Назад</a>
+        </div>
+      </div>
+    </div>
 
-{#{%- else -%}#}
-{#<div class="report">#}
-{#	<h3>Данные за указанный период не найдены</h3>#}
-{##}
-{#	<div class="uk-margin-top">#}
-{#		<a href="" class="uk-button uk-button-default">Назад</a>#}
-{#	</div>#}
-{#</div>#}
-{%- endif -%}
+    {#{%- else -%}#}
+    {#<div class="report">#}
+    {#	<h3>Данные за указанный период не найдены</h3>#}
+    {##}
+    {#	<div class="uk-margin-top">#}
+    {#		<a href="" class="uk-button uk-button-default">Назад</a>#}
+    {#	</div>#}
+    {#</div>#}
+  {%- endif -%}
 
 {%- endblock -%}

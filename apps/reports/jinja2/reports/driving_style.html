@@ -1,215 +1,222 @@
 {%- extends 'reports/base.html' -%}
 
 {%- block REPORT_HEADING -%}
-	<div class="report__heading-row uk-margin">
-		Период:
-		{{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
-		{{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
-	</div>
-	<div class="report__heading-row uk-margin">
-		ФИО ответственного за разбор событий:
-		____________________________________________
-	</div>
+  <div class="report__heading-row uk-margin">
+    Период:
+    {{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
+    {{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
+  </div>
+  <div class="report__heading-row uk-margin">
+    ФИО ответственного за разбор событий:
+    ____________________________________________
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
-	Детализация нарушений ПДД и инструкции по эксплуатации техники
+  Детализация нарушений ПДД и инструкции по эксплуатации техники
 {%- endblock -%}
 
 
 {%- block REPORT_TABLE -%}
-<div class="table-wrap">
-	<table class="report-table">
-		<thead>
-			<tr>
-				<td rowspan="3" class="td-small">Время</td>
-				<td rowspan="3" class="td-small">ФИО</td>
-				<td rowspan="3" class="td-small">№&nbsp;ТС</td>
-				<td rowspan="3" class="td-small">Суммарное<br/>время<br/>в движении<br/>за период,&nbsp;ч</td>
-				<td colspan="8" class="td-small">Нарушения</td>
-				<td colspan="4" class="td-small">%&nbsp;нарушений</td>
-				<td rowspan="3" class="td-small">Оценка<br/>вождения,&nbsp;%</td>
-			</tr>
+  <div class="table-wrap">
+    <table class="report-table">
+      <thead>
+      <tr>
+        <td rowspan="3" class="td-small">Время</td>
+        <td rowspan="3" class="td-small">ФИО</td>
+        <td rowspan="3" class="td-small">№&nbsp;ТС</td>
+        <td rowspan="3" class="td-small">Суммарное<br/>время<br/>в движении<br/>за период,&nbsp;ч
+        </td>
+        <td colspan="8" class="td-small">Нарушения</td>
+        <td colspan="4" class="td-small">%&nbsp;нарушений</td>
+        <td rowspan="3" class="td-small">Оценка<br/>вождения,&nbsp;%</td>
+      </tr>
 
-			<tr>
-				<td colspan="2" class="td-small">Превышение скоростного<br/>режима, км/ч</td>
-				<td colspan="2" class="td-small">Выключенный свет фар<br/>при движении</td>
-				<td colspan="2" class="td-small">Непристегнутый ремень<br/>безопасности при движении</td>
-				<td colspan="2" class="td-small">Не транспортное положение<br/>оборудования при движении</td>
-				<td rowspan="2" class="td-small">Скоростной<br/>режим</td>
-				<td rowspan="2" class="td-small">Свет</td>
-				<td rowspan="2" class="td-small">Ремень</td>
-				<td rowspan="2" class="td-small">Доп.<br/>оборудование</td>
-			</tr>
+      <tr>
+        <td colspan="2" class="td-small">Превышение скоростного<br/>режима, км/ч</td>
+        <td colspan="2" class="td-small">Выключенный свет фар<br/>при движении</td>
+        <td colspan="2" class="td-small">Непристегнутый ремень<br/>безопасности при движении</td>
+        <td colspan="2" class="td-small">Не транспортное положение<br/>оборудования при движении
+        </td>
+        <td rowspan="2" class="td-small">Скоростной<br/>режим</td>
+        <td rowspan="2" class="td-small">Свет</td>
+        <td rowspan="2" class="td-small">Ремень</td>
+        <td rowspan="2" class="td-small">Доп.<br/>оборудование</td>
+      </tr>
 
-			<tr>
-				<td class="td-small">Кол-во<br/>случаев</td>
-				<td class="td-small">Часов<br/>нарушения</td>
-				<td class="td-small">Кол-во<br/>случаев</td>
-				<td class="td-small">Часов<br/>нарушения</td>
-				<td class="td-small">Кол-во<br/>случаев</td>
-				<td class="td-small">Часов<br/>нарушения</td>
-				<td class="td-small">Кол-во<br/>случаев</td>
-				<td class="td-small">Часов<br/>нарушения</td>
-			</tr>
-		</thead>
+      <tr>
+        <td class="td-small">Кол-во<br/>случаев</td>
+        <td class="td-small">Часов<br/>нарушения</td>
+        <td class="td-small">Кол-во<br/>случаев</td>
+        <td class="td-small">Часов<br/>нарушения</td>
+        <td class="td-small">Кол-во<br/>случаев</td>
+        <td class="td-small">Часов<br/>нарушения</td>
+        <td class="td-small">Кол-во<br/>случаев</td>
+        <td class="td-small">Часов<br/>нарушения</td>
+      </tr>
+      </thead>
 
-		{%- for r, row in enumerate(report_data.values()) -%}
-            {%- for p, period in enumerate(row['periods']) -%}
-			<tbody>
-				<tr class="grouping collapsed" data-rel="{{ r }},{{ p }}">
-					<td class="td-small">
-                        <span class="icon-expand"></span>
-                        {{ period['dt_from']|date('Y-m-d H:i:s') }} - {{ period['dt_to']|date('Y-m-d H:i:s') }}
-                    </td>
-					<td class="td-small">{{ period['job'].driver_fio if period.get('job') else '' }}</td>
-					<td class="td-small">{{ row['unit_name'] }}</td>
-					<td class="td-small">{{ period['total_time']|render_timedelta }}</td>
-					<td class="td-small">{{ period['facts']['speed']['count'] if period['facts']['speed']['count'] else '' }}</td>
-					<td class="td-small">{{ period['facts']['speed']['seconds']|render_timedelta }}</td>
-					<td class="td-small">{{ period['facts']['lights']['count'] if period['facts']['lights']['count'] else '' }}</td>
-					<td class="td-small">{{ period['facts']['lights']['seconds']|render_timedelta }}</td>
-					<td class="td-small">{{ period['facts']['belt']['count'] if period['facts']['belt']['count'] else '' }}</td>
-					<td class="td-small">{{ period['facts']['belt']['seconds']|render_timedelta }}</td>
-					<td class="td-small">{{ period['facts']['devices']['count'] if period['facts']['devices']['count'] else '' }}</td>
-					<td class="td-small">{{ period['facts']['devices']['seconds']|render_timedelta }}</td>
-					<td class="td-small" style="background-color:{{ render_background(period['percentage']['speed']) }}">
-						{{- period['percentage']['speed']|floatcomma(-2) if period['percentage']['speed'] else '' -}}
-					</td>
-					<td class="td-small" style="background-color:{{ render_background(period['percentage']['lights']) }}">
-						{{- period['percentage']['lights']|floatcomma(-2) if period['percentage']['lights'] else '' -}}
-					</td>
-					<td class="td-small" style="background-color:{{ render_background(period['percentage']['belt']) }}">
-						{{- period['percentage']['belt']|floatcomma(-2) if period['percentage']['belt'] else '' -}}
-					</td>
-					<td class="td-small" style="background-color:{{ render_background(period['percentage']['devices']) }}">
-						{{- period['percentage']['devices']|floatcomma(-2) if period['percentage']['devices'] else '' -}}
-					</td>
-					<td class="td-small">{{ period['rating']|floatcomma(-2) }}</td>
-				</tr>
-                {%- for detail in period['details'] -%}
-                    <tr class="detailed hidden" data-rel="{{ r }},{{ p }}">
-                        <td class="td-small">{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
-                        <td class="td-small">{{ period['job'].driver_fio if period.get('job') else '' }}</td>
-                        <td class="td-small">{{ row['unit_name'] }}</td>
-                        <td class="td-small">&nbsp;</td>
-                        <td class="td-small">{{ detail['speed']['count'] if detail['speed']['count'] else '' }}</td>
-                        <td class="td-small">{{ detail['speed']['seconds']|render_timedelta }}</td>
-                        <td class="td-small">{{ detail['lights']['count'] if detail['lights']['count'] else '' }}</td>
-                        <td class="td-small">{{ detail['lights']['seconds']|render_timedelta }}</td>
-                        <td class="td-small">{{ detail['belt']['count'] if detail['belt']['count'] else '' }}</td>
-                        <td class="td-small">{{ detail['belt']['seconds']|render_timedelta }}</td>
-                        <td class="td-small">{{ detail['devices']['count'] if detail['devices']['count'] else '' }}</td>
-                        <td class="td-small">{{ detail['devices']['seconds']|render_timedelta }}</td>
-                        <td class="td-small">&nbsp;</td>
-                        <td class="td-small">&nbsp;</td>
-                        <td class="td-small">&nbsp;</td>
-                        <td class="td-small">&nbsp;</td>
-                        <td class="td-small">&nbsp;</td>
-                    </tr>
-                {%- endfor -%}
-			</tbody>
-            {%- endfor -%}
-		{%- endfor -%}
-	</table>
-</div>
+      {%- for r, row in enumerate(report_data.values()) -%}
+        {%- for p, period in enumerate(row['periods']) -%}
+          <tbody>
+          <tr class="grouping collapsed" data-rel="{{ r }},{{ p }}">
+            <td class="td-small">
+              <span class="icon-expand"></span>
+              {{ period['dt_from']|date('Y-m-d H:i:s') }}
+              - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
+            </td>
+            <td class="td-small">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
+            <td class="td-small">{{ row['unit_name'] }}</td>
+            <td class="td-small">{{ period['total_time']|render_timedelta }}</td>
+            <td class="td-small">{{ period['facts']['speed']['count'] if period['facts']['speed']['count'] else '' }}</td>
+            <td class="td-small">{{ period['facts']['speed']['seconds']|render_timedelta }}</td>
+            <td class="td-small">{{ period['facts']['lights']['count'] if period['facts']['lights']['count'] else '' }}</td>
+            <td class="td-small">{{ period['facts']['lights']['seconds']|render_timedelta }}</td>
+            <td class="td-small">{{ period['facts']['belt']['count'] if period['facts']['belt']['count'] else '' }}</td>
+            <td class="td-small">{{ period['facts']['belt']['seconds']|render_timedelta }}</td>
+            <td class="td-small">{{ period['facts']['devices']['count'] if period['facts']['devices']['count'] else '' }}</td>
+            <td class="td-small">{{ period['facts']['devices']['seconds']|render_timedelta }}</td>
+            <td class="td-small"
+                style="background-color:{{ render_background(period['percentage']['speed']) }}">
+              {{- period['percentage']['speed']|floatcomma(-2) if period['percentage']['speed'] else '' -}}
+            </td>
+            <td class="td-small"
+                style="background-color:{{ render_background(period['percentage']['lights']) }}">
+              {{- period['percentage']['lights']|floatcomma(-2) if period['percentage']['lights'] else '' -}}
+            </td>
+            <td class="td-small"
+                style="background-color:{{ render_background(period['percentage']['belt']) }}">
+              {{- period['percentage']['belt']|floatcomma(-2) if period['percentage']['belt'] else '' -}}
+            </td>
+            <td class="td-small"
+                style="background-color:{{ render_background(period['percentage']['devices']) }}">
+              {{- period['percentage']['devices']|floatcomma(-2) if period['percentage']['devices'] else '' -}}
+            </td>
+            <td class="td-small">{{ period['rating']|floatcomma(-2) }}</td>
+          </tr>
+          {%- for detail in period['details'] -%}
+            <tr class="detailed hidden" data-rel="{{ r }},{{ p }}">
+              <td class="td-small">{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
+              <td class="td-small">{{ period['job'].driver_fio if period.get('job') else '' }}</td>
+              <td class="td-small">{{ row['unit_name'] }}</td>
+              <td class="td-small">&nbsp;</td>
+              <td class="td-small">{{ detail['speed']['count'] if detail['speed']['count'] else '' }}</td>
+              <td class="td-small">{{ detail['speed']['seconds']|render_timedelta }}</td>
+              <td class="td-small">{{ detail['lights']['count'] if detail['lights']['count'] else '' }}</td>
+              <td class="td-small">{{ detail['lights']['seconds']|render_timedelta }}</td>
+              <td class="td-small">{{ detail['belt']['count'] if detail['belt']['count'] else '' }}</td>
+              <td class="td-small">{{ detail['belt']['seconds']|render_timedelta }}</td>
+              <td class="td-small">{{ detail['devices']['count'] if detail['devices']['count'] else '' }}</td>
+              <td class="td-small">{{ detail['devices']['seconds']|render_timedelta }}</td>
+              <td class="td-small">&nbsp;</td>
+              <td class="td-small">&nbsp;</td>
+              <td class="td-small">&nbsp;</td>
+              <td class="td-small">&nbsp;</td>
+              <td class="td-small">&nbsp;</td>
+            </tr>
+          {%- endfor -%}
+          </tbody>
+        {%- endfor -%}
+      {%- endfor -%}
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HINT -%}
-<div class="hint uk-margin-top">
-	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
-		<tr>
-			<td style="text-align:right;vertical-align:top" rowspan="3">
-				<b>Условия форматирования ячеек:</b>
-			</td>
-			<td style="background-color:lightgreen">
-				до {{ form.cleaned_data.get('normal_rating', 10) }}% нарушений - норма
-			</td>
-		</tr>
-		<tr>
-			<td style="background-color:yellow">
-				от {{ form.cleaned_data.get('normal_rating', 10) }}%
-                до {{ form.cleaned_data.get('bad_rating', 30) }}% нарушений -
-                требуется профилактическая беседа
-			</td>
-		</tr>
-		<tr>
-			<td style="background-color:orangered">
-				от {{ form.cleaned_data.get('bad_rating', 30) }}% до 100% нарушений -
-				требуется профилактическая беседа с возможным лишением части премии
-			</td>
-		</tr>
-	</table>
-</div>
+  <div class="hint uk-margin-top">
+    <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
+      <tr>
+        <td style="text-align:right;vertical-align:top" rowspan="3">
+          <b>Условия форматирования ячеек:</b>
+        </td>
+        <td style="background-color:lightgreen">
+          до {{ form.cleaned_data.get('normal_rating', 10) }}% нарушений - норма
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color:yellow">
+          от {{ form.cleaned_data.get('normal_rating', 10) }}%
+          до {{ form.cleaned_data.get('bad_rating', 30) }}% нарушений -
+          требуется профилактическая беседа
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color:orangered">
+          от {{ form.cleaned_data.get('bad_rating', 30) }}% до 100% нарушений -
+          требуется профилактическая беседа с возможным лишением части премии
+        </td>
+      </tr>
+    </table>
+  </div>
 
-<div class="hint uk-margin-top">
-	<table border="0" cellpadding="5" cellspacing="0">
-		<tr>
-			<td style="text-align:right;vertical-align:top;font-style:italic">
-				<b>Условия расчета количества случаев, 1 случаем считать:</b>
-			</td>
-			<td>
-				Показатели скорости, ремня или оборудования, которые были установлены в настройках
-                транспортного средства (Вкладка "Качество вождения")
-			</td>
-		</tr>
-	</table>
-</div>
+  <div class="hint uk-margin-top">
+    <table border="0" cellpadding="5" cellspacing="0">
+      <tr>
+        <td style="text-align:right;vertical-align:top;font-style:italic">
+          <b>Условия расчета количества случаев, 1 случаем считать:</b>
+        </td>
+        <td>
+          Показатели скорости, ремня или оборудования, которые были установлены в настройках
+          транспортного средства (Вкладка "Качество вождения")
+        </td>
+      </tr>
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block FORM -%}
-<form class="form" method="post" action="">
-	<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-	<fieldset class="uk-fieldset">
+  <form class="form" method="post" action="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <fieldset class="uk-fieldset">
 
-		<legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
+      <legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
 
-		<div class="form-controls">
-			<div class="uk-margin">
-                <label class="uk-form-label" for="report_from">С</label>
-				<input class="uk-input dt-input" name="dt_from" id="report_from"
-							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
-			</div>
+      <div class="form-controls">
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_from">С</label>
+          <input class="uk-input dt-input" name="dt_from" id="report_from"
+                 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-                <label class="uk-form-label" for="report_to">По</label>
-				<input class="uk-input dt-input" name="dt_to" id="report_to"
-							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_to">По</label>
+          <input class="uk-input dt-input" name="dt_to" id="report_to"
+                 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
 
-            <div class="uk-margin">
-                <label class="uk-form-label" for="report_normal_rating">
-                    Процент нарушений, при котором требуется профилактическая беседа
-                </label>
-				<input class="uk-input" name="normal_rating"
-                       id="report_normal_rating"
-                       type="number" step="1" min="0" max="99"
-                       value="{{ form.cleaned_data.get('normal_rating', 10) }}">
-				<div class="errors">{{ form.errors.get('normal_rating', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_normal_rating">
+            Процент нарушений, при котором требуется профилактическая беседа
+          </label>
+          <input class="uk-input" name="normal_rating"
+                 id="report_normal_rating"
+                 type="number" step="1" min="0" max="99"
+                 value="{{ form.cleaned_data.get('normal_rating', 10) }}">
+          <div class="errors">{{ form.errors.get('normal_rating', '') }}</div>
+        </div>
 
-            <div class="uk-margin">
-                <label class="uk-form-label" for="report_bad_rating">
-                    Процент нарушений, при котором требуется профилактическая беседа
-                    с возможным лишением части премии
-                </label>
-				<input class="uk-input" name="bad_rating"
-                       id="report_bad_rating"
-                       type="number" step="1" min="0" max="99"
-                       value="{{ form.cleaned_data.get('bad_rating', 30) }}">
-				<div class="errors">{{ form.errors.get('bad_rating', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_bad_rating">
+            Процент нарушений, при котором требуется профилактическая беседа
+            с возможным лишением части премии
+          </label>
+          <input class="uk-input" name="bad_rating"
+                 id="report_bad_rating"
+                 type="number" step="1" min="0" max="99"
+                 value="{{ form.cleaned_data.get('bad_rating', 30) }}">
+          <div class="errors">{{ form.errors.get('bad_rating', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-				<button class="uk-button uk-button-primary">Создать</button>
-			</div>
-		</div>
+        <div class="uk-margin">
+          <button class="uk-button uk-button-primary">Создать</button>
+        </div>
+      </div>
 
-	</fieldset>
-</form>
+    </fieldset>
+  </form>
 {%- endblock -%}

@@ -1,134 +1,134 @@
 {%- extends 'reports/base.html' -%}
 
 {%- block REPORT_HEADING -%}
-    <div class="report__heading-row uk-margin">
-        На дату:&nbsp;
-        {{- form.cleaned_data.dt|date('d.m.Y') -}}
-    </div>
+  <div class="report__heading-row uk-margin">
+    На дату:&nbsp;
+    {{- form.cleaned_data.dt|date('d.m.Y') -}}
+  </div>
 
-    <div class="report__heading-row uk-margin">
-        ФИО ответственного за<br/>устранение неполадок:
-        ____________________________________________
-    </div>
+  <div class="report__heading-row uk-margin">
+    ФИО ответственного за<br/>устранение неполадок:
+    ____________________________________________
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
-    <div class="report__heading-row uk-margin">
-        Всего оборудованных транспортных объектов ССМТ: {{ stats['total'] -}}
-    </div>
+  <div class="report__heading-row uk-margin">
+    Всего оборудованных транспортных объектов ССМТ: {{ stats['total'] -}}
+  </div>
 
-    <div class="report__heading-row uk-margin">
-        Из них*: исправных {{ stats['total'] - stats['broken'] }}<br/>
-        Возможно неисправных {{ stats['broken'] -}}
-    </div>
+  <div class="report__heading-row uk-margin">
+    Из них*: исправных {{ stats['total'] - stats['broken'] }}<br/>
+    Возможно неисправных {{ stats['broken'] -}}
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_TABLE -%}
-    {%- if report_data -%}
-        <div class="table-wrap">
-            <table class="report-table">
-                <thead>
+  {%- if report_data -%}
+    <div class="table-wrap">
+      <table class="report-table">
+        <thead>
 
-                <tr>
-                    <td rowspan="2">Гос№ ТС</td>
-                    <td colspan="2">Последняя полученная информация</td>
-                    <td rowspan="2">ФИО водителя</td>
-                    <td rowspan="2">
-                        Суммарное неисправное<br/>
-                        рабочее время, ч
-                    </td>
-                    <td rowspan="2">
-                        Наименование возможно<br/>
-                        неисправного оборудования (ДУТ, ...)
-                    </td>
-                </tr>
+        <tr>
+          <td rowspan="2">Гос№ ТС</td>
+          <td colspan="2">Последняя полученная информация</td>
+          <td rowspan="2">ФИО водителя</td>
+          <td rowspan="2">
+            Суммарное неисправное<br/>
+            рабочее время, ч
+          </td>
+          <td rowspan="2">
+            Наименование возможно<br/>
+            неисправного оборудования (ДУТ, ...)
+          </td>
+        </tr>
 
-                <tr>
-                    <td>Место/геозона</td>
-                    <td>Время</td>
-                </tr>
+        <tr>
+          <td>Место/геозона</td>
+          <td>Время</td>
+        </tr>
 
-                </thead>
+        </thead>
 
-                {%- for row in report_data -%}
-                    <tbody>
-                    <tr>
-                        <td>{{ row['unit'] }}</td>
-                        <td>{{ row['place'] or '' }}</td>
-                        <td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
-                        <td class="nowrap">{{ row['driver_name'] or '' }}</td>
-                        <td class="tright">{{ row['sum_broken_work_time'] or '' }}</td>
-                        <td>{{ row['fault'] or '' }}</td>
-                    </tr>
-                    </tbody>
-                {%- endfor -%}
-            </table>
-        </div>
-    {%- else -%}
-        <p>Неисправное оборудование не выявлено.</p>
-    {%- endif -%}
+        {%- for row in report_data -%}
+          <tbody>
+          <tr>
+            <td>{{ row['unit'] }}</td>
+            <td>{{ row['place'] or '' }}</td>
+            <td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
+            <td class="nowrap">{{ row['driver_name'] or '' }}</td>
+            <td class="tright">{{ row['sum_broken_work_time'] or '' }}</td>
+            <td>{{ row['fault'] or '' }}</td>
+          </tr>
+          </tbody>
+        {%- endfor -%}
+      </table>
+    </div>
+  {%- else -%}
+    <p>Неисправное оборудование не выявлено.</p>
+  {%- endif -%}
 {%- endblock -%}
 
 
 {%- block REPORT_HINT -%}
-    <div class="hint uk-margin-top">
-        <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
-            <tr>
-                <td style="vertical-align:top">
-                    *Состояния:<br/>
-                    <span class="fa fa-check"></span>
-                    исправное - передача данных с датчиков и блока (трекера) осуществляется без
-                    затруднений;<br/>
+  <div class="hint uk-margin-top">
+    <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
+      <tr>
+        <td style="vertical-align:top">
+          *Состояния:<br/>
+          <span class="fa fa-check"></span>
+          исправное - передача данных с датчиков и блока (трекера) осуществляется без
+          затруднений;<br/>
 
-                    <span class="fa fa-check"></span>
-                    неисправное - отсутствует передача данных с блока (трекера) или датчиков (веса,
-                    ДУТ, ...) более 3 часов.
-                </td>
-            </tr>
-        </table>
-    </div>
+          <span class="fa fa-check"></span>
+          неисправное - отсутствует передача данных с блока (трекера) или датчиков (веса,
+          ДУТ, ...) более 3 часов.
+        </td>
+      </tr>
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block FORM -%}
-    <form class="form" method="post" action="">
-        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-        <fieldset class="uk-fieldset">
+  <form class="form" method="post" action="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <fieldset class="uk-fieldset">
 
-            <legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
+      <legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
 
-            <div class="form-controls">
-                <div class="uk-margin">
-                    <label class="uk-form-label" for="report_dt">На дату</label>
-                    <input class="uk-input date-input" name="dt" id="report_dt"
-                           value="{{ form.cleaned_data['dt']|date('d.m.Y') if form.cleaned_data and form.cleaned_data.get('dt') else '' }}">
-                    <div class="errors">{{ form.errors.get('dt', '') }}</div>
-                </div>
+      <div class="form-controls">
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_dt">На дату</label>
+          <input class="uk-input date-input" name="dt" id="report_dt"
+                 value="{{ form.cleaned_data['dt']|date('d.m.Y') if form.cleaned_data and form.cleaned_data.get('dt') else '' }}">
+          <div class="errors">{{ form.errors.get('dt', '') }}</div>
+        </div>
 
-                <div class="uk-margin">
-                    <label class="uk-form-label" for="report_job_extra_offset">
-                        Дополнительное время до и после ПЛ, ч
-                    </label>
-                    <input class="uk-input" name="job_extra_offset"
-                           id="report_job_extra_offset"
-                           type="number" step="1" min="1" max="99"
-                           value="{{ form.cleaned_data.get('job_extra_offset') }}">
-                    <div class="errors">{{ form.errors.get('job_extra_offset', '') }}</div>
-                    <div class="hint">
-                        Указывается время в часах, которое добавляется до и после планового периода
-                        путевого листа при анализе работоспособности оборудования ССМТ.
-                        Данное значение не влияет на расчет суммарного рабочего времени
-                        неисправности.
-                    </div>
-                </div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_job_extra_offset">
+            Дополнительное время до и после ПЛ, ч
+          </label>
+          <input class="uk-input" name="job_extra_offset"
+                 id="report_job_extra_offset"
+                 type="number" step="1" min="1" max="99"
+                 value="{{ form.cleaned_data.get('job_extra_offset') }}">
+          <div class="errors">{{ form.errors.get('job_extra_offset', '') }}</div>
+          <div class="hint">
+            Указывается время в часах, которое добавляется до и после планового периода
+            путевого листа при анализе работоспособности оборудования ССМТ.
+            Данное значение не влияет на расчет суммарного рабочего времени
+            неисправности.
+          </div>
+        </div>
 
-                <div class="uk-margin">
-                    <button class="uk-button uk-button-primary">Создать</button>
-                </div>
-            </div>
+        <div class="uk-margin">
+          <button class="uk-button uk-button-primary">Создать</button>
+        </div>
+      </div>
 
-        </fieldset>
-    </form>
+    </fieldset>
+  </form>
 {%- endblock -%}

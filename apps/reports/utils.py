@@ -109,7 +109,7 @@ def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
 
 
 def parse_wialon_report_datetime(str_date):
-    if '-----' in str_date:
+    if '-----' in str_date or 'Неизвестно' in str_date:
         return None
 
     pattern = '%Y-%m-%d %H:%M:%S' if str_date.count(':') >= 2 else '%Y-%m-%d %H:%M'

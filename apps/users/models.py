@@ -39,9 +39,15 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_resource_name = models.CharField(
         _('Наименование ресурса'), max_length=255, blank=True, null=True
     )
+
     wialon_discharge_report_template_name = models.CharField(
-        _('Наименование отчета "Перерасход топлива"'), max_length=255, blank=True, null=True
+        _('Наименование отчета "Перерасход топлива"'), max_length=255,
+        blank=True, null=True
     )
+    wialon_discharge_individual_report_template_name = models.CharField(
+        _('Наименование отчета "Перерасход топлива индивидуальный"'), max_length=255, blank=True, null=True
+    )
+
     wialon_driving_style_report_template_name = models.CharField(
         _('Наименование отчета "Качество вождения (БДД)"'), max_length=255, blank=True, null=True
     )
@@ -53,9 +59,11 @@ class User(AbstractUser, LastModMixin, BasicModel):
     wialon_geozones_report_template_name = models.CharField(
         _('Наименование отчета "Геозоны"'), max_length=255, blank=True, null=True
     )
+
     wialon_kmu_report_template_name = models.CharField(
         _('Наименование отчета "Работа крановой установки"'), max_length=255, blank=True, null=True
     )
+
     wialon_sensors_report_template_name = models.CharField(
         _('Наименование отчета "Неисправности"'), max_length=255, blank=True, null=True
     )

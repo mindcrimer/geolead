@@ -1,138 +1,139 @@
 {%- extends 'reports/base.html' -%}
 
 {%- block REPORT_HEADING -%}
-	<div class="report__heading-row uk-margin">
-		Период:
-		{{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
-		{{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
-	</div>
+  <div class="report__heading-row uk-margin">
+    Период:
+    {{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
+    {{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
-	{%- if report_data.get('start') -%}
-		<div class="report__heading-row uk-margin">
-			Список случаев несоответствий выездов*
-		</div>
-	{%- endif -%}
+  {%- if report_data.get('start') -%}
+    <div class="report__heading-row uk-margin">
+      Список случаев несоответствий выездов*
+    </div>
+  {%- endif -%}
 {%- endblock -%}
 
 
 {%- block REPORT_TABLE -%}
-{%- if report_data.get('start') -%}
-<div class="table-wrap">
-	<table class="report-table">
-		<thead>
-			<tr>
-				<td>Гос № ТС</td>
-				<td>ФИО водителя</td>
-				<td>Время начала смены из путевого листа</td>
-				<td>№ шаблона задания</td>
-				<td>Название шаблона задания</td>
-				<td>Фактическое место/геозона (в рамках шаблона задания) на начало смены</td>
-				<td>Фактическое место/геозона на начало смены</td>
-			</tr>
+  {%- if report_data.get('start') -%}
+    <div class="table-wrap">
+      <table class="report-table">
+        <thead>
+        <tr>
+          <td>Гос № ТС</td>
+          <td>ФИО водителя</td>
+          <td>Время начала смены из путевого листа</td>
+          <td>№ шаблона задания</td>
+          <td>Название шаблона задания</td>
+          <td>Фактическое место/геозона (в рамках шаблона задания) на начало смены</td>
+          <td>Фактическое место/геозона на начало смены</td>
+        </tr>
 
-		</thead>
+        </thead>
 
-		{%- for row in report_data.get('start') -%}
-			<tbody>
-				<tr>
-					<td>{{ row['car_number'] }}</td>
-					<td>{{ row['driver_fio'] }}</td>
-					<td>{{ row['job_date_start']|date('d.m.Y H:i:s') }}</td>
-					<td>{{ row['route_id'] }}</td>
-					<td>{{ row['route_title'] }}</td>
-					<td>{{ row['route_fact_start'] }}</td>
-					<td>{{ row['fact_start'] }}</td>
-				</tr>
-			</tbody>
-		{%- endfor -%}
-	</table>
-</div>
-{%- endif -%}
+        {%- for row in report_data.get('start') -%}
+          <tbody>
+          <tr>
+            <td>{{ row['car_number'] }}</td>
+            <td>{{ row['driver_fio'] }}</td>
+            <td>{{ row['job_date_start']|date('d.m.Y H:i:s') }}</td>
+            <td>{{ row['route_id'] }}</td>
+            <td>{{ row['route_title'] }}</td>
+            <td>{{ row['route_fact_start'] }}</td>
+            <td>{{ row['fact_start'] }}</td>
+          </tr>
+          </tbody>
+        {%- endfor -%}
+      </table>
+    </div>
+  {%- endif -%}
 
-{%- if report_data.get('end') -%}
-<div class="report__heading-row uk-margin" style="text-align:right">
-	Список случаев несоответствий заездов
-</div>
+  {%- if report_data.get('end') -%}
+    <div class="report__heading-row uk-margin" style="text-align:right">
+      Список случаев несоответствий заездов
+    </div>
 
-<div class="table-wrap">
-	<table class="report-table">
-		<thead>
-			<tr>
-				<td>Гос № ТС</td>
-				<td>ФИО водителя</td>
-				<td>Время окончания смены из путевого листа</td>
-				<td>№ шаблона задания</td>
-				<td>Название шаблона задания</td>
-				<td>Время фактического прибытия</td>
-				<td>**Отклонение, ч</td>
-			</tr>
-		</thead>
+    <div class="table-wrap">
+      <table class="report-table">
+        <thead>
+        <tr>
+          <td>Гос № ТС</td>
+          <td>ФИО водителя</td>
+          <td>Время окончания смены из путевого листа</td>
+          <td>№ шаблона задания</td>
+          <td>Название шаблона задания</td>
+          <td>Время фактического прибытия</td>
+          <td>**Отклонение, ч</td>
+        </tr>
+        </thead>
 
-		{%- for row in report_data.get('end') -%}
-			<tbody>
-			<tr>
-				<td>{{ row['car_number'] }}</td>
-				<td>{{ row['driver_fio'] }}</td>
-				<td>{{ row['job_date_end']|date('d.m.Y H:i:s') }}</td>
-				<td>{{ row['route_id'] }}</td>
-				<td>{{ row['route_title'] }}</td>
-				<td>{{ row['fact_end']|date('d.m.Y H:i:s') }}</td>
-				<td class="tright">{{ row['delta'] }}</td>
-			</tr>
-			</tbody>
-		{%- endfor -%}
-	</table>
-</div>
-{%- endif -%}
+        {%- for row in report_data.get('end') -%}
+          <tbody>
+          <tr>
+            <td>{{ row['car_number'] }}</td>
+            <td>{{ row['driver_fio'] }}</td>
+            <td>{{ row['job_date_end']|date('d.m.Y H:i:s') }}</td>
+            <td>{{ row['route_id'] }}</td>
+            <td>{{ row['route_title'] }}</td>
+            <td>{{ row['fact_end']|date('d.m.Y H:i:s') }}</td>
+            <td class="tright">{{ row['delta'] }}</td>
+          </tr>
+          </tbody>
+        {%- endfor -%}
+      </table>
+    </div>
+  {%- endif -%}
 {%- endblock -%}
 
 
 {%- block REPORT_HINT -%}
-<div class="hint uk-margin-top">
-	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
-		<tr>
-			<td style="vertical-align:top">
-				* если во время начала смены автомобиль не находился в стартовой точке (гараже или соответствующем месте) - фиксируется несоответствие выезда
-			</td>
-		</tr>
-		<tr>
-			<td>** более 30 мин. от планового завершения смены</td>
-		</tr>
-	</table>
-</div>
+  <div class="hint uk-margin-top">
+    <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
+      <tr>
+        <td style="vertical-align:top">
+          * если во время начала смены автомобиль не находился в стартовой точке (гараже или
+          соответствующем месте) - фиксируется несоответствие выезда
+        </td>
+      </tr>
+      <tr>
+        <td>** более 30 мин. от планового завершения смены</td>
+      </tr>
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block FORM -%}
-<form class="form" method="post" action="">
-	<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-	<fieldset class="uk-fieldset">
+  <form class="form" method="post" action="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <fieldset class="uk-fieldset">
 
-		<legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
+      <legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
 
-		<div class="form-controls">
-			<div class="uk-margin">
-                <label class="uk-form-label" for="report_from">С</label>
-				<input class="uk-input dt-input" name="dt_from" id="report_from"
-							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
-			</div>
+      <div class="form-controls">
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_from">С</label>
+          <input class="uk-input dt-input" name="dt_from" id="report_from"
+                 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-                <label class="uk-form-label" for="dt_to">По</label>
-				<input class="uk-input dt-input" name="dt_to" id="report_to"
-							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="dt_to">По</label>
+          <input class="uk-input dt-input" name="dt_to" id="report_to"
+                 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-				<button class="uk-button uk-button-primary">Создать</button>
-			</div>
-		</div>
+        <div class="uk-margin">
+          <button class="uk-button uk-button-primary">Создать</button>
+        </div>
+      </div>
 
-	</fieldset>
-</form>
+    </fieldset>
+  </form>
 {%- endblock -%}

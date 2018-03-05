@@ -112,7 +112,6 @@ class DrivingStyleView(BaseReportView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(DrivingStyleView, self).get_context_data(**kwargs)
-        report_data = None
         self.form = kwargs['form']
         kwargs['today'] = datetime.date.today()
 
@@ -161,9 +160,6 @@ class DrivingStyleView(BaseReportView):
                 i = 0
                 for unit_id, unit_name in units_dict.items():
                     i += 1
-                    # FIXME
-                    if i > 10:
-                        break
                     print('%s) %s' % (i, unit_name))
 
                     if unit_id not in report_data:
@@ -290,11 +286,11 @@ class DrivingStyleView(BaseReportView):
                             period['percentage'][viol_key] = percentage
                             period['rating'] -= percentage
 
-                kwargs.update(
-                    report_data=report_data,
-                    render_background=self.render_background,
-                    enumerate=enumerate
-                )
+            kwargs.update(
+                report_data=report_data,
+                render_background=self.render_background,
+                enumerate=enumerate
+            )
 
         return kwargs
 
@@ -312,3 +308,9 @@ class DrivingStyleView(BaseReportView):
 
         # red
         return '#FF4500'
+
+    def write_xls_data(self, worksheet, context):
+        worksheet = super(DrivingStyleView, self).write_xls_data(worksheet, context)
+
+        worksheet.set_portrait(False)
+        return worksheet

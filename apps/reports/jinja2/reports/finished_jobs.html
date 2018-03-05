@@ -1,125 +1,126 @@
 {%- extends 'reports/base.html' -%}
 
 {%- block REPORT_HEADING -%}
-	<div class="report__heading-row uk-margin">
-		Период:&nbsp;
-		{{- form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
-		{{- form.cleaned_data.dt_to|date('d.m.Y H:i') -}}
-	</div>
+  <div class="report__heading-row uk-margin">
+    Период:&nbsp;
+    {{- form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
+    {{- form.cleaned_data.dt_to|date('d.m.Y H:i') -}}
+  </div>
 
-	<div class="report__heading-row uk-margin">
-		ФИО ответственного за<br/>корректировку:
-		____________________________________________
-	</div>
+  <div class="report__heading-row uk-margin">
+    ФИО ответственного за<br/>корректировку:
+    ____________________________________________
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HEAD_RIGHT %}
-	<div class="report__heading-row">
-		Всего шаблонов заданий в базе ССМТ: {{ stats['total'] -}}
-	</div>
+  <div class="report__heading-row">
+    Всего шаблонов заданий в базе ССМТ: {{ stats['total'] -}}
+  </div>
 
-	<div class="report__heading-row">
-		Из них неактуальных заданий: {{ stats['non_actual'] -}}
-	</div>
+  <div class="report__heading-row">
+    Из них неактуальных заданий: {{ stats['non_actual'] -}}
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_TABLE -%}
-<div class="table-wrap">
-	<table class="report-table">
-		<thead>
+  <div class="table-wrap">
+    <table class="report-table">
+      <thead>
 
-			<tr>
-				<td rowspan="2">№ шаблона задания из ССМТ</td>
-				<td colspan="2">Кол-во путевых листов</td>
-				<td rowspan="2">Актуальность, %</td>
-			</tr>
+      <tr>
+        <td rowspan="2">№ шаблона задания из ССМТ</td>
+        <td colspan="2">Кол-во путевых листов</td>
+        <td rowspan="2">Актуальность, %</td>
+      </tr>
 
-			<tr>
-				<td>Заявлено</td>
-				<td>Исполнялось*</td>
-			</tr>
+      <tr>
+        <td>Заявлено</td>
+        <td>Исполнялось*</td>
+      </tr>
 
-		</thead>
+      </thead>
 
-		{%- for row in report_data.values() -%}
-			<tbody>
-				<tr>
-					<td>{{ row['key'] }}</td>
-					<td class="tright">{{ row['plan'] }}</td>
-					<td class="tright">{{ row['finished'] }}</td>
-					<td class="tright">{{ row['ratio'] }}</td>
-				</tr>
-			</tbody>
-		{%- endfor -%}
-	</table>
-</div>
+      {%- for row in report_data.values() -%}
+        <tbody>
+        <tr>
+          <td>{{ row['key'] }}</td>
+          <td class="tright">{{ row['plan'] }}</td>
+          <td class="tright">{{ row['finished'] }}</td>
+          <td class="tright">{{ row['ratio'] }}</td>
+        </tr>
+        </tbody>
+      {%- endfor -%}
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HINT -%}
-<div class="hint uk-margin-top">
-	<table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
-		<tr>
-			<td style="vertical-align:top">
-				* Исполненое задание - по факту работы транспорта в рамках одного путевого листа было
-				зафиксировано посещение заданных заданием геозон, хотя бы однократно.
-			</td>
-		</tr>
-		<tr>
-			<td style="vertical-align:top">
-				Условие неактуальности шаблона задания: более {{ form.cleaned_data.non_actual_param }}%
-                неисполненных заданий
-			</td>
-		</tr>
-	</table>
-</div>
+  <div class="hint uk-margin-top">
+    <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
+      <tr>
+        <td style="vertical-align:top">
+          * Исполненое задание - по факту работы транспорта в рамках одного путевого листа было
+          зафиксировано посещение заданных заданием геозон, хотя бы однократно.
+        </td>
+      </tr>
+      <tr>
+        <td style="vertical-align:top">
+          Условие неактуальности шаблона задания: более {{ form.cleaned_data.non_actual_param }}%
+          неисполненных заданий
+        </td>
+      </tr>
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block FORM -%}
-<form class="form" method="post" action="">
-	<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-	<fieldset class="uk-fieldset">
+  <form class="form" method="post" action="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <fieldset class="uk-fieldset">
 
-		<legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
+      <legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
 
-		<div class="form-controls">
-			<div class="uk-margin">
-				<label class="uk-form-label" for="report_from">С</label>
-                <input class="uk-input dt-input" name="dt_from" id="report_from"
-                       value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
-			</div>
+      <div class="form-controls">
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_from">С</label>
+          <input class="uk-input dt-input" name="dt_from" id="report_from"
+                 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-                <label class="uk-form-label" for="report_to">По</label>
-				<input class="uk-input dt-input" name="dt_to" id="report_to"
-                       value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_to">По</label>
+          <input class="uk-input dt-input" name="dt_to" id="report_to"
+                 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
 
-            <div class="uk-margin">
-                <label class="uk-form-label" for="report_non_actual_param">Условие неактуальности, более, %</label>
-				<input class="uk-input" name="non_actual_param"
-                       id="report_non_actual_param"
-                       type="number" step="1" min="0" max="99"
-                       value="{{ form.cleaned_data.get('non_actual_param') }}">
-				<div class="errors">{{ form.errors.get('non_actual_param', '') }}</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_non_actual_param">Условие неактуальности, более,
+            %</label>
+          <input class="uk-input" name="non_actual_param"
+                 id="report_non_actual_param"
+                 type="number" step="1" min="0" max="99"
+                 value="{{ form.cleaned_data.get('non_actual_param') }}">
+          <div class="errors">{{ form.errors.get('non_actual_param', '') }}</div>
 
-                <div class="hint">
-                    Если по нефиксированному шаблону задания будет меньший или равный процент
-                    неисполненных путевых листов, то шаблон заданий будет считаться актуальным
-                    и <b>не будет</b> выведен в отчете
-                </div>
-			</div>
+          <div class="hint">
+            Если по нефиксированному шаблону задания будет меньший или равный процент
+            неисполненных путевых листов, то шаблон заданий будет считаться актуальным
+            и <b>не будет</b> выведен в отчете
+          </div>
+        </div>
 
-			<div class="uk-margin">
-				<button class="uk-button uk-button-primary">Создать</button>
-			</div>
-		</div>
+        <div class="uk-margin">
+          <button class="uk-button uk-button-primary">Создать</button>
+        </div>
+      </div>
 
-	</fieldset>
-</form>
+    </fieldset>
+  </form>
 {%- endblock -%}

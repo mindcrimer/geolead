@@ -231,6 +231,8 @@ def get_languages():
 @jinjafilter
 def floatformat(value, digits):
     """Порт floatformat"""
+    if not value:
+        return ''
     return float_format(value, digits)
 
 

@@ -1,150 +1,170 @@
 {%- extends 'reports/base.html' -%}
 
 {%- block REPORT_HEADING -%}
-<div class="report__heading-row uk-margin">
-	Период:
-	{{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
-	{{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
-</div>
-<div class="report__heading-row uk-margin">
-	Итого перерасход, л: {{ overspanding_total|floatformat(-2) -}}
-</div>
-<div class="report__heading-row uk-margin">
-	Итого слив, л: {{ discharge_total|floatformat(-2) -}}
-</div>
-<div class="report__heading-row uk-margin">
-	Зафиксировано случаев слива: {{ overspanding_count -}}
-</div>
+  <div class="report__heading-row uk-margin">
+    Период:
+    {{ form.cleaned_data.dt_from|date('d.m.Y H:i') }}&nbsp;&mdash;
+    {{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
+  </div>
+  <div class="report__heading-row uk-margin">
+    Итого перерасход, л: {{ overspanding_total|floatformat(-2) or 0 -}}
+  </div>
+  <div class="report__heading-row uk-margin">
+    Итого слив, л: {{ discharge_total|floatformat(-2) or 0 -}}
+  </div>
+  <div class="report__heading-row uk-margin">
+    Зафиксировано случаев слива: {{ overspanding_count or 0 -}}
+  </div>
 {%- endblock -%}
-
 
 {%- block REPORT_HEAD_RIGHT -%}
-Список случаев перерасхода топлива на дату:
+  Список случаев перерасхода топлива на дату:
 {%- endblock -%}
 
-
 {%- block REPORT_TABLE -%}
-<div class="table-wrap">
-	<table class="report-table">
-		<thead>
+  <div class="table-wrap">
+    <table class="report-table">
+      <thead>
+      <tr>
+        <td rowspan="2">Время</td>
+        <td rowspan="2">Гос№ ТС</td>
+        <td rowspan="2">
+          Плановый график<br/>
+          работы водителя<br/>
+          (время с - время по)
+        </td>
+        <td rowspan="2">ФИО водителя</td>
+        <td colspan="2">Событие слив</td>
+        <td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
+        <td rowspan="2">*Перерасход,<br/>л</td>
+      </tr>
 
-			<tr>
-				<td rowspan="2">Время</td>
-				<td rowspan="2">Гос№ ТС</td>
-				<td rowspan="2">
-					Плановый график<br/>
-					работы водителя<br/>
-					(время с - время по)
-				</td>
-				<td rowspan="2">ФИО водителя</td>
-				<td colspan="2">Событие слив</td>
-				<td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
-				<td rowspan="2">*Перерасход,<br/>л</td>
-			</tr>
+      <tr>
+        <td style="max-width:150px;">Место/<br/>геозона</td>
+        <td>Объем</td>
+        <td>По норме<br/>от пробега**</td>
+        <td>По норме<br/>от времени<br/>работы на ХХ***</td>
+        <td>По норме<br/>от работы доп.<br/>оборудования****</td>
+        <td>По факту<br/>с ДУТ</td>
+      </tr>
+      </thead>
 
-			<tr>
-				<td style="max-width:150px;">Место/<br/>геозона</td>
-				<td>Объем</td>
-				<td>По норме<br/>от пробега**</td>
-				<td>По норме<br/>от времени<br/>работы на ХХ***</td>
-				<td>По норме<br/>от работы доп.<br/>оборудования****</td>
-				<td>По факту<br/>с ДУТ</td>
-			</tr>
+      {%- for r, row in enumerate(report_data.values()) -%}
+        {%- for p, period in enumerate(row['periods']) -%}
+          <tbody>
+            <tr{% if period['details'] %} class="grouping collapsed"{% endif %} data-rel="{{ r }},{{ p }}">
+              <td>
+                {%- if period['details'] -%}
+                  <span class="icon-expand"></span>
+                {%- endif -%}
+                {{ period['dt_from']|date('Y-m-d H:i:s') }}
+                - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
+              </td>
+              <td>{{ row['unit_name'] }}</td>
+              <td>
+                {%- if period.get('job') -%}
+                  {{ period['dt_from']|date('Y-m-d H:i:s') }}
+                  - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
+                {%- else %}&nbsp;{% endif -%}
+              </td>
+              <td class="nowrap">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
+              <td>{{ period['discharge']['place'] }}</td>
+              <td class="tright">{% if period['discharge']['volume'] %}
+                {{- period['discharge']['volume']|floatformat(-2) }}{% else -%}
+                &nbsp;{% endif %}</td>
+              <td class="tright">{% if period['consumption']['standard_mileage'] %}
+                {{- period['consumption']['standard_mileage']|floatformat(-2) }}{% else -%}
+                &nbsp;{% endif %}</td>
+              <td class="tright">{% if period['consumption']['standard_worktime'] %}
+                {{- period['consumption']['standard_worktime']|floatformat(-2) }}{% else -%}
+                &nbsp;{% endif %}</td>
+              <td class="tright">{% if period['consumption']['standard_extra_device'] %}
+                {{- period['consumption']['standard_extra_device']|floatformat(-2) }}{% else -%}
+                &nbsp;{% endif %}</td>
+              <td class="tright">{% if period['consumption']['fact_dut'] %}
+                {{- period['consumption']['fact_dut']|floatformat(-2) }}{% else %}
+                &nbsp;{% endif %}</td>
+              <td class="tright">{% if period['overspanding'] %}
+                {{- period['overspanding']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
+            </tr>
 
-		</thead>
-
-		{%- for key, row in report_data.items() -%}
-			<tbody>
-				<tr{% if row['discharge']['volume'] and row['details'] %} class="grouping collapsed" data-rel="{{ key }}"{% endif %}>
-					<td>
-						{%- if row['details'] -%}
-						<span class="icon-expand"></span>
-						{%- else -%}
-						{{- row['discharge']['dt']|date('Y-m-d H:i:s') -}}
-						{%- endif -%}
-					</td>
-					<td>{{ key }}</td>
-					<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
-					<td class="nowrap">{{ row['driver_name'] }}</td>
-					<td>{{ row['discharge']['place'] }}</td>
-					<td class="tright">{% if row['discharge']['volume'] %}{{ row['discharge']['volume']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
-					<td class="tright">{% if row['consumption']['standard_mileage'] %}{{ row['consumption']['standard_mileage']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
-					<td class="tright">{% if row['consumption']['standard_worktime'] %}{{ row['consumption']['standard_worktime']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
-					<td class="tright">{% if row['consumption']['standard_extra_device'] %}{{ row['consumption']['standard_extra_device']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
-					<td class="tright">{% if row['consumption']['fact_dut'] %}{{ row['consumption']['fact_dut']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
-					<td class="tright">{% if row['overspanding'] %}{{ row['overspanding']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
-				</tr>
-
-				{%- for detail in row['details'] -%}
-					<tr class="detailed hidden" data-rel="{{ key }}">
-						<td>{{ detail['dt']|date('Y-m-d H:i:s') }}</td>
-						<td>{{ key }}</td>
-						<td>{{ row['plan_worktime'][0] }} /<br/>{{ row['plan_worktime'][1] }}</td>
-						<td class="nowrap">{{ row['driver_name'] }}</td>
-						<td>{{ detail['place'] }}</td>
-						<td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
-						<td class="tright">&nbsp;</td>
-						<td class="tright">&nbsp;</td>
-						<td class="tright">&nbsp;</td>
-						<td class="tright">&nbsp;</td>
-						<td class="tright">&nbsp;</td>
-					</tr>
-				{%- endfor -%}
-			</tbody>
-		{%- endfor -%}
-	</table>
-</div>
+            {%- for detail in period['details'] -%}
+              <tr class="detailed hidden" data-rel="{{ r }},{{ p }}">
+                <td>{{ detail['dt']|date('Y-m-d H:i:s') or '' }}</td>
+                <td>{{ row['unit_name'] }}</td>
+                <td>
+                  {%- if period.get('job') -%}
+                    {{ period['dt_from']|date('Y-m-d H:i:s') }}
+                    - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
+                  {%- else %}&nbsp;{% endif -%}
+                </td>
+                <td class="nowrap">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
+                <td>{{ detail['place'] or '' }}</td>
+                <td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr>
+            {%- endfor -%}
+          </tbody>
+        {%- endfor -%}
+      {%- endfor -%}
+    </table>
+  </div>
 {%- endblock -%}
 
 
 {%- block REPORT_HINT -%}
-<div class="hint uk-margin-top">
-	* В случае превышения фактического расхода топлива на нормативы более чем на {{ form.cleaned_data['overspanding_percentage'] }}%<br/>
-	** исходя из нормативов л/100км, с добавочным коэффициентом на работу оборудования<br/>
-	*** исходя из нормативов л/час при заведенном двигателе на холостых оборотах,
-	с добавочным коэффициентом на работу оборудования
-</div>
+  <div class="hint uk-margin-top">
+    * В случае превышения фактического расхода топлива на нормативы более чем на
+    {{ form.cleaned_data['overspanding_percentage'] }}%<br/>
+    ** исходя из нормативов л/100км, с добавочным коэффициентом на работу оборудования<br/>
+    *** исходя из нормативов л/час при заведенном двигателе на холостых оборотах,
+    с добавочным коэффициентом на работу оборудования
+  </div>
 {%- endblock -%}
 
 
 {%- block FORM -%}
-<form class="form" method="post" action="">
-	<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-	<fieldset class="uk-fieldset">
+  <form class="form" method="post" action="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <fieldset class="uk-fieldset">
 
-		<legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
+      <legend class="uk-legend uk-margin-bottom">{{ report_name|e }}</legend>
 
-		<div class="form-controls">
-			<div class="uk-margin">
-                <label class="uk-form-label" for="report_from">С</label>
-				<input class="uk-input dt-input" name="dt_from" id="report_from"
-							 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_from', '') }}</div>
-			</div>
+      <div class="form-controls">
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_from">С</label>
+          <input class="uk-input dt-input" name="dt_from" id="report_from"
+                 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_from', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-                <label class="uk-form-label" for="report_to">По</label>
-				<input class="uk-input dt-input" name="dt_to" id="report_to"
-							 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
-				<div class="errors">{{ form.errors.get('dt_to', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_to">По</label>
+          <input class="uk-input dt-input" name="dt_to" id="report_to"
+                 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
+          <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
 
-            <div class="uk-margin">
-                <label class="uk-form-label" for="report_overspanding_percentage">
-                    Показатель превышения фактического расхода топлива на нормативы, %
-                </label>
-				<input class="uk-input" name="overspanding_percentage"
-                       id="report_overspanding_percentage"
-                       type="number" step="1" min="0" max="99"
-                       value="{{ form.cleaned_data.get('overspanding_percentage', 5) }}">
-				<div class="errors">{{ form.errors.get('overspanding_percentage', '') }}</div>
-			</div>
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_overspanding_percentage">
+            Показатель превышения фактического расхода топлива на нормативы, %
+          </label>
+          <input class="uk-input" name="overspanding_percentage"
+                 id="report_overspanding_percentage"
+                 type="number" step="1" min="0" max="99"
+                 value="{{ form.cleaned_data.get('overspanding_percentage', 5) }}">
+          <div class="errors">{{ form.errors.get('overspanding_percentage', '') }}</div>
+        </div>
 
-			<div class="uk-margin">
-				<button class="uk-button uk-button-primary">Создать</button>
-			</div>
-		</div>
+        <div class="uk-margin">
+          <button class="uk-button uk-button-primary">Создать</button>
+        </div>
+      </div>
 
-	</fieldset>
-</form>
+    </fieldset>
+  </form>
 {%- endblock -%}

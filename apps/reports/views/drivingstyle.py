@@ -31,6 +31,7 @@ class DrivingStyleView(BaseReportView):
     def __init__(self, *args, **kwargs):
         super(DrivingStyleView, self).__init__(*args, **kwargs)
         self.form = None
+        self.user = None
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -56,7 +57,7 @@ class DrivingStyleView(BaseReportView):
             't_from': int(dt_from.timestamp()),
             't_to': int(dt_to.timestamp()),
             'job': job,
-            'total_time': (dt_to - dt_from).total_seconds(),
+            'total_time': .0,
             'facts': {
                 'speed': {
                     'count': 0,
@@ -128,10 +129,10 @@ class DrivingStyleView(BaseReportView):
                 if not sess_id:
                     raise ReportException(WIALON_NOT_LOGINED)
 
-                user = User.objects.filter(is_active=True) \
+                self.user = User.objects.filter(is_active=True) \
                     .filter(wialon_username=self.request.session.get('user')).first()
 
-                if not user:
+                if not self.user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 try:
@@ -141,12 +142,14 @@ class DrivingStyleView(BaseReportView):
 
                 units_dict = OrderedDict((u['id'], u['name']) for u in units_list)
 
-                dt_from_utc = local_to_utc_time(self.form.cleaned_data['dt_from'], user.wialon_tz)
+                dt_from_utc = local_to_utc_time(
+                    self.form.cleaned_data['dt_from'], self.user.wialon_tz
+                )
                 dt_to_utc = local_to_utc_time(
-                    self.form.cleaned_data['dt_to'].replace(second=59), user.wialon_tz
+                    self.form.cleaned_data['dt_to'].replace(second=59), self.user.wialon_tz
                 )
 
-                ura_user = user.ura_user if user.ura_user_id else user
+                ura_user = self.user.ura_user if self.user.ura_user_id else self.user
                 jobs = Job.objects.filter(
                     user=ura_user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
                 ).order_by('date_begin', 'date_end')
@@ -158,7 +161,7 @@ class DrivingStyleView(BaseReportView):
                     except ValueError:
                         pass
 
-                template_id = get_wialon_report_template_id('driving_style_individual', user)
+                template_id = get_wialon_report_template_id('driving_style_individual', self.user)
 
                 print('Всего ТС: %s' % len(units_dict))
 
@@ -208,84 +211,99 @@ class DrivingStyleView(BaseReportView):
                     dt_from = int(time.mktime(report_row['periods'][0]['dt_from'].timetuple()))
                     dt_to = int(time.mktime(report_row['periods'][-1]['dt_to'].timetuple()))
 
-                    cleanup_and_request_report(user, template_id, sess_id=sess_id)
+                    cleanup_and_request_report(self.user, template_id, sess_id=sess_id)
                     r = exec_report(
-                        user, template_id, dt_from, dt_to,
+                        self.user, template_id, dt_from, dt_to,
                         sess_id=sess_id, object_id=unit_id
                     )
 
-                    wialon_report_rows = []
+                    wialon_report_rows = {}
                     for table_index, table_info in enumerate(r['reportResult']['tables']):
-
-                        if table_info['name'] != 'unit_ecodriving':
-                            continue
-
-                        wialon_report_rows = get_report_rows(
-                            user,
+                        wialon_report_rows[table_info['name']] = get_report_rows(
+                            self.user,
                             table_index,
                             table_info['rows'],
                             level=1,
                             sess_id=sess_id
                         )
 
-                    for row in wialon_report_rows:
-                        detail_data = {
-                            'speed': {
-                                'count': 0,
-                                'seconds': .0
-                            },
-                            'lights': {
-                                'count': 0,
-                                'seconds': .0
-                            },
-                            'belt': {
-                                'count': 0,
-                                'seconds': .0
-                            },
-                            'devices': {
-                                'count': 0,
-                                'seconds': .0
-                            },
-                            'dt': ''
-                        }
-                        violation = row['c'][1].lower() if row['c'][1] else ''
-                        if 'свет' in violation or 'фар' in violation:
-                            viol_key = 'lights'
-                        elif 'скорост' in violation or 'превышен' in violation:
-                            viol_key = 'speed'
-                        elif 'ремн' in violation or 'ремен' in violation:
-                            viol_key = 'belt'
-                        elif 'кму' in violation:
-                            viol_key = 'devices'
-                        else:
-                            viol_key = ''
+                    for period in report_row['periods']:
+                        for row in wialon_report_rows.get('unit_trips', []):
+                            row_dt_from, row_dt_to = self.parse_wialon_report_datetime(row['c'])
+                            if row_dt_to is None:
+                                row_dt_to = period['dt_to']
 
-                        if viol_key:
-                            if detail_data:
-                                detail_data['dt'] = parse_wialon_report_datetime(
-                                    row['c'][2]['t']
-                                    if isinstance(row['c'][2], dict)
-                                    else row['c'][2]
-                                )
+                            if period['dt_from'] < row_dt_from and period['dt_to'] > row_dt_to:
+                                delta = (
+                                    min(row_dt_to, period['dt_to']) -
+                                    max(row_dt_from, period['dt_from'])
+                                ).total_seconds()
 
-                                for period in report_row['periods']:
-                                    if period['t_from'] < row['t2'] and period['t_to'] > row['t1']:
+                                if not delta:
+                                    print('empty trips period')
+                                    continue
+
+                                period['total_time'] += delta
+
+                        for row in wialon_report_rows.get('unit_ecodriving', []):
+                            if period['t_from'] < row['t2'] and period['t_to'] > row['t1']:
+                                detail_data = {
+                                    'speed': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'lights': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'belt': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'devices': {
+                                        'count': 0,
+                                        'seconds': .0
+                                    },
+                                    'dt': ''
+                                }
+                                violation = row['c'][1].lower() if row['c'][1] else ''
+                                if 'свет' in violation or 'фар' in violation:
+                                    viol_key = 'lights'
+                                elif 'скорост' in violation or 'превышен' in violation:
+                                    viol_key = 'speed'
+                                elif 'ремн' in violation or 'ремен' in violation:
+                                    viol_key = 'belt'
+                                elif 'кму' in violation:
+                                    viol_key = 'devices'
+                                else:
+                                    viol_key = ''
+
+                                if viol_key:
+                                    if detail_data:
+                                        detail_data['dt'] = parse_wialon_report_datetime(
+                                            row['c'][2]['t']
+                                            if isinstance(row['c'][2], dict)
+                                            else row['c'][2]
+                                        )
+
                                         delta = min(row['t2'], period['t_to']) - \
-                                                max(row['t1'], period['t_from'])
+                                            max(row['t1'], period['t_from'])
                                         detail_data[viol_key]['seconds'] = delta
                                         period['details'].append(detail_data)
                                         period['facts'][viol_key]['count'] += 1
                                         period['facts'][viol_key]['seconds'] += delta
 
-                    for period in report_row['periods']:
-                        period['dt_from'] = utc_to_local_time(period['dt_from'], user.wialon_tz)
-                        period['dt_to'] = utc_to_local_time(period['dt_to'], user.wialon_tz)
+                        if period['total_time']:
+                            for viol_key in ('speed', 'lights', 'belt', 'devices'):
+                                percentage = period['facts'][viol_key]['seconds'] / \
+                                             period['total_time'] * 100
+                                period['percentage'][viol_key] = percentage
+                                period['rating'] -= percentage
 
-                        for viol_key in ('speed', 'lights', 'belt', 'devices'):
-                            percentage = period['facts'][viol_key]['seconds'] / \
-                                         period['total_time'] * 100
-                            period['percentage'][viol_key] = percentage
-                            period['rating'] -= percentage
+                        period['dt_from'] = utc_to_local_time(
+                            period['dt_from'], self.user.wialon_tz
+                        )
+                        period['dt_to'] = utc_to_local_time(period['dt_to'], self.user.wialon_tz)
 
             kwargs.update(
                 report_data=report_data,
@@ -320,6 +338,20 @@ class DrivingStyleView(BaseReportView):
         if style:
             return self.styles['border_right_red_style']
         return '#FF4500'
+
+    def parse_wialon_report_datetime(self, row):
+        row_dt_from = local_to_utc_time(
+            parse_wialon_report_datetime(
+                row[0]['t'] if isinstance(row[0], dict) else row[0]
+            ), self.user.wialon_tz
+        )
+        row_dt_to = local_to_utc_time(
+            parse_wialon_report_datetime(
+                row[1]['t'] if isinstance(row[1], dict) else row[1]
+            ), self.user.wialon_tz
+        )
+
+        return row_dt_from, row_dt_to
 
     def write_xls_data(self, worksheet, context):
         worksheet = super(DrivingStyleView, self).write_xls_data(worksheet, context)

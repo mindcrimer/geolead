@@ -26,8 +26,7 @@
         <td rowspan="3" class="td-small">Время</td>
         <td rowspan="3" class="td-small">ФИО</td>
         <td rowspan="3" class="td-small">№&nbsp;ТС</td>
-        <td rowspan="3" class="td-small">Суммарное<br/>время<br/>в движении<br/>за период,&nbsp;ч
-        </td>
+        <td rowspan="3" class="td-small">Суммарное<br/>время<br/>в движении<br/>за период,&nbsp;ч</td>
         <td colspan="8" class="td-small">Нарушения</td>
         <td colspan="4" class="td-small">%&nbsp;нарушений</td>
         <td rowspan="3" class="td-small">Оценка<br/>вождения,&nbsp;%</td>
@@ -37,8 +36,7 @@
         <td colspan="2" class="td-small">Превышение скоростного<br/>режима, км/ч</td>
         <td colspan="2" class="td-small">Выключенный свет фар<br/>при движении</td>
         <td colspan="2" class="td-small">Непристегнутый ремень<br/>безопасности при движении</td>
-        <td colspan="2" class="td-small">Не транспортное положение<br/>оборудования при движении
-        </td>
+        <td colspan="2" class="td-small">Не транспортное положение<br/>оборудования при движении</td>
         <td rowspan="2" class="td-small">Скоростной<br/>режим</td>
         <td rowspan="2" class="td-small">Свет</td>
         <td rowspan="2" class="td-small">Ремень</td>
@@ -60,7 +58,7 @@
       {%- for r, row in enumerate(report_data.values()) -%}
         {%- for p, period in enumerate(row['periods']) -%}
           <tbody>
-          <tr class="grouping collapsed" data-rel="{{ r }},{{ p }}">
+          <tr{% if period['details'] %} class="grouping collapsed"{% endif %} data-rel="{{ r }},{{ p }}">
             <td class="td-small">
               <span class="icon-expand"></span>
               {{ period['dt_from']|date('Y-m-d H:i:s') }}
@@ -69,31 +67,31 @@
             <td class="td-small">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
             <td class="td-small">{{ row['unit_name'] }}</td>
             <td class="td-small">{{ period['total_time']|render_timedelta }}</td>
-            <td class="td-small">{{ period['facts']['speed']['count'] if period['facts']['speed']['count'] else '' }}</td>
+            <td class="td-small tright">{{ period['facts']['speed']['count'] if period['facts']['speed']['count'] else '' }}</td>
             <td class="td-small">{{ period['facts']['speed']['seconds']|render_timedelta }}</td>
-            <td class="td-small">{{ period['facts']['lights']['count'] if period['facts']['lights']['count'] else '' }}</td>
+            <td class="td-small tright">{{ period['facts']['lights']['count'] if period['facts']['lights']['count'] else '' }}</td>
             <td class="td-small">{{ period['facts']['lights']['seconds']|render_timedelta }}</td>
-            <td class="td-small">{{ period['facts']['belt']['count'] if period['facts']['belt']['count'] else '' }}</td>
+            <td class="td-small tright">{{ period['facts']['belt']['count'] if period['facts']['belt']['count'] else '' }}</td>
             <td class="td-small">{{ period['facts']['belt']['seconds']|render_timedelta }}</td>
-            <td class="td-small">{{ period['facts']['devices']['count'] if period['facts']['devices']['count'] else '' }}</td>
+            <td class="td-small tright">{{ period['facts']['devices']['count'] if period['facts']['devices']['count'] else '' }}</td>
             <td class="td-small">{{ period['facts']['devices']['seconds']|render_timedelta }}</td>
-            <td class="td-small"
+            <td class="td-small tright"
                 style="background-color:{{ render_background(period['percentage']['speed']) }}">
               {{- period['percentage']['speed']|floatcomma(-2) if period['percentage']['speed'] else '' -}}
             </td>
-            <td class="td-small"
+            <td class="td-small tright"
                 style="background-color:{{ render_background(period['percentage']['lights']) }}">
               {{- period['percentage']['lights']|floatcomma(-2) if period['percentage']['lights'] else '' -}}
             </td>
-            <td class="td-small"
+            <td class="td-small tright"
                 style="background-color:{{ render_background(period['percentage']['belt']) }}">
               {{- period['percentage']['belt']|floatcomma(-2) if period['percentage']['belt'] else '' -}}
             </td>
-            <td class="td-small"
+            <td class="td-small tright"
                 style="background-color:{{ render_background(period['percentage']['devices']) }}">
               {{- period['percentage']['devices']|floatcomma(-2) if period['percentage']['devices'] else '' -}}
             </td>
-            <td class="td-small">{{ period['rating']|floatcomma(-2) }}</td>
+            <td class="td-small tright">{{ period['rating']|floatcomma(-2) }}</td>
           </tr>
           {%- for detail in period['details'] -%}
             <tr class="detailed hidden" data-rel="{{ r }},{{ p }}">
@@ -101,19 +99,19 @@
               <td class="td-small">{{ period['job'].driver_fio if period.get('job') else '' }}</td>
               <td class="td-small">{{ row['unit_name'] }}</td>
               <td class="td-small">&nbsp;</td>
-              <td class="td-small">{{ detail['speed']['count'] if detail['speed']['count'] else '' }}</td>
+              <td class="td-small tright">{{ detail['speed']['count'] if detail['speed']['count'] else '' }}</td>
               <td class="td-small">{{ detail['speed']['seconds']|render_timedelta }}</td>
-              <td class="td-small">{{ detail['lights']['count'] if detail['lights']['count'] else '' }}</td>
+              <td class="td-small tright">{{ detail['lights']['count'] if detail['lights']['count'] else '' }}</td>
               <td class="td-small">{{ detail['lights']['seconds']|render_timedelta }}</td>
-              <td class="td-small">{{ detail['belt']['count'] if detail['belt']['count'] else '' }}</td>
+              <td class="td-small tright">{{ detail['belt']['count'] if detail['belt']['count'] else '' }}</td>
               <td class="td-small">{{ detail['belt']['seconds']|render_timedelta }}</td>
-              <td class="td-small">{{ detail['devices']['count'] if detail['devices']['count'] else '' }}</td>
+              <td class="td-small tright">{{ detail['devices']['count'] if detail['devices']['count'] else '' }}</td>
               <td class="td-small">{{ detail['devices']['seconds']|render_timedelta }}</td>
-              <td class="td-small">&nbsp;</td>
-              <td class="td-small">&nbsp;</td>
-              <td class="td-small">&nbsp;</td>
-              <td class="td-small">&nbsp;</td>
-              <td class="td-small">&nbsp;</td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
             </tr>
           {%- endfor -%}
           </tbody>

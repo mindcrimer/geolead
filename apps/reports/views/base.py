@@ -29,10 +29,12 @@ class BaseReportView(BaseTemplateView):
     report_name = ''
     context_dump_fields = ('report_data',)
     can_download = False
+    xls_heading_merge = 3
 
     def __init__(self, *args, **kwargs):
         super(BaseReportView, self).__init__(*args, **kwargs)
         self.styles = {}
+        self.workbook = None
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {}
@@ -100,14 +102,14 @@ class BaseReportView(BaseTemplateView):
 
         filename = 'report_%s.xls' % utcnow().strftime('%Y%m%d_%H%M%S')
 
-        workbook = xlwt.Workbook()
-        worksheet = workbook.add_sheet('Отчет')
+        self.workbook = xlwt.Workbook()
+        worksheet = self.workbook.add_sheet('Отчет')
 
         self.write_xls_data(worksheet, context)
 
         response = HttpResponse(content_type='application/vnd.ms-excel')
         response['Content-Disposition'] = 'attachment; filename="%s"' % filename
-        workbook.save(response)
+        self.workbook.save(response)
         return response
 
     def write_xls_data(self, worksheet, context):
@@ -130,7 +132,9 @@ class BaseReportView(BaseTemplateView):
             )
         }
 
-        worksheet.write_merge(0, 0, 0, 3, self.report_name, style=self.styles['heading_style'])
+        worksheet.write_merge(
+            0, 0, 0, self.xls_heading_merge, self.report_name, style=self.styles['heading_style']
+        )
         worksheet.row(0).height_mismatch = True
         worksheet.row(0).height = 500
 

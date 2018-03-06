@@ -71,6 +71,16 @@ class User(AbstractUser, LastModMixin, BasicModel):
         _('Наименование отчета "Последние данные"'), max_length=255, blank=True, null=True
     )
 
+    wialon_mobile_vehicle_types = models.CharField(
+        _('Список мобильных типов ТС, по которым необходимы отчеты движения и ПДД'),
+        max_length=255, blank=True, null=True,
+        help_text=_(
+            'Через ЗАПЯТУЮ. Пробелы между типами и регистр значения не имеют. '
+            'Если не указан список типов, допускаем наличие любых ТС в отчетах по движению И ПДД. '
+            'Оюбъекты, у которых в характеристиках не указан тип ТС, также включаются в отчеты.'
+        )
+    )
+
     wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
 
     ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))

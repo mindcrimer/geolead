@@ -16,7 +16,7 @@ from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_N
 from snippets.jinjaglobals import date as date_format, floatcomma
 from ura.models import Job
 from users.models import User
-from wialon.api import get_units
+from wialon.api import get_units, get_unit_settings
 from wialon.exceptions import WialonException
 
 
@@ -46,6 +46,7 @@ class DrivingStyleView(BaseReportView):
     def get_new_grouping():
         return {
             'unit_name': '',
+            'unit_number': '',
             'periods': []
         }
 
@@ -140,7 +141,7 @@ class DrivingStyleView(BaseReportView):
                 except WialonException as e:
                     raise ReportException(str(e))
 
-                units_dict = OrderedDict((u['id'], u['name']) for u in units_list)
+                units_dict = OrderedDict((u['id'], u) for u in units_list)
 
                 dt_from_utc = local_to_utc_time(
                     self.form.cleaned_data['dt_from'], self.user.wialon_tz
@@ -165,15 +166,45 @@ class DrivingStyleView(BaseReportView):
 
                 print('Всего ТС: %s' % len(units_dict))
 
+                mobile_vehicle_types = set()
+                if self.user.wialon_mobile_vehicle_types:
+                    mobile_vehicle_types = set(
+                        x.strip() for x in self.user.wialon_mobile_vehicle_types
+                        .lower().split(',')
+                    )
+
                 i = 0
-                for unit_id, unit_name in units_dict.items():
+                for unit_id, unit in units_dict.items():
                     i += 1
+                    unit_name = unit['name']
                     print('%s) %s' % (i, unit_name))
+
+                    unit_settings = get_unit_settings(
+                        unit_id, sess_id=sess_id, user=self.user,
+                        get_sensors=False, get_features=True
+                    )
+
+                    vehicle_types = [
+                        x for x in unit_settings.get('pflds', {}).values()
+                        if x['n'] == 'vehicle_type'
+                    ]
+                    vehicle_type = ''
+                    if vehicle_types:
+                        vehicle_type = vehicle_types[0]['v'].lower().strip()
+
+                    if mobile_vehicle_types and vehicle_type \
+                            and vehicle_type not in mobile_vehicle_types:
+                        print('%s) Skip vehicle type "%s" of item %s' % (
+                            i, vehicle_type, unit_name
+                        ))
+                        continue
 
                     if unit_id not in report_data:
                         report_data[unit_id] = self.get_new_grouping()
+
                     report_row = report_data[unit_id]
                     report_row['unit_name'] = unit_name
+                    report_row['unit_number'] = unit.get('number', '')
 
                     unit_jobs = jobs_cache.get(unit_id)
                     if not unit_jobs:
@@ -245,55 +276,61 @@ class DrivingStyleView(BaseReportView):
 
                                 period['total_time'] += delta
 
-                        for row in wialon_report_rows.get('unit_ecodriving', []):
-                            if period['t_from'] < row['t2'] and period['t_to'] > row['t1']:
-                                detail_data = {
-                                    'speed': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'lights': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'belt': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'devices': {
-                                        'count': 0,
-                                        'seconds': .0
-                                    },
-                                    'dt': ''
-                                }
-                                violation = row['c'][1].lower() if row['c'][1] else ''
-                                if 'свет' in violation or 'фар' in violation:
-                                    viol_key = 'lights'
-                                elif 'скорост' in violation or 'превышен' in violation:
-                                    viol_key = 'speed'
-                                elif 'ремн' in violation or 'ремен' in violation:
-                                    viol_key = 'belt'
-                                elif 'кму' in violation:
-                                    viol_key = 'devices'
-                                else:
-                                    viol_key = ''
-
-                                if viol_key:
-                                    if detail_data:
-                                        detail_data['dt'] = parse_wialon_report_datetime(
-                                            row['c'][2]['t']
-                                            if isinstance(row['c'][2], dict)
-                                            else row['c'][2]
-                                        )
-
-                                        delta = min(row['t2'], period['t_to']) - \
-                                            max(row['t1'], period['t_from'])
-                                        detail_data[viol_key]['seconds'] = delta
-                                        period['details'].append(detail_data)
-                                        period['facts'][viol_key]['count'] += 1
-                                        period['facts'][viol_key]['seconds'] += delta
-
                         if period['total_time']:
+                            for row in wialon_report_rows.get('unit_ecodriving', []):
+                                if period['t_from'] < row['t2'] and period['t_to'] > row['t1']:
+                                    detail_data = {
+                                        'speed': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'lights': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'belt': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'devices': {
+                                            'count': 0,
+                                            'seconds': .0
+                                        },
+                                        'dt_from': '',
+                                        'dt_to': ''
+                                    }
+                                    violation = row['c'][1].lower() if row['c'][1] else ''
+                                    if 'свет' in violation or 'фар' in violation:
+                                        viol_key = 'lights'
+                                    elif 'скорост' in violation or 'превышен' in violation:
+                                        viol_key = 'speed'
+                                    elif 'ремн' in violation or 'ремен' in violation:
+                                        viol_key = 'belt'
+                                    elif 'кму' in violation:
+                                        viol_key = 'devices'
+                                    else:
+                                        viol_key = ''
+
+                                    if viol_key:
+                                        if detail_data:
+                                            detail_data['dt_from'] = parse_wialon_report_datetime(
+                                                row['c'][2]['t']
+                                                if isinstance(row['c'][2], dict)
+                                                else row['c'][2]
+                                            )
+                                            detail_data['dt_to'] = parse_wialon_report_datetime(
+                                                row['c'][3]['t']
+                                                if isinstance(row['c'][3], dict)
+                                                else row['c'][3]
+                                            )
+
+                                            delta = min(row['t2'], period['t_to']) - \
+                                                max(row['t1'], period['t_from'])
+                                            detail_data[viol_key]['seconds'] = delta
+                                            period['details'].append(detail_data)
+                                            period['facts'][viol_key]['count'] += 1
+                                            period['facts'][viol_key]['seconds'] += delta
+
                             for viol_key in ('speed', 'lights', 'belt', 'devices'):
                                 percentage = period['facts'][viol_key]['seconds'] / \
                                              period['total_time'] * 100
@@ -303,7 +340,16 @@ class DrivingStyleView(BaseReportView):
                         period['dt_from'] = utc_to_local_time(
                             period['dt_from'], self.user.wialon_tz
                         )
-                        period['dt_to'] = utc_to_local_time(period['dt_to'], self.user.wialon_tz)
+                        period['dt_to'] = utc_to_local_time(
+                            period['dt_to'], self.user.wialon_tz
+                        )
+
+                for k, v in report_data.items():
+                    v['periods'] = list(filter(lambda p: p['total_time'], v.get('periods', [])))
+
+                report_data = OrderedDict(
+                    (k, v) for k, v in report_data.items() if v['periods']
+                )
 
             kwargs.update(
                 report_data=report_data,
@@ -369,30 +415,30 @@ class DrivingStyleView(BaseReportView):
             'border_right_red_style': xlwt.easyxf(
                 'borders: bottom thin, left thin, right thin, top thin;'
                 'align: vert centre, horiz right'
-            ),
+            )
         })
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-        pattern.pattern_back_colour = xlwt.Style.colour_map['green']
+        pattern.pattern_fore_colour = xlwt.Style.colour_map['light_green']
         self.styles['border_right_green_style'].pattern = pattern
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-        pattern.pattern_back_colour = xlwt.Style.colour_map['yellow']
+        pattern.pattern_fore_colour = xlwt.Style.colour_map['light_yellow']
         self.styles['border_right_yellow_style'].pattern = pattern
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-        pattern.pattern_back_colour = xlwt.Style.colour_map['red']
+        pattern.pattern_fore_colour = xlwt.Style.colour_map['coral']
         self.styles['border_right_red_style'].pattern = pattern
 
         worksheet.set_portrait(False)
         worksheet.col(0).width = 5000
         worksheet.col(1).width = 6000
         worksheet.col(2).width = 8000
-        worksheet.col(3).width = 4000
-        worksheet.col(4).width = 3000
+        worksheet.col(3).width = 5000
+        worksheet.col(4).width = 4000
         worksheet.col(5).width = 3000
         worksheet.col(6).width = 3000
         worksheet.col(7).width = 3000
@@ -403,8 +449,9 @@ class DrivingStyleView(BaseReportView):
         worksheet.col(12).width = 3000
         worksheet.col(13).width = 3000
         worksheet.col(14).width = 3000
-        worksheet.col(15).width = 3200
-        worksheet.col(16).width = 3000
+        worksheet.col(15).width = 3000
+        worksheet.col(16).width = 3300
+        worksheet.col(17).width = 3000
 
         # header
         worksheet.write_merge(
@@ -428,60 +475,74 @@ class DrivingStyleView(BaseReportView):
         # head
         worksheet.write_merge(4, 6, 0, 0, ' Время', style=self.styles['border_center_style'])
         worksheet.write_merge(4, 6, 1, 1, ' ФИО', style=self.styles['border_center_style'])
-        worksheet.write_merge(4, 6, 2, 2, ' № ТС', style=self.styles['border_center_style'])
         worksheet.write_merge(
-            4, 6, 3, 3, ' Суммарное\nвремя\nв движении\nза период, ч',
+            4, 6, 2, 2, ' Наименование ТС', style=self.styles['border_center_style']
+        )
+        worksheet.write_merge(
+            4, 6, 3, 3, ' Гос.номер ТС', style=self.styles['border_center_style']
+        )
+        worksheet.write_merge(
+            4, 6, 4, 4, ' Суммарное время\nв движении\nза период, чч:мм:сс',
             style=self.styles['border_center_style']
         )
 
-        worksheet.write_merge(4, 4, 4, 11, ' Нарушения', style=self.styles['border_center_style'])
+        worksheet.write_merge(4, 4, 5, 12, ' Нарушения', style=self.styles['border_center_style'])
         worksheet.write_merge(
-            5, 5, 4, 5, ' Превышение скоростного\nрежима, км/ч',
+            5, 5, 5, 6, ' Превышение скоростного\nрежима',
             style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 5, 6, 7, ' Выключенный свет фар\nпри движении',
+            5, 5, 7, 8, ' Выключенный свет фар\nпри движении',
             style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 5, 8, 9, ' Непристегнутый ремень\nбезопасности при движении',
+            5, 5, 9, 10, ' Непристегнутый ремень\nбезопасности при движении',
             style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 5, 10, 11, ' Не транспортное положение\nоборудования при движении',
+            5, 5, 11, 12, ' Не транспортное\nположение оборудования\nпри движении',
             style=self.styles['border_center_style']
         )
-        worksheet.write(6, 4, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
-        worksheet.write(6, 5, ' Часов\nнарушения', style=self.styles['border_center_style'])
-        worksheet.write(6, 6, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
-        worksheet.write(6, 7, ' Часов\nнарушения', style=self.styles['border_center_style'])
-        worksheet.write(6, 8, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
-        worksheet.write(6, 9, ' Часов\nнарушения', style=self.styles['border_center_style'])
-        worksheet.write(6, 10, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
-        worksheet.write(6, 11, ' Часов\nнарушения', style=self.styles['border_center_style'])
+        worksheet.write(6, 5, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
+        worksheet.write(
+            6, 6, ' Часов\nнарушения,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
+        worksheet.write(6, 7, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
+        worksheet.write(
+            6, 8, ' Часов\nнарушения,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
+        worksheet.write(6, 9, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
+        worksheet.write(
+            6, 10, ' Часов\nнарушения,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
+        worksheet.write(6, 11, ' Кол-во\nслучаев', style=self.styles['border_center_style'])
+        worksheet.write(
+            6, 12, ' Часов\nнарушения,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
 
         worksheet.write_merge(
-            4, 4, 12, 15, ' % нарушений', style=self.styles['border_center_style']
+            4, 4, 13, 16, ' % нарушений', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 6, 12, 12, ' Скоростной\nрежим', style=self.styles['border_center_style']
+            5, 6, 13, 13, ' Скоростной\nрежим', style=self.styles['border_center_style']
         )
-        worksheet.write_merge(5, 6, 13, 13, ' Свет', style=self.styles['border_center_style'])
-        worksheet.write_merge(5, 6, 14, 14, ' Ремень', style=self.styles['border_center_style'])
+        worksheet.write_merge(5, 6, 14, 14, ' Свет', style=self.styles['border_center_style'])
+        worksheet.write_merge(5, 6, 15, 15, ' Ремень', style=self.styles['border_center_style'])
         worksheet.write_merge(
-            5, 6, 15, 15, ' Доп.\nоборудование', style=self.styles['border_center_style']
+            5, 6, 16, 16, ' Доп.\nоборудование', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            4, 6, 16, 16, ' Оценка\nвождения, %', style=self.styles['border_center_style']
+            4, 6, 17, 17, ' Оценка\nвождения, %', style=self.styles['border_center_style']
         )
 
-        for i in range(17):
+        for i in range(18):
             worksheet.write(7, i, str(i + 1), style=self.styles['border_center_style'])
 
         for i in range(1, 8):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
-        worksheet.row(6).height = 520
-        worksheet.row(5).height = 520
+
+        worksheet.row(5).height = 680
+        worksheet.row(6).height = 680
 
         # body
         i = 7
@@ -491,7 +552,7 @@ class DrivingStyleView(BaseReportView):
                 worksheet.row(i).level = 1
                 # worksheet.row(i).collapse = 2
 
-                worksheet.write(i, 0, '%s - %s' % (
+                worksheet.write(i, 0, '%s -\n%s' % (
                     date(period['dt_from'], 'Y-m-d H:i:s'),
                     date(period['dt_to'], 'Y-m-d H:i:s')
                 ), style=self.styles['border_left_style'])
@@ -502,77 +563,78 @@ class DrivingStyleView(BaseReportView):
                 )
 
                 worksheet.write(i, 2, row['unit_name'], style=self.styles['border_left_style'])
+                worksheet.write(i, 3, row['unit_number'], style=self.styles['border_left_style'])
 
                 worksheet.write(
-                    i, 3, render_timedelta(period['total_time']),
+                    i, 4, render_timedelta(period['total_time']),
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 4, period['facts']['speed']['count']
-                    if period['facts']['speed']['count'] else '',
+                    i, 5, period['facts']['speed']['count']
+                    if period['facts']['speed']['count'] else '0',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 5, render_timedelta(period['facts']['speed']['seconds']),
+                    i, 6, render_timedelta(period['facts']['speed']['seconds'], '0:00:00'),
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 6, period['facts']['lights']['count']
-                    if period['facts']['lights']['count'] else '',
+                    i, 7, period['facts']['lights']['count']
+                    if period['facts']['lights']['count'] else '0',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 7, render_timedelta(period['facts']['lights']['seconds']),
+                    i, 8, render_timedelta(period['facts']['lights']['seconds'], '0:00:00'),
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 8, period['facts']['belt']['count']
-                    if period['facts']['belt']['count'] else '',
+                    i, 9, period['facts']['belt']['count']
+                    if period['facts']['belt']['count'] else '0',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 9, render_timedelta(period['facts']['belt']['seconds']),
+                    i, 10, render_timedelta(period['facts']['belt']['seconds'], '0:00:00'),
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 10, period['facts']['devices']['count']
-                    if period['facts']['devices']['count'] else '',
+                    i, 11, period['facts']['devices']['count']
+                    if period['facts']['devices']['count'] else '0',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 11, render_timedelta(period['facts']['devices']['seconds']),
+                    i, 12, render_timedelta(period['facts']['devices']['seconds'], '0:00:00'),
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 12, floatcomma(period['percentage']['speed'], -2)
-                    if period['percentage']['speed'] else '',
+                    i, 13, floatcomma(period['percentage']['speed'], -2)
+                    if period['percentage']['speed'] else '0',
                     style=self.render_background(
                         period['percentage']['speed'], style=True, cleaned_data=cleaned_data
                     )
                 )
                 worksheet.write(
-                    i, 13, floatcomma(period['percentage']['lights'], -2)
-                    if period['percentage']['lights'] else '',
+                    i, 14, floatcomma(period['percentage']['lights'], -2)
+                    if period['percentage']['lights'] else '0',
                     style=self.render_background(
                         period['percentage']['lights'], style=True, cleaned_data=cleaned_data
                     )
                 )
                 worksheet.write(
-                    i, 14, floatcomma(period['percentage']['belt'], -2)
-                    if period['percentage']['belt'] else '',
+                    i, 15, floatcomma(period['percentage']['belt'], -2)
+                    if period['percentage']['belt'] else '0',
                     style=self.render_background(
                         period['percentage']['belt'], style=True, cleaned_data=cleaned_data
                     )
                 )
                 worksheet.write(
-                    i, 15, floatcomma(period['percentage']['devices'], -2)
-                    if period['percentage']['devices'] else '',
+                    i, 16, floatcomma(period['percentage']['devices'], -2)
+                    if period['percentage']['devices'] else '0',
                     style=self.render_background(
                         period['percentage']['devices'], style=True, cleaned_data=cleaned_data
                     )
                 )
                 worksheet.write(
-                    i, 16, floatcomma(period['rating'], -2),
+                    i, 17, floatcomma(period['rating'], -2),
                     style=self.styles['border_right_style']
                 )
 
@@ -583,10 +645,10 @@ class DrivingStyleView(BaseReportView):
                     worksheet.row(i).level = 2
                     # worksheet.row(i).collapse = 2
 
-                    worksheet.write(
-                        i, 0, date(detail['dt'], 'Y-m-d H:i:s') or '',
-                        style=self.styles['border_left_style']
-                    )
+                    worksheet.write(i, 0, '%s -\n%s' % (
+                        date(detail['dt_from'], 'Y-m-d H:i:s'),
+                        date(detail['dt_to'], 'Y-m-d H:i:s')
+                    ), style=self.styles['border_left_style'])
 
                     worksheet.write(
                         i, 1, period['job'].driver_fio if period.get('job') else '',
@@ -594,49 +656,52 @@ class DrivingStyleView(BaseReportView):
                     )
 
                     worksheet.write(i, 2, row['unit_name'], style=self.styles['border_left_style'])
-                    worksheet.write(i, 3, '', style=self.styles['border_left_style'])
+                    worksheet.write(
+                        i, 3, row['unit_number'], style=self.styles['border_left_style']
+                    )
+                    worksheet.write(i, 4, '', style=self.styles['border_left_style'])
 
                     worksheet.write(
-                        i, 4, detail['speed']['count']
-                        if detail['speed']['count'] else '',
+                        i, 5, detail['speed']['count']
+                        if detail['speed']['count'] else '0',
                         style=self.styles['border_right_style']
                     )
                     worksheet.write(
-                        i, 5, render_timedelta(detail['speed']['seconds']),
+                        i, 6, render_timedelta(detail['speed']['seconds'], '0:00:00'),
                         style=self.styles['border_left_style']
                     )
                     worksheet.write(
-                        i, 6, detail['lights']['count']
-                        if detail['lights']['count'] else '',
+                        i, 7, detail['lights']['count']
+                        if detail['lights']['count'] else '0',
                         style=self.styles['border_right_style']
                     )
                     worksheet.write(
-                        i, 7, render_timedelta(detail['lights']['seconds']),
+                        i, 8, render_timedelta(detail['lights']['seconds'], '0:00:00'),
                         style=self.styles['border_left_style']
                     )
                     worksheet.write(
-                        i, 8, detail['belt']['count']
-                        if detail['belt']['count'] else '',
+                        i, 9, detail['belt']['count']
+                        if detail['belt']['count'] else '0',
                         style=self.styles['border_right_style']
                     )
                     worksheet.write(
-                        i, 9, render_timedelta(detail['belt']['seconds']),
+                        i, 10, render_timedelta(detail['belt']['seconds'], '0:00:00'),
                         style=self.styles['border_left_style']
                     )
                     worksheet.write(
-                        i, 10, detail['devices']['count']
-                        if detail['devices']['count'] else '',
+                        i, 11, detail['devices']['count']
+                        if detail['devices']['count'] else '0',
                         style=self.styles['border_right_style']
                     )
                     worksheet.write(
-                        i, 11, render_timedelta(detail['devices']['seconds']),
+                        i, 12, render_timedelta(detail['devices']['seconds'], '0:00:00'),
                         style=self.styles['border_left_style']
                     )
-                    worksheet.write(i, 12, '', style=self.styles['border_left_style'])
                     worksheet.write(i, 13, '', style=self.styles['border_left_style'])
                     worksheet.write(i, 14, '', style=self.styles['border_left_style'])
                     worksheet.write(i, 15, '', style=self.styles['border_left_style'])
                     worksheet.write(i, 16, '', style=self.styles['border_left_style'])
+                    worksheet.write(i, 17, '', style=self.styles['border_left_style'])
 
                     worksheet.row(i).height = 520
 

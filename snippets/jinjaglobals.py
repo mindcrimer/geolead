@@ -237,8 +237,8 @@ def floatformat(value, digits):
 
 
 @jinjafilter
-def floatcomma(value, digits):
-    return float_format(value, digits).replace(',', '.')
+def floatcomma(value, digits, default_value='0'):
+    return float_format(value, digits).replace(',', '.') or default_value
 
 
 @jinjafilter

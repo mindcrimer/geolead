@@ -413,48 +413,48 @@ class DischargeView(BaseReportView):
         )
 
         # head
-        worksheet.write_merge(6, 7, 0, 0, ' Время', style=self.styles['border_left_style'])
+        worksheet.write_merge(6, 7, 0, 0, ' Время', style=self.styles['border_center_style'])
         worksheet.write_merge(
-            6, 7, 1, 1, ' Гос№ ТС', style=self.styles['border_left_style']
+            6, 7, 1, 1, ' Гос№ ТС', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
             6, 7, 2, 2, ' Плановый график\nработы водителя\n(время с - время по)',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 7, 3, 3, ' ФИО водителя', style=self.styles['border_left_style']
+            6, 7, 3, 3, ' ФИО водителя', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 6, 4, 5, ' Событие слив', style=self.styles['border_left_style']
+            6, 6, 4, 5, ' Событие слив', style=self.styles['border_center_style']
         )
         worksheet.write(
-            7, 4, ' Место/\nгеозона', style=self.styles['border_left_style']
+            7, 4, ' Место/\nгеозона', style=self.styles['border_center_style']
         )
         worksheet.write(
-            7, 5, ' Объем', style=self.styles['border_left_style']
+            7, 5, ' Объем', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
             6, 6, 6, 9, ' Израсходовано топлива за запрашиваемый период, л',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write(
             7, 6, ' По норме\nот пробега**',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write(
             7, 7, ' По норме\nот времени\nработы на ХХ***',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write(
             7, 8, ' По норме\nот работы доп.\nоборудования****',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write(
             7, 9, ' По факту\nс ДУТ',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 7, 10, 10, ' *Перерасход,\nл', style=self.styles['border_left_style']
+            6, 7, 10, 10, ' *Перерасход,\nл', style=self.styles['border_center_style']
         )
 
         for i in range(11):
@@ -478,7 +478,7 @@ class DischargeView(BaseReportView):
                     date(period['dt_to'], 'Y-m-d H:i:s')
                 ), style=self.styles['border_left_style'])
 
-                worksheet.write(i, 1, row['unit_name'])
+                worksheet.write(i, 1, row['unit_name'], style=self.styles['border_left_style'])
 
                 job_period = ''
                 if period.get('job'):
@@ -532,7 +532,7 @@ class DischargeView(BaseReportView):
                         style=self.styles['border_left_style']
                     )
 
-                    worksheet.write(i, 1, row['unit_name'])
+                    worksheet.write(i, 1, row['unit_name'], style=self.styles['border_left_style'])
 
                     job_period = ''
                     if period.get('job'):

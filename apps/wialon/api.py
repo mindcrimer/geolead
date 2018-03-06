@@ -449,16 +449,23 @@ def get_units(user=None, sess_id=None, extra_fields=False):
     return units
 
 
-def get_unit_settings(item_id, user=None, sess_id=None):
+def get_unit_settings(item_id, user=None, sess_id=None, get_sensors=True, get_features=False):
     """Получение данных о машине (объекте)"""
     assert user or sess_id
 
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
+    flags = 1
+    if get_sensors:
+        flags += 4096
+
+    if get_features:
+        flags += 8388608
+
     request_params = json.dumps({
         'id': item_id,
-        'flags': 1 + 4096
+        'flags': flags
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (

@@ -41,9 +41,9 @@ def date(value, arg, use_l10n=False):
 
 
 @jinjafilter
-def render_timedelta(value):
+def render_timedelta(value, default_value=''):
     if not value:
-        return ''
+        return str(default_value)
 
     result = str(datetime.timedelta(seconds=value))
     if 'day' in result:
@@ -65,7 +65,7 @@ def render_timedelta(value):
             else:
                 result = result.replace('day', 'дней')
 
-    return result
+    return result if result else str(default_value)
 
 
 @jinjafilter

@@ -343,6 +343,7 @@ class DrivingStyleView(BaseReportView):
                         period['dt_to'] = utc_to_local_time(
                             period['dt_to'], self.user.wialon_tz
                         )
+                        period['rating'] = max(period['rating'], .0)
 
                 for k, v in report_data.items():
                     v['periods'] = list(filter(lambda p: p['total_time'], v.get('periods', [])))
@@ -437,7 +438,7 @@ class DrivingStyleView(BaseReportView):
         worksheet.col(0).width = 5000
         worksheet.col(1).width = 6000
         worksheet.col(2).width = 8000
-        worksheet.col(3).width = 5000
+        worksheet.col(3).width = 4000
         worksheet.col(4).width = 4000
         worksheet.col(5).width = 3000
         worksheet.col(6).width = 3000

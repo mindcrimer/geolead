@@ -698,4 +698,20 @@ class DrivingStyleView(BaseReportView):
 
                     worksheet.row(i).height = 520
 
+        worksheet.write_merge(
+            i + 1, i + 1, 0, 17,
+            '''Условия форматирования ячеек:
+до %s%% нарушений - норма
+от %s%% до %s%% нарушений - требуется профилактическая беседа
+от %s%% до 100%% нарушений - требуется профилактическая беседа с возможным лишением части премии
+''' % (
+                context['cleaned_data'].get('normal_rating', 10),
+                context['cleaned_data'].get('normal_rating', 10),
+                context['cleaned_data'].get('bad_rating', 30),
+                context['cleaned_data'].get('bad_rating', 30),
+            ),
+            style=self.styles['left_center_style']
+        )
+        worksheet.row(i + 1).height = 520 * 4
+
         return worksheet

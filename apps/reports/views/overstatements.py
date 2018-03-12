@@ -108,18 +108,17 @@ class OverstatementsView(BaseReportView):
                     date_begin__gte=dt_from,
                     date_end__lte=dt_to,
                     route_id__in=list(routes.keys())
-                ).prefetch_related('points')
+                ).prefetch_related('points').order_by('date_begin', 'date_end')
 
                 def get_car_number(unit_id, _units_dict):
                     return _units_dict.get(int(unit_id), {}).get('number', '<%s>' % unit_id)
-
-                spaces_total_time = .0
-                spaces = []
 
                 if jobs:
                     report_data = []
 
                 for job in jobs:
+                    spaces_total_time = .0
+                    spaces = []
                     standard = standards.get(int(job.route_id))
                     if not standard:
                         continue
@@ -171,11 +170,21 @@ class OverstatementsView(BaseReportView):
                                 report_data.append(row)
 
                     spaces_total_time /= 60.0
-                    if standard['space_overstatements_standard'] is not None \
+                    if spaces \
+                            and standard['space_overstatements_standard'] is not None \
                             and spaces_total_time > standard['space_overstatements_standard']:
                         row = self.get_new_grouping()
                         # период пока не указываем, так как это по всему маршруту
-                        row['period'] = ''
+                        row['period'] = '%s - %s' % (
+                            date(utc_to_local_time(
+                                spaces[0].enter_date_time.replace(tzinfo=None),
+                                user.wialon_tz
+                            ), 'd.m.Y H:i:s'),
+                            date(utc_to_local_time(
+                                spaces[-1].leave_date_time.replace(tzinfo=None),
+                                user.wialon_tz
+                            ), 'd.m.Y H:i:s')
+                        )
                         row['route_id'] = job.route_id
                         row['point_name'] = 'SPACE'
                         row['point_type'] = '0'

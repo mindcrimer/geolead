@@ -26,38 +26,38 @@
     <table class="report-table">
       <thead>
       <tr>
-        <td rowspan="2">Время</td>
-        <td rowspan="2">Наименование</td>
-        <td rowspan="2">Гос.номер ТС</td>
-        <td rowspan="2">Тип ТС</td>
-        <td rowspan="2">
+        <td rowspan="2" class="td-small">Время</td>
+        <td rowspan="2" class="td-small">Наименование</td>
+        <td rowspan="2" class="td-small">Гос.номер ТС</td>
+        <td rowspan="2" class="td-small">Тип ТС</td>
+        <td rowspan="2" class="td-small">
           Плановый график<br/>
           работы водителя<br/>
           (время с - время по)
         </td>
-        <td colspan="5">
+        <td colspan="5" class="td-small">
           Фактическая<br/>
           наработка<br/>
           за запрашиваемый период
         </td>
-        <td rowspan="2">ФИО водителя</td>
-        <td colspan="2">Событие слив</td>
-        <td colspan="4">Израсходовано топлива за запрашиваемый период, л</td>
-        <td rowspan="2">Перерасход,<br/>л*</td>
+        <td rowspan="2" class="td-small">ФИО водителя</td>
+        <td colspan="2" class="td-small">Событие слив</td>
+        <td colspan="4" class="td-small">Израсходовано топлива за запрашиваемый период, л</td>
+        <td rowspan="2" class="td-small">Перерасход,<br/>л*</td>
       </tr>
 
       <tr>
-        <td>Пробег, км</td>
-        <td>Время работы<br/>на ХХ***,<br/>чч:мм:сс</td>
-        <td>Время работы<br/>доп.оборудования****,<br/>чч:мм:сс</td>
-        <td>Время<br/>в движении,<br/>чч:мм:сс</td>
-        <td>Время работы<br/>двигателя,<br/>чч:мм:сс</td>
-        <td style="max-width:150px;">Место/<br/>геозона</td>
-        <td>Объем</td>
-        <td>По норме<br/>от пробега**</td>
-        <td>По норме<br/>от времени<br/>работы на ХХ***</td>
-        <td>По норме<br/>от работы доп.<br/>оборудования****</td>
-        <td>По факту<br/>с ДУТ</td>
+        <td class="td-small">Пробег, км</td>
+        <td class="td-small">Время работы<br/>на ХХ***,<br/>чч:мм:сс</td>
+        <td class="td-small">Время работы<br/>доп.оборудования****,<br/>чч:мм:сс</td>
+        <td class="td-small">Время<br/>в движении,<br/>чч:мм:сс</td>
+        <td class="td-small">Время работы<br/>двигателя,<br/>чч:мм:сс</td>
+        <td style="max-width:150px;" class="td-small">Место/<br/>геозона</td>
+        <td class="td-small">Объем</td>
+        <td class="td-small">По норме<br/>от пробега**</td>
+        <td class="td-small">По норме<br/>от времени<br/>работы на ХХ***</td>
+        <td class="td-small">По норме<br/>от работы доп.<br/>оборудования****</td>
+        <td class="td-small">По факту<br/>с ДУТ</td>
       </tr>
       </thead>
 
@@ -65,75 +65,75 @@
         {%- for p, period in enumerate(row['periods']) -%}
           <tbody>
             <tr{% if period['details'] %} class="grouping collapsed"{% endif %} data-rel="{{ r }},{{ p }}">
-              <td>
+              <td class="td-small">
                 {%- if period['details'] -%}
                   <span class="icon-expand"></span>
                 {%- endif -%}
                 {{ period['dt_from']|date('Y-m-d H:i:s') }}
                 - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
               </td>
-              <td>{{ row['unit_name'] }}</td>
-              <td>{{ row['unit_number'] }}</td>
-              <td>{{ row['vehicle_type'] }}</td>
-              <td>
+              <td class="td-small">{{ row['unit_name'] }}</td>
+              <td class="td-small">{{ row['unit_number'] }}</td>
+              <td class="td-small">{{ row['vehicle_type'] }}</td>
+              <td class="td-small">
                 {%- if period.get('job') -%}
                   {{ period['dt_from']|date('Y-m-d H:i:s') }}
                   - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
                 {%- else %}&nbsp;{% endif -%}
               </td>
-              <td class="tright">
+              <td class="tright td-small">
                 {%- if period['mileage'] %}
                 {{ period['mileage']|floatformat(-2) }}
                 {%- else -%}&nbsp;{% endif -%}
               </td>
-              <td>
+              <td class="td-small">
                 {%- if period['idle_hours'] %}
                 {{ period['idle_hours']|render_timedelta('0:00:00') }}
                 {%- else -%}&nbsp;{% endif -%}
               </td>
-              <td>
+              <td class="td-small">
                 {%- if period['extra_device_hours'] %}
                 {{ period['extra_device_hours']|render_timedelta('0:00:00') }}
                 {%- else -%}&nbsp;{% endif -%}
               </td>
-              <td>
+              <td class="td-small">
                 {%- if period['move_hours'] %}
                 {{ period['move_hours']|render_timedelta('0:00:00') }}
                 {%- else -%}&nbsp;{% endif -%}
               </td>
-              <td>
+              <td class="td-small">
                 {%- if period['moto_hours'] %}
                 {{ period['moto_hours']|render_timedelta('0:00:00') }}
                 {%- else -%}&nbsp;{% endif -%}
               </td>
-              <td class="nowrap">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
-              <td>{{ period['discharge']['place'] }}</td>
-              <td class="tright">{% if period['discharge']['volume'] %}
+              <td class="nowrap td-small">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
+              <td class="td-small">{{ period['discharge']['place'] }}</td>
+              <td class="tright td-small">{% if period['discharge']['volume'] %}
                 {{- period['discharge']['volume']|floatformat(-2) }}{% else -%}
                 &nbsp;{% endif %}</td>
-              <td class="tright">{% if period['fact_mileage'] %}
+              <td class="tright td-small">{% if period['fact_mileage'] %}
                 {{- period['fact_mileage']|floatformat(-2) }}{% else -%}
                 &nbsp;{% endif %}</td>
-              <td class="tright">{% if period['fact_motohours'] %}
+              <td class="tright td-small">{% if period['fact_motohours'] %}
                 {{- period['fact_motohours']|floatformat(-2) }}{% else -%}
                 &nbsp;{% endif %}</td>
-              <td class="tright">{% if period['fact_extra_device'] %}
+              <td class="tright td-small">{% if period['fact_extra_device'] %}
                 {{- period['fact_extra_device']|floatformat(-2) }}{% else -%}
                 &nbsp;{% endif %}</td>
-              <td class="tright">{% if period['fact_dut'] %}
+              <td class="tright td-small">{% if period['fact_dut'] %}
                 {{- period['fact_dut']|floatformat(-2) }}{% else %}
                 &nbsp;{% endif %}</td>
-              <td class="tright">{% if period['overspanding'] %}
+              <td class="tright td-small">{% if period['overspanding'] %}
                 {{- period['overspanding']|floatformat(-2) }}{% else %}&nbsp;{% endif %}</td>
             </tr>
 
             {%- for detail in period['details'] -%}
               <tr class="detailed hidden" data-rel="{{ r }},{{ p }}">
-                <td>{{ detail['dt']|date('Y-m-d H:i:s') or '' }}</td>
-                <td>{{ row['unit_name'] }}</td>
-                <td>{{ row['unit_number'] }}</td>
-                <td>{{ row['vehicle_type'] }}</td>
-                <td>
+                <td class="td-small">{{ detail['dt']|date('Y-m-d H:i:s') or '' }}</td>
+                <td class="td-small">{{ row['unit_name'] }}</td>
+                <td class="td-small">{{ row['unit_number'] }}</td>
+                <td class="td-small">{{ row['vehicle_type'] }}</td>
+                <td class="td-small">
                   {%- if period.get('job') -%}
                     {{ period['dt_from']|date('Y-m-d H:i:s') }}
                     - {{ period['dt_to']|date('Y-m-d H:i:s') -}}
@@ -144,9 +144,9 @@
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
-                <td class="nowrap">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
-                <td>{{ detail['place'] or '' }}</td>
-                <td class="tright">{{ detail['volume']|floatformat(-2) }}</td>
+                <td class="nowrap td-small">{{ period['job'].driver_fio if period.get('job') else '&nbsp;' }}</td>
+                <td class="td-small">{{ detail['place'] or '' }}</td>
+                <td class="tright td-small">{{ detail['volume']|floatformat(-2) }}</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>

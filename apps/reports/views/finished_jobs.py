@@ -89,7 +89,7 @@ class FinishedJobsView(BaseReportView):
                         date_end__lte=dt_to,
                         route_id__in=list(routes_dict.keys())
                     )\
-                    .prefetch_related('points')
+                    .prefetch_related('points').order_by('date_begin', 'date_end')
 
                 for job in jobs:
                     route = routes_dict.get(int(job.route_id))

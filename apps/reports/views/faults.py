@@ -335,7 +335,7 @@ class FaultsView(BaseReportView):
 
         for job in jobs:
             intersects_period = max(dt_from, job.date_begin), min(dt_to, job.date_end)
-            sum_broken_work_time += (intersects_period[1] - intersects_period[0]).seconds
+            sum_broken_work_time += (intersects_period[1] - intersects_period[0]).total_seconds()
 
         if sum_broken_work_time:
             return round(sum_broken_work_time / 3600.0, 2)

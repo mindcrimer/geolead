@@ -54,7 +54,7 @@ class FuelDischargeForm(forms.Form):
     dt_to = forms.DateTimeField(label=_('По'))
     overspanding_percentage = forms.IntegerField(
         label=_('Показатель превышения фактического расхода топлива на нормативы, %'),
-        min_value=0, max_value=99, initial=5, required=True
+        min_value=0, max_value=1000, initial=5, required=True
     )
 
 

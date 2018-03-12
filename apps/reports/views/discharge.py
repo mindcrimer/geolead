@@ -8,7 +8,7 @@ from django.utils.timezone import utc
 from base.exceptions import ReportException
 from base.utils import parse_float
 from reports import forms
-from reports.jinjaglobals import date
+from reports.jinjaglobals import date, render_timedelta
 from reports.utils import parse_timedelta, parse_wialon_report_datetime, \
     get_wialon_report_template_id, cleanup_and_request_report, exec_report, \
     get_report_rows, local_to_utc_time, utc_to_local_time
@@ -47,34 +47,35 @@ class DischargeView(BaseReportView):
     def get_new_grouping():
         return {
             'unit_name': '',
+            'unit_number': '',
+            'vehicle_type': '',
             'periods': []
         }
 
     @staticmethod
     def get_new_period(dt_from, dt_to, job=None):
         return {
-            'dt_from': dt_from,
-            'dt_to': dt_to,
-            't_from': int(dt_from.timestamp()),
-            't_to': int(dt_to.timestamp()),
-            'job': job,
-            'driver_name': '',
-            'kmu': .0,
+            'details': [],
             'discharge': {
                 'place': '',
                 'dt': '',
                 'volume': .0
             },
-            'consumption': {
-                'standard_mileage': .0,
-                'standard_worktime': .0,
-                'standard_extra_device': .0,
-                'fact_dut': .0
-            },
-            'overspanding': .0,
+            'dt_from': dt_from,
+            'dt_to': dt_to,
+            'extra_device_hours': .0,
+            'fact_dut': .0,
+            'fact_extra_device': .0,
+            'fact_mileage': .0,
+            'fact_motohours': .0,
+            'job': job,
+            'idle_hours': .0,
+            'mileage': .0,
             'moto_hours': .0,
             'move_hours': .0,
-            'details': []
+            'overspanding': .0,
+            't_from': int(dt_from.timestamp()),
+            't_to': int(dt_to.timestamp())
         }
 
     def get_context_data(self, **kwargs):
@@ -108,7 +109,8 @@ class DischargeView(BaseReportView):
 
                 dt_from_utc = local_to_utc_time(form.cleaned_data['dt_from'], self.user.wialon_tz)
                 dt_to_utc = local_to_utc_time(
-                    form.cleaned_data['dt_to'].replace(second=59), self.user.wialon_tz
+                    form.cleaned_data['dt_to'].replace(hour=23, minute=59, second=59),
+                    self.user.wialon_tz
                 )
 
                 ura_user = self.user.ura_user if self.user.ura_user_id else self.user
@@ -158,6 +160,8 @@ class DischargeView(BaseReportView):
 
                     report_row = report_data[unit_id]
                     report_row['unit_name'] = unit_name
+                    report_row['unit_number'] = unit.get('number', '')
+                    report_row['vehicle_type'] = unit.get('vehicle_type', '')
 
                     unit_jobs = jobs_cache.get(unit_id)
                     if not unit_jobs:
@@ -214,9 +218,30 @@ class DischargeView(BaseReportView):
                         )
 
                         wialon_report_rows[table_info['name']] = [row['c'] for row in rows]
-                        print(table_info['name'])
 
                     for period in report_row['periods']:
+                        for row in wialon_report_rows.get('unit_trips', []):
+                            row_dt_from, row_dt_to = self.parse_wialon_report_datetime(row)
+                            if row_dt_to is None:
+                                row_dt_to = period['dt_to']
+
+                            if period['dt_from'] < row_dt_from and period['dt_to'] > row_dt_to:
+                                delta = (
+                                    min(row_dt_to, period['dt_to']) -
+                                    max(row_dt_from, period['dt_from'])
+                                ).total_seconds()
+                                if not delta:
+                                    print('empty trip period')
+                                    continue
+
+                                trip_ratio = 1
+                                total_delta = (row_dt_to - row_dt_from).total_seconds()
+                                if total_delta > 0:
+                                    trip_ratio = delta / total_delta
+                                period['mileage'] += parse_float(row[3]) * trip_ratio
+                                period['move_hours'] += parse_timedelta(row[4]).total_seconds()\
+                                    * trip_ratio
+
                         for row in wialon_report_rows.get('unit_digital_sensors', []):
                             row_dt_from, row_dt_to = self.parse_wialon_report_datetime(row)
                             if row_dt_to is None:
@@ -225,9 +250,7 @@ class DischargeView(BaseReportView):
                             if period['dt_from'] < row_dt_from and period['dt_to'] > row_dt_to:
                                 delta = min(row_dt_to, period['dt_to']) - \
                                         max(row_dt_from, period['dt_from'])
-                                period['kmu'] += delta.total_seconds()
-
-                        period['kmu'] /= 3600.0
+                                period['extra_device_hours'] += delta.total_seconds()
 
                         for row in wialon_report_rows.get('unit_thefts', []):
                             dt = parse_wialon_report_datetime(
@@ -278,7 +301,7 @@ class DischargeView(BaseReportView):
 
                                 total_delta = (row_dt_to - row_dt_from).total_seconds()
 
-                                period['moto_hours'] += delta / 3600.0
+                                period['moto_hours'] += delta
                                 # доля моточасов в периоде и общих моточасов в строке
                                 # данный множитель учтем в расчетах потребления
                                 moto_ratio = 1
@@ -286,7 +309,7 @@ class DischargeView(BaseReportView):
                                     moto_ratio = delta / total_delta
 
                                 try:
-                                    period['consumption']['fact_dut'] += (
+                                    period['fact_dut'] += (
                                         float(parse_float(row[3])) if row[3] else .0
                                     ) * moto_ratio
 
@@ -294,35 +317,41 @@ class DischargeView(BaseReportView):
                                     pass
 
                                 try:
-                                    period['consumption']['standard_mileage'] += (
+                                    period['fact_mileage'] += (
                                         float(parse_float(row[4])) if row[4] else .0
                                     ) * moto_ratio
 
                                 except ValueError:
                                     pass
 
-                                period['move_hours'] += parse_timedelta(row[5]).total_seconds() \
-                                    * moto_ratio / 3600.0
+                                try:
+                                    period['idle_hours'] += (
+                                        parse_timedelta(row[6]).total_seconds() if row[6] else .0
+                                    ) * moto_ratio
+
+                                except ValueError:
+                                    pass
 
                         if idle_value:
-                            period['consumption']['standard_worktime'] = max(
+                            period['fact_motohours'] = max(
                                 period['moto_hours'] - period['move_hours']
-                                - period['kmu'], .0
-                            ) * idle_value
+                                - period['extra_device_hours'],
+                                .0
+                            ) / 3600.0 * idle_value
 
                         if extras_value:
-                            period['consumption']['standard_extra_device'] = \
-                                period['kmu'] * extras_value
+                            period['fact_extra_device'] = \
+                                period['extra_device_hours'] / 3600.0 * extras_value
 
-                        total_standards = period['consumption']['standard_extra_device'] \
-                            + period['consumption']['standard_worktime'] \
-                            + period['consumption']['standard_mileage']
+                        total_facts = period['fact_extra_device'] \
+                            + period['fact_motohours'] \
+                            + period['fact_mileage']
 
-                        if total_standards:
-                            ratio = period['consumption']['fact_dut'] / total_standards
+                        if total_facts:
+                            ratio = period['fact_dut'] / total_facts
                             if ratio >= normal_ratio:
-                                overspanding = period['consumption']['fact_dut'] \
-                                   - total_standards
+                                overspanding = period['fact_dut'] \
+                                   - total_facts
 
                                 period['overspanding'] = overspanding
                                 self.overspanding_total += overspanding
@@ -374,90 +403,123 @@ class DischargeView(BaseReportView):
 
         worksheet.col(0).width = 5000
         worksheet.col(1).width = 8000
-        worksheet.col(2).width = 5000
-        worksheet.col(3).width = 6000
-        worksheet.col(4).width = 9000
-        worksheet.col(5).width = 2200
-        worksheet.col(6).width = 3000
-        worksheet.col(7).width = 4000
+        worksheet.col(2).width = 4000
+        worksheet.col(3).width = 4500
+        worksheet.col(4).width = 5000
+        worksheet.col(5).width = 3000
+        worksheet.col(6).width = 4000
+        worksheet.col(7).width = 5500
         worksheet.col(8).width = 4000
-        worksheet.col(9).width = 2700
-        worksheet.col(10).width = 3200
+        worksheet.col(9).width = 4000
+        worksheet.col(10).width = 6000
+        worksheet.col(11).width = 9000
+        worksheet.col(12).width = 2200
+        worksheet.col(13).width = 3000
+        worksheet.col(14).width = 4000
+        worksheet.col(15).width = 4000
+        worksheet.col(16).width = 2700
+        worksheet.col(17).width = 3200
 
         # header
         worksheet.write_merge(
-            1, 1, 0, 10, 'За период: %s - %s' % (
+            1, 1, 0, 17, 'За период: %s - %s' % (
                 date_format(context['cleaned_data']['dt_from'], 'd.m.Y H:i'),
                 date_format(context['cleaned_data']['dt_to'], 'd.m.Y H:i')
             )
         )
         worksheet.write_merge(
-            2, 2, 0, 10, 'Итого перерасход, л: %s' % floatformat(
+            2, 2, 0, 17, 'Итого перерасход, л: %s' % floatformat(
                 context.get('overspanding_total', 0) or 0, -2
             ),
             style=self.styles['left_center_style']
         )
         worksheet.write_merge(
-            3, 3, 0, 10, 'Итого слив, л: %s' % floatformat(
+            3, 3, 0, 17, 'Итого слив, л: %s' % floatformat(
                 context.get('discharge_total', 0) or 0, -2
             ),
             style=self.styles['left_center_style']
         )
         worksheet.write_merge(
-            4, 4, 0, 10, 'Зафиксировано случаев слива: %s' % context.get('overspanding_count', 0),
+            4, 4, 0, 17, 'Зафиксировано случаев слива: %s' % context.get('overspanding_count', 0),
             style=self.styles['left_center_style']
         )
         worksheet.write_merge(
-            5, 5, 0, 10, 'Список случаев перерасхода топлива на дату:',
+            5, 5, 0, 17, 'Список случаев перерасхода топлива на дату:',
             style=self.styles['right_center_style']
         )
 
         # head
         worksheet.write_merge(6, 7, 0, 0, ' Время', style=self.styles['border_center_style'])
         worksheet.write_merge(
-            6, 7, 1, 1, ' Гос№ ТС', style=self.styles['border_center_style']
+            6, 7, 1, 1, ' Наименование', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 7, 2, 2, ' Плановый график\nработы водителя\n(время с - время по)',
-            style=self.styles['border_center_style']
+            6, 7, 2, 2, ' Гос.номер ТС', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 7, 3, 3, ' ФИО водителя', style=self.styles['border_center_style']
+            6, 7, 3, 3, ' Тип ТС', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 6, 4, 5, ' Событие слив', style=self.styles['border_center_style']
-        )
-        worksheet.write(
-            7, 4, ' Место/\nгеозона', style=self.styles['border_center_style']
-        )
-        worksheet.write(
-            7, 5, ' Объем', style=self.styles['border_center_style']
-        )
-        worksheet.write_merge(
-            6, 6, 6, 9, ' Израсходовано топлива за запрашиваемый период, л',
-            style=self.styles['border_center_style']
-        )
-        worksheet.write(
-            7, 6, ' По норме\nот пробега**',
-            style=self.styles['border_center_style']
-        )
-        worksheet.write(
-            7, 7, ' По норме\nот времени\nработы на ХХ***',
-            style=self.styles['border_center_style']
-        )
-        worksheet.write(
-            7, 8, ' По норме\nот работы доп.\nоборудования****',
-            style=self.styles['border_center_style']
-        )
-        worksheet.write(
-            7, 9, ' По факту\nс ДУТ',
+            6, 7, 4, 4, ' Плановый график\nработы водителя\n(время с - время по)',
             style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            6, 7, 10, 10, ' *Перерасход,\nл', style=self.styles['border_center_style']
+            6, 6, 5, 9, ' Фактическая наработка за запрашиваемый период',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 5, ' Пробег, км', style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 6, ' Время работы\nна ХХ***,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 7, ' Время работы\nдоп.оборудования****,\nчч:мм:сс',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 8, ' Время\nв движении,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 9, ' Время работы\nдвигателя,\nчч:мм:сс', style=self.styles['border_center_style']
+        )
+        worksheet.write_merge(
+            6, 7, 10, 10, ' ФИО водителя', style=self.styles['border_center_style']
+        )
+        worksheet.write_merge(
+            6, 6, 11, 12, ' Событие слив', style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 11, ' Место/\nгеозона', style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 12, ' Объем', style=self.styles['border_center_style']
+        )
+        worksheet.write_merge(
+            6, 6, 13, 14, ' Израсходовано топлива за запрашиваемый период, л',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 13, ' По норме\nот пробега**',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 14, ' По норме\nот времени\nработы на ХХ***',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 15, ' По норме\nот работы доп.\nоборудования****',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write(
+            7, 16, ' По факту\nс ДУТ',
+            style=self.styles['border_center_style']
+        )
+        worksheet.write_merge(
+            6, 7, 17, 17, ' Перерасход,\nл*', style=self.styles['border_center_style']
         )
 
-        for i in range(11):
+        for i in range(18):
             worksheet.write(8, i, str(i + 1), style=self.styles['border_center_style'])
 
         for i in range(1, 9):
@@ -471,7 +533,6 @@ class DischargeView(BaseReportView):
             for period in row['periods']:
                 i += 1
                 worksheet.row(i).level = 1
-                # worksheet.row(i).collapse = 2
 
                 worksheet.write(i, 0, '%s - %s' % (
                     date(period['dt_from'], 'Y-m-d H:i:s'),
@@ -479,6 +540,8 @@ class DischargeView(BaseReportView):
                 ), style=self.styles['border_left_style'])
 
                 worksheet.write(i, 1, row['unit_name'], style=self.styles['border_left_style'])
+                worksheet.write(i, 2, row['unit_number'], style=self.styles['border_left_style'])
+                worksheet.write(i, 3, row['vehicle_type'], style=self.styles['border_left_style'])
 
                 job_period = ''
                 if period.get('job'):
@@ -486,38 +549,67 @@ class DischargeView(BaseReportView):
                         date(period['dt_from'], 'Y-m-d H:i:s'),
                         date(period['dt_to'], 'Y-m-d H:i:s')
                     )
-                worksheet.write(i, 2, job_period, style=self.styles['border_left_style'])
+                worksheet.write(i, 4, job_period, style=self.styles['border_left_style'])
 
                 worksheet.write(
-                    i, 3, period['job'].driver_fio if period.get('job') else '',
+                    i, 5, floatformat(period['mileage'], 2) or '',
+                    style=self.styles['border_right_style']
+                )
+                worksheet.write(
+                    i, 6,
+                    render_timedelta(period['idle_hours'], '0:00:00')
+                    if period['idle_hours'] else '',
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 4, period['discharge']['place'],
+                    i, 7,
+                    render_timedelta(period['extra_device_hours'], '0:00:00')
+                    if period['extra_device_hours'] else '',
                     style=self.styles['border_left_style']
                 )
                 worksheet.write(
-                    i, 5, floatformat(period['discharge']['volume'], 2) or '',
+                    i, 8,
+                    render_timedelta(period['move_hours'], '0:00:00')
+                    if period['move_hours'] else '',
+                    style=self.styles['border_left_style']
+                )
+                worksheet.write(
+                    i, 9,
+                    render_timedelta(period['moto_hours'], '0:00:00')
+                    if period['moto_hours'] else '',
+                    style=self.styles['border_left_style']
+                )
+
+                worksheet.write(
+                    i, 10, period['job'].driver_fio if period.get('job') else '',
+                    style=self.styles['border_left_style']
+                )
+                worksheet.write(
+                    i, 11, period['discharge']['place'],
+                    style=self.styles['border_left_style']
+                )
+                worksheet.write(
+                    i, 12, floatformat(period['discharge']['volume'], 2) or '',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 6, floatformat(period['consumption']['standard_mileage'], 2) or '',
+                    i, 13, floatformat(period['fact_mileage'], 2) or '',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 7, floatformat(period['consumption']['standard_worktime'], 2) or '',
+                    i, 14, floatformat(period['fact_motohours'], 2) or '',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 8, floatformat(period['consumption']['standard_extra_device'], 2) or '',
+                    i, 15, floatformat(period['fact_extra_device'], 2) or '',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 9, floatformat(period['consumption']['fact_dut'], 2) or '',
+                    i, 16, floatformat(period['fact_dut'], 2) or '',
                     style=self.styles['border_right_style']
                 )
                 worksheet.write(
-                    i, 10, floatformat(period['overspanding'], 2) or '',
+                    i, 17, floatformat(period['overspanding'], 2) or '',
                     style=self.styles['border_right_style']
                 )
                 worksheet.row(i).height = 520
@@ -525,7 +617,6 @@ class DischargeView(BaseReportView):
                 for detail in period['details']:
                     i += 1
                     worksheet.row(i).level = 2
-                    # worksheet.row(i).collapse = 2
 
                     worksheet.write(
                         i, 0, date(detail['dt'], 'Y-m-d H:i:s') or '',
@@ -533,6 +624,12 @@ class DischargeView(BaseReportView):
                     )
 
                     worksheet.write(i, 1, row['unit_name'], style=self.styles['border_left_style'])
+                    worksheet.write(
+                        i, 2, row['unit_number'], style=self.styles['border_left_style']
+                    )
+                    worksheet.write(
+                        i, 3, row['vehicle_type'], style=self.styles['border_left_style']
+                    )
 
                     job_period = ''
                     if period.get('job'):
@@ -540,25 +637,65 @@ class DischargeView(BaseReportView):
                             date(period['dt_from'], 'Y-m-d H:i:s'),
                             date(period['dt_to'], 'Y-m-d H:i:s')
                         )
-                    worksheet.write(i, 2, job_period, style=self.styles['border_left_style'])
+                    worksheet.write(i, 4, job_period, style=self.styles['border_left_style'])
 
                     worksheet.write(
-                        i, 3, period['job'].driver_fio if period.get('job') else '',
-                        style=self.styles['border_left_style']
-                    )
-                    worksheet.write(
-                        i, 4, detail['place'] or '',
-                        style=self.styles['border_left_style']
-                    )
-                    worksheet.write(
-                        i, 5, floatformat(detail['volume'], 2) or '',
+                        i, 5, floatformat(period['mileage'], 2) or '',
                         style=self.styles['border_right_style']
                     )
-                    worksheet.write(i, 6, '', style=self.styles['border_right_style'])
-                    worksheet.write(i, 7, '', style=self.styles['border_right_style'])
-                    worksheet.write(i, 8, '', style=self.styles['border_right_style'])
-                    worksheet.write(i, 9, '', style=self.styles['border_right_style'])
-                    worksheet.write(i, 10, '', style=self.styles['border_right_style'])
+                    worksheet.write(
+                        i, 6,
+                        render_timedelta(period['idle_hours'], '0:00:00')
+                        if period['idle_hours'] else '',
+                        style=self.styles['border_left_style']
+                    )
+                    worksheet.write(
+                        i, 7,
+                        render_timedelta(period['extra_device_hours'], '0:00:00')
+                        if period['extra_device_hours'] else '',
+                        style=self.styles['border_left_style']
+                    )
+                    worksheet.write(
+                        i, 8,
+                        render_timedelta(period['move_hours'], '0:00:00')
+                        if period['move_hours'] else '',
+                        style=self.styles['border_left_style']
+                    )
+                    worksheet.write(
+                        i, 9,
+                        render_timedelta(period['moto_hours'], '0:00:00')
+                        if period['moto_hours'] else '',
+                        style=self.styles['border_left_style']
+                    )
+
+                    worksheet.write(
+                        i, 10, period['job'].driver_fio if period.get('job') else '',
+                        style=self.styles['border_left_style']
+                    )
+                    worksheet.write(
+                        i, 11, detail['place'] or '',
+                        style=self.styles['border_left_style']
+                    )
+                    worksheet.write(
+                        i, 12, floatformat(detail['volume'], 2) or '',
+                        style=self.styles['border_right_style']
+                    )
+                    worksheet.write(i, 13, '', style=self.styles['border_right_style'])
+                    worksheet.write(i, 14, '', style=self.styles['border_right_style'])
+                    worksheet.write(i, 15, '', style=self.styles['border_right_style'])
+                    worksheet.write(i, 16, '', style=self.styles['border_right_style'])
+                    worksheet.write(i, 17, '', style=self.styles['border_right_style'])
                     worksheet.row(i).height = 520
+
+        worksheet.write_merge(
+            i + 1, i + 1, 0, 12,
+            '''* В случае превышения фактического расхода топлива на нормативы более чем на %s%%
+** исходя из нормативов л/100км, с добавочным коэффициентом на работу оборудования
+*** исходя из нормативов л/час при заведенном двигателе на холостых оборотах,
+с добавочным коэффициентом на работу оборудования''' %
+            context['cleaned_data'].get('overspanding_percentage', 5),
+            style=self.styles['left_center_style']
+        )
+        worksheet.row(i + 1).height = 520 * 4
 
         return worksheet

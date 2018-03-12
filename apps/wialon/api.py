@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
+from smtplib import SMTPException
 
 from django.conf import settings
 from django.core.cache import cache
 
 import requests
+from snippets.utils.email import send_trigger_email
 
 from wialon import DEFAULT_CACHE_TIMEOUT
 from wialon.exceptions import WialonException
@@ -307,6 +309,15 @@ def get_report_template_id(name, user=None, sess_id=None):
     if user:
         error += ' Проверьте правильность имени шаблона отчета в настройках интеграции ' \
                  'у пользователя "%s".' % user
+        try:
+            send_trigger_email(
+                'Шаблон отчета не найден', extra_data={
+                    'Учетная запись': user,
+                    'Шаблон отчета': name
+                }
+            )
+        except (ConnectionError, SMTPException):
+            pass
     process_error(res, error)
 
     if 'items' not in res or len(res['items']) == 0 \
@@ -417,7 +428,7 @@ def get_units(user=None, sess_id=None, extra_fields=False):
 
     units = []
     for item in res['items']:
-        number, vin = '', ''
+        number, vin, vehicle_type = '', '', ''
 
         if 'pflds' in item:
 
@@ -425,16 +436,20 @@ def get_units(user=None, sess_id=None, extra_fields=False):
                 if f['n'] == 'vin':
                     vin = f['v']
 
+                elif f['n'] == 'vehicle_type':
+                    vehicle_type = f.get('v', '').strip()
+
                 elif f['n'] == 'registration_plate':
                     number = f['v']
 
-                if number and vin:
+                if number and vin and vehicle_type:
                     break
 
         data = {
             'id': item['id'],
             'name': item['nm'].strip(),
             'number': number,
+            'vehicle_type': vehicle_type,
             'vin': vin
         }
 

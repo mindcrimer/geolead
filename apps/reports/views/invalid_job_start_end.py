@@ -142,7 +142,7 @@ class InvalidJobStartEndView(BaseReportView):
                     if not end_point.enter_date_time:
                         continue
 
-                    delta = (job.date_end - end_point.enter_date_time).seconds / 60.0
+                    delta = (job.date_end - end_point.enter_date_time).total_seconds() / 60.0
                     if delta < 30:
                         continue
 

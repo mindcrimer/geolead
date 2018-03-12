@@ -320,7 +320,7 @@ class BaseUraRidesView(URAResource):
                 point_type=get_point_type(point['name']),
                 enter_date_time=time_in,
                 leave_date_time=time_out,
-                total_time=(time_out - time_in).seconds,
+                total_time=(time_out - time_in).total_seconds(),
                 parking_time=point['params']['stopMinutes'],
                 lat=point['coords']['lat'],
                 lng=point['coords']['lng']

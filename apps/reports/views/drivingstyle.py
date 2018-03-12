@@ -16,7 +16,7 @@ from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_N
 from snippets.jinjaglobals import date as date_format, floatcomma
 from ura.models import Job
 from users.models import User
-from wialon.api import get_units, get_unit_settings
+from wialon.api import get_units
 from wialon.exceptions import WialonException
 
 
@@ -123,9 +123,10 @@ class DrivingStyleView(BaseReportView):
         kwargs['today'] = datetime.date.today()
 
         if self.request.POST:
-            report_data = OrderedDict()
+            report_data = None
 
             if self.form.is_valid():
+                report_data = OrderedDict()
                 sess_id = self.request.session.get('sid')
                 if not sess_id:
                     raise ReportException(WIALON_NOT_LOGINED)
@@ -179,18 +180,7 @@ class DrivingStyleView(BaseReportView):
                     unit_name = unit['name']
                     print('%s) %s' % (i, unit_name))
 
-                    unit_settings = get_unit_settings(
-                        unit_id, sess_id=sess_id, user=self.user,
-                        get_sensors=False, get_features=True
-                    )
-
-                    vehicle_types = [
-                        x for x in unit_settings.get('pflds', {}).values()
-                        if x['n'] == 'vehicle_type'
-                    ]
-                    vehicle_type = ''
-                    if vehicle_types:
-                        vehicle_type = vehicle_types[0]['v'].lower().strip()
+                    vehicle_type = unit['vehicle_type'].lower()
 
                     if mobile_vehicle_types and vehicle_type \
                             and vehicle_type not in mobile_vehicle_types:

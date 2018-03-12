@@ -248,10 +248,10 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
                     delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
                     # не пересекаются:
-                    if delta.seconds < 0 or delta.days < 0:
+                    if delta.total_seconds() < 0:
                         continue
 
-                    point['params']['moveTime'] += delta.seconds
+                    point['params']['moveTime'] += delta.total_seconds()
 
     def post(self, request, **kwargs):
         jobs = []

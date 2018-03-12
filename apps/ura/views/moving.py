@@ -120,10 +120,10 @@ class URAMovingResource(BaseUraRidesView):
 
                 delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
                 # не пересекаются:
-                if delta.seconds < 0 or delta.days < 0:
+                if delta.total_seconds() < 0:
                     continue
 
-                point['params']['motoHours'] += delta.seconds
+                point['params']['motoHours'] += delta.total_seconds()
 
         self.print_time_needed('motoHours')
 
@@ -163,10 +163,10 @@ class URAMovingResource(BaseUraRidesView):
 
                 delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
                 # не пересекаются:
-                if delta.seconds < 0 or delta.days < 0:
+                if delta.total_seconds() < 0:
                     continue
 
-                point['params']['stopMinutes'] += delta.seconds
+                point['params']['stopMinutes'] += delta.total_seconds()
 
         self.print_time_needed('MoveTime')
 
@@ -175,7 +175,7 @@ class URAMovingResource(BaseUraRidesView):
         for i, point in enumerate(self.ride_points):
             point['params']['moveMinutes'] = round(
                 (
-                    (point['time_out'] - point['time_in']).seconds
+                    (point['time_out'] - point['time_in']).total_seconds()
                     - point['params']['stopMinutes']
                 ) / 60.0, 2
             )

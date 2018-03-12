@@ -309,15 +309,19 @@ def get_report_template_id(name, user=None, sess_id=None):
     if user:
         error += ' Проверьте правильность имени шаблона отчета в настройках интеграции ' \
                  'у пользователя "%s".' % user
+
+    if 'error' in res and res['error'] != 1:
         try:
             send_trigger_email(
                 'Шаблон отчета не найден', extra_data={
                     'Учетная запись': user,
-                    'Шаблон отчета': name
+                    'Шаблон отчета': name,
+                    'Result': res
                 }
             )
         except (ConnectionError, SMTPException):
             pass
+
     process_error(res, error)
 
     if 'items' not in res or len(res['items']) == 0 \

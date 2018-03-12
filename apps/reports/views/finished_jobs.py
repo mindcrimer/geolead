@@ -172,6 +172,9 @@ class FinishedJobsView(BaseReportView):
         worksheet.write(6, 1, ' Заявлено', style=self.styles['border_left_style'])
         worksheet.write(6, 2, ' Исполнялось*', style=self.styles['border_left_style'])
 
+        for i in range(4):
+            worksheet.write(8, i, str(i + 1), style=self.styles['border_center_style'])
+
         for i in range(1, 7):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
 

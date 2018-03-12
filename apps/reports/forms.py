@@ -68,3 +68,7 @@ class OverstatementsForm(forms.Form):
     """Форма отчета о сверхнормативных простоях"""
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
+    overstatement_param = forms.IntegerField(
+        label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),
+        min_value=0, max_value=99, initial=5, required=True
+    )

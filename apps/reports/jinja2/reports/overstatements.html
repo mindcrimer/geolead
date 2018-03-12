@@ -27,12 +27,17 @@
 
       <tr>
         <td>Время пребывания в геозоне с__по__</td>
+        <td>
+          Плановый график<br/>
+          работы водителя<br/>
+          с__по__
+        </td>
         <td>№ шаблона задания</td>
         <td>Наименование геозоны</td>
         <td>Тип геозоны</td>
         <td>гос № ТС</td>
         <td>ФИО водителя</td>
-        <td>*Перепростой, ч.</td>
+        <td>*Перепростой<br/>/перенахождение, ч.</td>
       </tr>
 
       </thead>
@@ -40,7 +45,8 @@
       {%- for row in report_data -%}
         <tbody>
         <tr>
-          <td>{{ row['period'] }}</td>
+          <td>{{ row['fact_period'] }}</td>
+          <td>{{ row['plan_period'] }}</td>
           <td>{{ row['route_id'] }}</td>
           <td>{{ row['point_name'] }}</td>
           <td class="tright">{{ row['point_type'] }}</td>
@@ -60,7 +66,7 @@
     <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
       <tr>
         <td style="vertical-align:top">
-          *в случае превышения фактического простоя над нормативным более чем на 5%
+          *В случае превышения фактического простоя / нахождения над нормативным более чем на 5%
         </td>
       </tr>
     </table>
@@ -88,6 +94,17 @@
           <input class="uk-input dt-input" name="dt_to" id="report_to"
                  value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
           <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_overstatement_param">
+            Учитывать процент превышения простоя / нахождения над нормативным более чем, на
+          </label>
+          <input class="uk-input" name="overstatement_param"
+                 id="report_overstatement_param"
+                 type="number" step="1" min="0" max="99"
+                 value="{{ form.cleaned_data.get('overstatement_param') }}">
+          <div class="errors">{{ form.errors.get('overstatement_param', '') }}</div>
         </div>
 
         <div class="uk-margin">

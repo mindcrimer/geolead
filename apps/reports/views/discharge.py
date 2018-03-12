@@ -83,9 +83,9 @@ class DischargeView(BaseReportView):
         report_data = None
 
         if self.request.POST:
-            report_data = OrderedDict()
-
             if form.is_valid():
+                report_data = OrderedDict()
+
                 sess_id = self.request.session.get('sid')
                 if not sess_id:
                     raise ReportException(WIALON_NOT_LOGINED)

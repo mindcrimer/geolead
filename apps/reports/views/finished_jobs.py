@@ -32,9 +32,9 @@ class FinishedJobsView(BaseReportView):
         return self.form_class(data)
 
     @staticmethod
-    def get_new_grouping():
+    def get_new_grouping(key=''):
         return {
-            'key': '',
+            'key': key,
             'plan': 0,
             'finished': 0,
             'ratio': .0
@@ -69,9 +69,15 @@ class FinishedJobsView(BaseReportView):
                     form.cleaned_data['dt_to'].replace(second=59), user.wialon_tz
                 )
 
-                routes = {
-                    x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
+                routes_list = get_routes(sess_id=sess_id, user=user, with_points=True)
+                routes_dict = {
+                    x['id']: x for x in routes_list
+                    if 'фиксирован' not in x['name'].lower()
                 }
+                all_routes_dict = {x['id']: x for x in routes_list}
+                used_routes = set()
+
+                stats['total'] = len(routes_dict)
 
                 ura_user = user.ura_user if user.ura_user_id else user
                 jobs = Job.objects\
@@ -79,18 +85,25 @@ class FinishedJobsView(BaseReportView):
                         user=ura_user,
                         date_begin__gte=dt_from,
                         date_end__lte=dt_to,
-                        route_id__in=list(routes.keys())
+                        route_id__in=list(routes_dict.keys())
                     )\
                     .prefetch_related('points')
 
                 for job in jobs:
-                    route = routes.get(int(job.route_id))
-                    if not route or 'фиксирован' in route['name'].lower():
+                    route = routes_dict.get(int(job.route_id))
+                    if not route:
+                        possible_route_name = all_routes_dict.get(int(job.route_id), {})\
+                            .get('name', '')
+                        if 'фиксирован' not in possible_route_name.lower():
+                            print(
+                                'Route not found (job_id: %s, route name: %s)' % (
+                                    job.pk, possible_route_name
+                                )
+                            )
                         continue
 
-                    stats['total'] += 1
-
                     key = job.route_id
+                    used_routes.add(key)
                     if key not in report_data:
                         report_data[key] = self.get_new_grouping()
                         report_data[key]['key'] = key
@@ -120,6 +133,12 @@ class FinishedJobsView(BaseReportView):
                     for x in report_data.items()
                     if x[1]['ratio'] < 100 - form.cleaned_data['non_actual_param']
                 }
+
+                # добавим те, которые вообще не использовались:
+                unused_routes = [x for x in routes_dict.values() if x['id'] not in used_routes]
+                for unused_route in unused_routes:
+                    key = unused_route['id']
+                    report_data[key] = self.get_new_grouping(key)
 
         kwargs.update(
             stats=stats,
@@ -161,25 +180,25 @@ class FinishedJobsView(BaseReportView):
 
         # head
         worksheet.write_merge(
-            5, 6, 0, 0, ' № шаблона задания\nиз ССМТ', style=self.styles['border_left_style']
+            5, 6, 0, 0, ' № шаблона задания\nиз ССМТ', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 5, 1, 2, ' Кол-во путевых листов', style=self.styles['border_left_style']
+            5, 5, 1, 2, ' Кол-во путевых листов', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 6, 3, 3, ' Актуальность, %', style=self.styles['border_left_style']
+            5, 6, 3, 3, ' Актуальность, %', style=self.styles['border_center_style']
         )
-        worksheet.write(6, 1, ' Заявлено', style=self.styles['border_left_style'])
-        worksheet.write(6, 2, ' Исполнялось*', style=self.styles['border_left_style'])
+        worksheet.write(6, 1, ' Заявлено', style=self.styles['border_center_style'])
+        worksheet.write(6, 2, ' Исполнялось*', style=self.styles['border_center_style'])
 
         for i in range(4):
-            worksheet.write(8, i, str(i + 1), style=self.styles['border_center_style'])
+            worksheet.write(7, i, str(i + 1), style=self.styles['border_center_style'])
 
-        for i in range(1, 7):
+        for i in range(1, 8):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
 
         # body
-        for i, row in enumerate(context['report_data'].values(), 7):
+        for i, row in enumerate(context['report_data'].values(), 8):
             worksheet.write(i, 0, row['key'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['plan'], style=self.styles['border_right_style'])
             worksheet.write(i, 2, row['finished'], style=self.styles['border_right_style'])

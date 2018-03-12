@@ -332,8 +332,10 @@ class DrivingStyleView(BaseReportView):
                                             period['facts'][viol_key]['seconds'] += delta
 
                             for viol_key in ('speed', 'lights', 'belt', 'devices'):
-                                percentage = period['facts'][viol_key]['seconds'] / \
-                                             period['total_time'] * 100
+                                percentage = min(
+                                    period['facts'][viol_key]['seconds'] /
+                                    period['total_time'], 1.0
+                                ) * 100
                                 period['percentage'][viol_key] = percentage
                                 period['rating'] -= percentage
 

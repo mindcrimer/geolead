@@ -32,6 +32,7 @@
 
       <tr>
         <td rowspan="2">№ шаблона задания из ССМТ</td>
+        <td rowspan="2">Наименование шаблона задания</td>
         <td colspan="2">Кол-во путевых листов</td>
         <td rowspan="2">Актуальность, %</td>
       </tr>
@@ -47,6 +48,7 @@
         <tbody>
         <tr>
           <td>{{ row['key'] }}</td>
+          <td>{{ row['name'] }}</td>
           <td class="tright">{{ row['plan'] }}</td>
           <td class="tright">{{ row['finished'] }}</td>
           <td class="tright">{{ row['ratio'] }}</td>

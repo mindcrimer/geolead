@@ -21,6 +21,7 @@ class FinishedJobsView(BaseReportView):
     template_name = 'reports/finished_jobs.html'
     report_name = 'Отчет по актуальности шаблонов заданий'
     can_download = True
+    xls_heading_merge = 4
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -35,6 +36,7 @@ class FinishedJobsView(BaseReportView):
     def get_new_grouping(key=''):
         return {
             'key': key,
+            'name': '',
             'plan': 0,
             'finished': 0,
             'ratio': .0
@@ -107,6 +109,7 @@ class FinishedJobsView(BaseReportView):
                     if key not in report_data:
                         report_data[key] = self.get_new_grouping()
                         report_data[key]['key'] = key
+                        report_data[key]['name'] = all_routes_dict.get(key, {}).get('name', '')
 
                     report_data[key]['plan'] += 1
 
@@ -139,6 +142,7 @@ class FinishedJobsView(BaseReportView):
                 for unused_route in unused_routes:
                     key = unused_route['id']
                     report_data[key] = self.get_new_grouping(key)
+                    report_data[key]['name'] = all_routes_dict.get(key, {}).get('name', '')
 
         kwargs.update(
             stats=stats,
@@ -150,12 +154,12 @@ class FinishedJobsView(BaseReportView):
     def write_xls_data(self, worksheet, context):
         worksheet = super(FinishedJobsView, self).write_xls_data(worksheet, context)
 
-        for col in range(4):
+        for col in range(5):
             worksheet.col(col).width = 5000
 
         # header
         worksheet.write_merge(
-            1, 1, 0, 3, 'За период: %s - %s' % (
+            1, 1, 0, 4, 'За период: %s - %s' % (
                 date_format(context['cleaned_data']['dt_from'], 'd.m.Y H:i'),
                 date_format(context['cleaned_data']['dt_to'], 'd.m.Y H:i')
             )
@@ -166,15 +170,15 @@ class FinishedJobsView(BaseReportView):
             style=self.styles['left_center_style']
         )
 
-        worksheet.write_merge(2, 2, 2, 3, '', style=self.styles['bottom_border_style'])
+        worksheet.write_merge(2, 2, 2, 4, '', style=self.styles['bottom_border_style'])
 
         worksheet.write_merge(
-            3, 3, 0, 3, 'Всего шаблонов заданий в базе ССМТ: %s' % context['stats']['total'],
+            3, 3, 0, 4, 'Всего шаблонов заданий в базе ССМТ: %s' % context['stats']['total'],
             style=self.styles['right_center_style']
         )
 
         worksheet.write_merge(
-            4, 4, 0, 3, 'Из них неактуальных заданий: %s' % context['stats']['non_actual'],
+            4, 4, 0, 4, 'Из них неактуальных заданий: %s' % context['stats']['non_actual'],
             style=self.styles['right_center_style']
         )
 
@@ -183,15 +187,18 @@ class FinishedJobsView(BaseReportView):
             5, 6, 0, 0, ' № шаблона задания\nиз ССМТ', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 5, 1, 2, ' Кол-во путевых листов', style=self.styles['border_center_style']
+            5, 6, 1, 1, ' Наименование шаблона задания', style=self.styles['border_center_style']
         )
         worksheet.write_merge(
-            5, 6, 3, 3, ' Актуальность, %', style=self.styles['border_center_style']
+            5, 5, 2, 3, ' Кол-во путевых листов', style=self.styles['border_center_style']
         )
-        worksheet.write(6, 1, ' Заявлено', style=self.styles['border_center_style'])
-        worksheet.write(6, 2, ' Исполнялось*', style=self.styles['border_center_style'])
+        worksheet.write(6, 2, ' Заявлено', style=self.styles['border_center_style'])
+        worksheet.write(6, 3, ' Исполнялось*', style=self.styles['border_center_style'])
+        worksheet.write_merge(
+            5, 6, 4, 4, ' Актуальность, %', style=self.styles['border_center_style']
+        )
 
-        for i in range(4):
+        for i in range(5):
             worksheet.write(7, i, str(i + 1), style=self.styles['border_center_style'])
 
         for i in range(1, 8):
@@ -200,9 +207,10 @@ class FinishedJobsView(BaseReportView):
         # body
         for i, row in enumerate(context['report_data'].values(), 8):
             worksheet.write(i, 0, row['key'], style=self.styles['border_left_style'])
-            worksheet.write(i, 1, row['plan'], style=self.styles['border_right_style'])
-            worksheet.write(i, 2, row['finished'], style=self.styles['border_right_style'])
-            worksheet.write(i, 3, row['ratio'], style=self.styles['border_right_style'])
+            worksheet.write(i, 1, row['name'], style=self.styles['border_left_style'])
+            worksheet.write(i, 2, row['plan'], style=self.styles['border_right_style'])
+            worksheet.write(i, 3, row['finished'], style=self.styles['border_right_style'])
+            worksheet.write(i, 4, row['ratio'], style=self.styles['border_right_style'])
             worksheet.row(i).height = REPORT_ROW_HEIGHT
 
         return worksheet

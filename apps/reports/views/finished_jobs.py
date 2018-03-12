@@ -20,7 +20,6 @@ class FinishedJobsView(BaseReportView):
     form_class = forms.FinishedJobsForm
     template_name = 'reports/finished_jobs.html'
     report_name = 'Отчет по актуальности шаблонов заданий'
-    can_download = True
     xls_heading_merge = 4
 
     def get_default_form(self):

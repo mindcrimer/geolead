@@ -26,7 +26,6 @@ class DischargeView(BaseReportView):
     form_class = forms.FuelDischargeForm
     template_name = 'reports/discharge.html'
     report_name = 'Отчет по перерасходу топлива'
-    can_download = True
 
     def __init__(self, *args, **kwargs):
         super(DischargeView, self).__init__(*args, **kwargs)

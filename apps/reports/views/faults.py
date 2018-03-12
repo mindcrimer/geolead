@@ -22,7 +22,6 @@ class FaultsView(BaseReportView):
     form_class = forms.FaultsForm
     template_name = 'reports/faults.html'
     report_name = 'Отчет о состоянии оборудования ССМТ'
-    can_download = True
 
     def __init__(self, *args, **kwargs):
         super(FaultsView, self).__init__(*args, **kwargs)

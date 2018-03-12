@@ -26,11 +26,12 @@
         <tr>
           <td>Гос № ТС</td>
           <td>ФИО водителя</td>
-          <td>Время начала смены из путевого листа</td>
+          <td>Время начала смены<br/>из путевого листа</td>
           <td>№ шаблона задания</td>
           <td>Название шаблона задания</td>
-          <td>Фактическое место/геозона (в рамках шаблона задания) на начало смены</td>
+          <td>Фактическое место/геозона<br/>(в рамках шаблона задания) на начало смены</td>
           <td>Фактическое место/геозона на начало смены</td>
+          <td>Тип фактического места/геозоны<br/>на начало смены</td>
         </tr>
 
         </thead>
@@ -45,6 +46,7 @@
             <td>{{ row['route_title'] }}</td>
             <td>{{ row['route_fact_start'] }}</td>
             <td>{{ row['fact_start'] }}</td>
+            <td class="tright">{{ row['point_type'] }}</td>
           </tr>
           </tbody>
         {%- endfor -%}
@@ -63,10 +65,12 @@
         <tr>
           <td>Гос № ТС</td>
           <td>ФИО водителя</td>
-          <td>Время окончания смены из путевого листа</td>
+          <td>Время окончания смены<br/>из путевого листа</td>
           <td>№ шаблона задания</td>
           <td>Название шаблона задания</td>
-          <td>Время фактического прибытия</td>
+          <td>Фактическое место/геозона<br/>прибытия</td>
+          <td>Тип фактического<br/>места/геозоны прибытия</td>
+          <td>Время фактического<br/>прибытия</td>
           <td>**Отклонение, ч</td>
         </tr>
         </thead>
@@ -79,6 +83,8 @@
             <td>{{ row['job_date_end']|date('d.m.Y H:i:s') }}</td>
             <td>{{ row['route_id'] }}</td>
             <td>{{ row['route_title'] }}</td>
+            <td>{{ row['point_title'] }}</td>
+            <td class="tright">{{ row['point_type'] }}</td>
             <td>{{ row['fact_end']|date('d.m.Y H:i:s') }}</td>
             <td class="tright">{{ row['delta'] }}</td>
           </tr>
@@ -100,7 +106,7 @@
         </td>
       </tr>
       <tr>
-        <td>** более 30 мин. от планового завершения смены</td>
+        <td>** более {{ form.cleaned_data.get('job_end_timeout', 30) }} мин. от планового завершения смены</td>
       </tr>
     </table>
   </div>
@@ -116,17 +122,34 @@
 
       <div class="form-controls">
         <div class="uk-margin">
-          <label class="uk-form-label" for="report_from">С</label>
-          <input class="uk-input dt-input" name="dt_from" id="report_from"
+          <label class="uk-form-label" for="report_dt_from">С</label>
+          <input class="uk-input dt-input" name="dt_from" id="report_dt_from"
                  value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
           <div class="errors">{{ form.errors.get('dt_from', '') }}</div>
         </div>
 
         <div class="uk-margin">
-          <label class="uk-form-label" for="dt_to">По</label>
-          <input class="uk-input dt-input" name="dt_to" id="report_to"
+          <label class="uk-form-label" for="report_dt_to">По</label>
+          <input class="uk-input dt-input" name="dt_to" id="report_dt_to"
                  value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
           <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
+          <label class="uk-form-label" for="report_job_end_timeout">
+            Максимальная продолжительность отсутствия объекта в месте окончания смены
+          </label>
+          <input type="number" step="1" min="0" max="300" class="uk-input"
+                 name="job_end_timeout" id="report_job_end_timeout"
+                 value="{{ form.cleaned_data['job_end_timeout'] if form.cleaned_data and form.cleaned_data.get('job_end_timeout') else '30' }}">
+          <div class="errors">{{ form.errors.get('job_end_timeout', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
+          <input class="uk-checkbox" name="include_fixed" id="report_include_fixed"
+              {% if form.cleaned_data.get('include_fixed') %} checked{% endif %} type="checkbox">
+          <label class="uk-form-label" for="report_include_fixed">&nbsp;Включить фиксированные задания</label>
+          <div class="errors">{{ form.errors.get('include_fixed', '') }}</div>
         </div>
 
         <div class="uk-margin">

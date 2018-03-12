@@ -25,7 +25,6 @@ class DrivingStyleView(BaseReportView):
     form_class = forms.DrivingStyleForm
     template_name = 'reports/driving_style.html'
     report_name = 'Отчет нарушений ПДД и инструкции по эксплуатации техники'
-    can_download = True
     xls_heading_merge = 4
 
     def __init__(self, *args, **kwargs):

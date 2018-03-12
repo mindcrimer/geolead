@@ -23,7 +23,6 @@ class OverstatementsView(BaseReportView):
     form_class = forms.OverstatementsForm
     template_name = 'reports/overstatements.html'
     report_name = 'Отчет о сверхнормативных простоях'
-    can_download = True
     xls_heading_merge = 7
 
     def get_default_form(self):
@@ -292,15 +291,12 @@ class OverstatementsView(BaseReportView):
             4, 7, ' *Перепростой\n/перенахождение, ч.', style=self.styles['border_center_style']
         )
 
-        for i in range(8):
-            worksheet.write(5, i, str(i + 1), style=self.styles['border_center_style'])
-
-        for i in range(1, 6):
+        for i in range(1, 5):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
         worksheet.row(4).height = 780
 
         # body
-        i = 6
+        i = 5
         for row in context['report_data']:
             worksheet.write(i, 0, row['fact_period'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['plan_period'], style=self.styles['border_left_style'])

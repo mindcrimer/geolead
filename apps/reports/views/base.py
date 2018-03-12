@@ -28,7 +28,6 @@ class BaseReportView(BaseTemplateView):
     form_class = None
     report_name = ''
     context_dump_fields = ('report_data',)
-    can_download = False
     xls_heading_merge = 3
 
     def __init__(self, *args, **kwargs):
@@ -42,7 +41,6 @@ class BaseReportView(BaseTemplateView):
 
     def get_default_context_data(self, **kwargs):
         context = {
-            'can_download': self.can_download,
             'None': None,
             'report_data': None,
             'report_name': self.report_name,

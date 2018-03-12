@@ -62,6 +62,15 @@ class InvalidJobStartEndForm(forms.Form):
     """Форма отчета о несвоевременном начале и окончании выполнения задания" """
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
+    include_fixed = forms.BooleanField(
+        label=_('Включить фиксированные задания'), initial=False, widget=forms.CheckboxInput,
+        required=False
+    )
+    job_end_timeout = forms.IntegerField(
+        max_value=300, min_value=0,
+        label=_('Максимальная продолжительность отсутствия объекта в месте окончания смены'),
+        initial=30
+    )
 
 
 class OverstatementsForm(forms.Form):

@@ -22,6 +22,7 @@ class FaultsView(BaseReportView):
     form_class = forms.FaultsForm
     template_name = 'reports/faults.html'
     report_name = 'Отчет о состоянии оборудования ССМТ'
+    xls_heading_merge = 5
 
     def __init__(self, *args, **kwargs):
         super(FaultsView, self).__init__(*args, **kwargs)
@@ -197,7 +198,7 @@ class FaultsView(BaseReportView):
 
                             data = [r['c'] for r in rows]
 
-                            analyze_result = self.analyze_sensor_data(field, data)
+                            analyze_result, values = self.analyze_sensor_data(field, data)
                             if analyze_result in (None, True):
                                 if analyze_result:
                                     # все отлично, данные меняются и они есть
@@ -219,16 +220,24 @@ class FaultsView(BaseReportView):
                                         )
 
                                 break
+
                             # если в последней попытке тоже не нашел различающиеся данные
-                            elif analyze_result is False and attempt == len(attempts) - 1:
+                            elif attempt == len(attempts) - 1:
                                 sensor = field
                                 if field == 'ВСЕ':
                                     sensor = 'Антенна GPS'
 
+                                value = list(values)[0] if values else ''
+                                if sensor in ('Ближний свет фар', 'Ремень', 'Зажигание'):
+                                    if value == '1.00':
+                                        value = 'Вкл'
+                                    elif value == '0.00':
+                                        value = 'Выкл'
+
                                 self.add_report_row(
                                     job, unit_name,
-                                    'Датчик "%s" отправляет одни и те же '
-                                    'данные в течение смены' % sensor
+                                    'Датчик "%s" отправляет одинаковое '
+                                    'значение (%s) в течение смены' % (sensor, value)
                                 )
 
         self.stats['total'] = len(self.stats['total'])
@@ -275,9 +284,9 @@ class FaultsView(BaseReportView):
             values = set(map(lambda x: x[3], data))
 
         if not values:
-            return None
+            return None, set()
 
-        return len(values) > 1
+        return len(values) > 1, values
 
     def add_report_row(self, job, unit_name, fault, place=None, dt=None,
                        sum_broken_work_time=None):
@@ -378,21 +387,24 @@ class FaultsView(BaseReportView):
         )
 
         # head
-        worksheet.write_merge(5, 6, 0, 0, ' Гос№ ТС', style=self.styles['border_left_style'])
+        worksheet.write_merge(5, 6, 0, 0, ' Гос№ ТС', style=self.styles['border_center_style'])
         worksheet.write_merge(
-            5, 5, 1, 2, ' Последняя полученная информация', style=self.styles['border_left_style']
+            5, 5, 1, 2, ' Последняя полученная информация',
+            style=self.styles['border_center_style']
         )
-        worksheet.write_merge(5, 6, 3, 3, ' ФИО водителя', style=self.styles['border_left_style'])
+        worksheet.write_merge(
+            5, 6, 3, 3, ' ФИО водителя', style=self.styles['border_center_style']
+        )
         worksheet.write_merge(
             5, 6, 4, 4, ' Суммарное\nнеисправное\nрабочее время, ч',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
         worksheet.write_merge(
             5, 6, 5, 5, ' Наименование возможно\nнеисправного оборудования (ДУТ, ...)',
-            style=self.styles['border_left_style']
+            style=self.styles['border_center_style']
         )
-        worksheet.write(6, 1, ' Место/геозона', style=self.styles['border_left_style'])
-        worksheet.write(6, 2, ' Время', style=self.styles['border_left_style'])
+        worksheet.write(6, 1, ' Место/геозона', style=self.styles['border_center_style'])
+        worksheet.write(6, 2, ' Время', style=self.styles['border_center_style'])
 
         for i in range(6):
             worksheet.write(7, i, str(i + 1), style=self.styles['border_center_style'])
@@ -415,6 +427,7 @@ class FaultsView(BaseReportView):
                 i, 4, row['sum_broken_work_time'], style=self.styles['border_right_style']
             )
             worksheet.write(i, 5, row['fault'], style=self.styles['border_left_style'])
-            worksheet.row(i).height = 520
+            worksheet.row(i).height = 780
+            worksheet.row(i).height_mismatch = True
 
         return worksheet

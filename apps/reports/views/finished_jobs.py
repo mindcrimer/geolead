@@ -104,7 +104,7 @@ class FinishedJobsView(BaseReportView):
                             )
                         continue
 
-                    key = job.route_id
+                    key = int(job.route_id)
                     used_routes.add(key)
                     if key not in report_data:
                         report_data[key] = self.get_new_grouping()
@@ -131,11 +131,11 @@ class FinishedJobsView(BaseReportView):
                     v['ratio'] = round((v['finished'] / v['plan']) * 100, 2)
 
                 # убираем полностью завершенные
-                report_data = {
-                    x[0]: x[1]
+                report_data = OrderedDict(
+                    (x[0], x[1])
                     for x in report_data.items()
                     if x[1]['ratio'] < 100 - form.cleaned_data['non_actual_param']
-                }
+                )
 
                 # добавим те, которые вообще не использовались:
                 unused_routes = [x for x in routes_dict.values() if x['id'] not in used_routes]
@@ -156,6 +156,7 @@ class FinishedJobsView(BaseReportView):
 
         for col in range(5):
             worksheet.col(col).width = 5000
+        worksheet.col(1).width = 12000
 
         # header
         worksheet.write_merge(
@@ -205,12 +206,26 @@ class FinishedJobsView(BaseReportView):
             worksheet.row(i).height = REPORT_ROW_HEIGHT
 
         # body
-        for i, row in enumerate(context['report_data'].values(), 8):
+        i = 8
+        for row in context['report_data'].values():
             worksheet.write(i, 0, row['key'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['name'], style=self.styles['border_left_style'])
             worksheet.write(i, 2, row['plan'], style=self.styles['border_right_style'])
             worksheet.write(i, 3, row['finished'], style=self.styles['border_right_style'])
             worksheet.write(i, 4, row['ratio'], style=self.styles['border_right_style'])
             worksheet.row(i).height = REPORT_ROW_HEIGHT
+            i += 1
+
+        worksheet.write_merge(
+            i + 1, i + 1, 0, 4,
+            '''
+* Исполненое задание - по факту работы транспорта в рамках одного путевого листа было
+зафиксировано посещение заданных заданием геозон, хотя бы однократно.
+Условие неактуальности шаблона задания: более %s%% неисполненных заданий
+''' %
+            context['cleaned_data'].get('non_actual_param', 20),
+            style=self.styles['left_center_style']
+        )
+        worksheet.row(i + 1).height = 520 * 2
 
         return worksheet

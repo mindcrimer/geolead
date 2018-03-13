@@ -33,8 +33,10 @@ class FaultsView(BaseReportView):
             'total': set(),
             'broken': set()
         }
+        # ВСЕ должен быть первым!
         self.known_sensors = (
             'ВСЕ',
+            'GPS антенна',
             'Ближний свет фар',
             'Ремень',
             'Зажигание',
@@ -46,7 +48,8 @@ class FaultsView(BaseReportView):
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
-            'dt': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
+            'dt': (datetime.datetime.now() - datetime.timedelta(days=1))
+            .replace(hour=0, minute=0, second=0, tzinfo=utc),
             'job_extra_offset': 2
         }
         return self.form_class(data)
@@ -100,7 +103,7 @@ class FaultsView(BaseReportView):
                 ura_user = self.user.ura_user if self.user.ura_user_id else self.user
                 jobs = Job.objects.filter(
                     user=ura_user, date_begin__lt=dt_to_utc, date_end__gt=dt_from_utc
-                )
+                ).order_by('unit_title')
 
                 if jobs:
                     dt_from, dt_to = get_period(
@@ -171,23 +174,35 @@ class FaultsView(BaseReportView):
 
                     if 'ВСЕ' not in report_tables:
                         self.add_report_row(
-                            job, unit_name, 'Нет данных от блока мониторинга'
+                            job,
+                            unit_name,
+                            'Нет данных от блока мониторинга',
+                            sensor=None
                         )
                         continue
 
+                    has_movings = False
                     for field in self.known_sensors:
                         if field not in report_tables and field != 'ВСЕ':
                             # проверим, возможно датчик и не настроен
                             unit_sensors = self.get_unit_sensors(int(job.unit_id), sess_id=sess_id)
                             if field.lower() in unit_sensors:
                                 self.add_report_row(
-                                    job, unit_name, 'Нет данных по датчику "%s"' % field
+                                    job,
+                                    unit_name,
+                                    'Нет данных по датчику "%s"' % field,
+                                    sensor=field
                                 )
                             continue
 
                         # перебираем сначала более маленькие выборки, с целью ускорения работы
-                        attempts = (10, 100, max(report_tables[field]['rows'], 10000))
+                        attempts = (10, 100, min(report_tables[field]['rows'], 10000))
                         for attempt, rows_limit in enumerate(attempts):
+
+                            # таблицу ВСЕ придется взять целиком, для оценки движения
+                            if field == 'ВСЕ' and attempt != len(attempts) - 1:
+                                continue
+
                             rows = get_report_rows(
                                 self.user,
                                 report_tables[field]['index'],
@@ -197,6 +212,12 @@ class FaultsView(BaseReportView):
                             )
 
                             data = [r['c'] for r in rows]
+                            if field == 'ВСЕ':
+                                try:
+                                    # есть ли какое-нибудьт изменение скорости?
+                                    has_movings = len(set(map(lambda x: x[4], data))) > 1
+                                except IndexError:
+                                    pass
 
                             analyze_result, values = self.analyze_sensor_data(field, data)
                             if analyze_result in (None, True):
@@ -211,34 +232,58 @@ class FaultsView(BaseReportView):
                                     unit_sensors = self.get_unit_sensors(
                                         int(job.unit_id), sess_id=sess_id
                                     )
-                                    if field == 'ВСЕ' or field.lower() in unit_sensors:
-                                        sensor = field
-                                        if field == 'ВСЕ':
-                                            sensor = 'Антенна GPS'
+                                    if field != 'ВСЕ' and field.lower() in unit_sensors:
                                         self.add_report_row(
-                                            job, unit_name, 'Нет данных по датчику "%s"' % sensor
+                                            job,
+                                            unit_name,
+                                            'Нет данных по датчику "%s"' % field,
+                                            sensor=field
                                         )
 
                                 break
 
                             # если в последней попытке тоже не нашел различающиеся данные
-                            elif attempt == len(attempts) - 1:
-                                sensor = field
-                                if field == 'ВСЕ':
-                                    sensor = 'Антенна GPS'
+                            elif not analyze_result and attempt == len(attempts) - 1:
+                                try:
+                                    value = float(list(values)[0])
+                                except (ValueError, TypeError, IndexError, AttributeError):
+                                    value = 0
 
-                                value = list(values)[0] if values else ''
-                                if sensor in ('Ближний свет фар', 'Ремень', 'Зажигание'):
-                                    if value == '1.00':
+                                if field in {
+                                    'Ближний свет фар', 'Ремень', 'Зажигание', 'GPS антенна'
+                                }:
+                                    if value == 1.0:
                                         value = 'Вкл'
-                                    elif value == '0.00':
+                                    elif value == 0.0:
                                         value = 'Выкл'
 
-                                self.add_report_row(
-                                    job, unit_name,
-                                    'Датчик "%s" отправляет одинаковое '
-                                    'значение (%s) в течение смены' % (sensor, value)
-                                )
+                                # всегда включенный GPS - норма
+                                if field == 'GPS антенна' and value == 'Вкл':
+                                    continue
+
+                                # всегда выключенное зажигание или свет фар
+                                # для стоящей техники - норма
+                                elif not has_movings and field in {
+                                    'Зажигание', 'Ближний свет фар'
+                                } and value == 'Выкл':
+                                    continue
+
+                                # всегда один и тот же уровень топлива для стоящей техники - норма
+                                elif not has_movings and field == 'Датчик уровня топлива':
+                                    continue
+
+                                # всегда выключенный ремень для стоящей техники - норма
+                                elif not has_movings and field == 'Ремень' and value == 'Выкл':
+                                    continue
+
+                                else:
+                                    self.add_report_row(
+                                        job,
+                                        unit_name,
+                                        'Датчик "%s" отправляет одинаковое '
+                                        'значение (%s) в течение смены' % (field, value),
+                                        sensor=field
+                                    )
 
         self.stats['total'] = len(self.stats['total'])
         self.stats['broken'] = len(self.stats['broken'])
@@ -269,8 +314,7 @@ class FaultsView(BaseReportView):
     @staticmethod
     def analyze_sensor_data(label, data):
         """Ищем корректность датчика"""
-        # print(label)
-        if label == 'ВСЕ':  # смотрим данные геолокации (GPS)
+        if label == 'GPS антенна':  # смотрим данные геолокации (GPS)
             values = set(
                 filter(None, map(
                     lambda x: ('%s,%s' % (x[3]['x'], x[3]['y'])) if (
@@ -280,6 +324,8 @@ class FaultsView(BaseReportView):
                 ))
             )
 
+        elif label == 'ВСЕ':
+            values = set()
         else:
             values = set(map(lambda x: x[3], data))
 
@@ -288,13 +334,13 @@ class FaultsView(BaseReportView):
 
         return len(values) > 1, values
 
-    def add_report_row(self, job, unit_name, fault, place=None, dt=None,
-                       sum_broken_work_time=None):
+    def add_report_row(self, job, unit_name, fault, sensor=None):
         report_row = self.get_new_grouping()
         self.stats['broken'].add(unit_name)
         print(fault)
 
-        if place is None and dt is None:
+        dt = place = None
+        if sensor is None:
             dt, place = self.get_last_data(unit_name)
 
         report_row.update(
@@ -305,7 +351,7 @@ class FaultsView(BaseReportView):
             driver_name=job.driver_fio
         )
 
-        if sum_broken_work_time is None and dt:
+        if dt:
             report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
                 job.unit_id,
                 local_to_utc_time(dt, self.user.wialon_tz), job.date_end
@@ -416,7 +462,8 @@ class FaultsView(BaseReportView):
         worksheet.row(4).height = REPORT_ROW_HEIGHT * 2
 
         # body
-        for i, row in enumerate(context['report_data'], start=8):
+        i = 8
+        for row in context['report_data']:
             worksheet.write(i, 0, row['unit'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['place'], style=self.styles['border_left_style'])
             worksheet.write(
@@ -429,5 +476,18 @@ class FaultsView(BaseReportView):
             worksheet.write(i, 5, row['fault'], style=self.styles['border_left_style'])
             worksheet.row(i).height = 780
             worksheet.row(i).height_mismatch = True
+            i += 1
+
+        worksheet.write_merge(
+            i, i, 0, 5,
+            '''
+*Состояния:
+- исправное - передача данных с датчиков и блока (трекера) осуществляется без затруднений;
+- неисправное - отсутствует передача данных с блока (трекера) или датчиков (веса, ДУТ, ...) 
+в течение смены.
+''',
+            style=self.styles['left_center_style']
+        )
+        worksheet.row(i).height = 520 * 3
 
         return worksheet

@@ -12,6 +12,7 @@ from reports.utils import get_period, local_to_utc_time, cleanup_and_request_rep
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
     REPORT_ROW_HEIGHT
 from snippets.jinjaglobals import date as date_format
+from snippets.utils.datetime import utcnow
 from ura.models import Job
 from users.models import User
 from wialon.api import get_units, get_unit_settings
@@ -28,13 +29,12 @@ class FaultsView(BaseReportView):
         super(FaultsView, self).__init__(*args, **kwargs)
         self.last_data = {}
         self.report_data = None
-        self.sensors_report_data = {}
         self.stats = {
             'total': set(),
             'broken': set()
         }
         # ВСЕ должен быть первым!
-        self.known_sensors = (
+        self.known_sensors = {
             'ВСЕ',
             'GPS антенна',
             'Ближний свет фар',
@@ -42,7 +42,7 @@ class FaultsView(BaseReportView):
             'Зажигание',
             'Датчик уровня топлива',
             'Напряжение АКБ'
-        )
+        }
         self.unit_sensors_cache = {}
         self.user = None
 
@@ -57,12 +57,15 @@ class FaultsView(BaseReportView):
     @staticmethod
     def get_new_grouping():
         return {
-            'unit': '',
-            'place': '',
-            'dt': '',
             'driver_name': '',
+            'dt': '',
+            'fault': '',
+            'job_date_end': None,
+            'place': '',
+            'sensor': None,
             'sum_broken_work_time': '',
-            'fault': ''
+            'unit_id': None,
+            'unit_name': ''
         }
 
     def get_context_data(self, **kwargs):
@@ -153,7 +156,6 @@ class FaultsView(BaseReportView):
                     dt_from, dt_to = get_period(
                         job_local_date_begin, job_local_date_to, self.user.wialon_tz
                     )
-                    self.sensors_report_data = {}
                     cleanup_and_request_report(self.user, sensors_template_id, sess_id=sess_id)
                     r = exec_report(
                         self.user, sensors_template_id, dt_from, dt_to,
@@ -285,6 +287,64 @@ class FaultsView(BaseReportView):
                                         sensor=field
                                     )
 
+                local_date_to = utc_to_local_time(utcnow(), self.user.wialon_tz)
+                local_date_from = local_date_to - datetime.timedelta(days=90)
+                dt_from, dt_to = get_period(local_date_from, local_date_to, self.user.wialon_tz)
+
+                for report_row in self.report_data:
+                    if not report_row['sensor'] or not report_row['unit_id']:
+                        continue
+
+                    print('Getting sensor\'s "%s" last message' % report_row['sensor'])
+                    cleanup_and_request_report(self.user, sensors_template_id, sess_id=sess_id)
+                    r = exec_report(
+                        self.user,
+                        sensors_template_id,
+                        dt_from,
+                        dt_to,
+                        sess_id=sess_id,
+                        object_id=report_row['unit_id']
+                    )
+
+                    dt, place = None, None
+                    for table_index, table_info in enumerate(r['reportResult']['tables']):
+                        label = table_info['label'].split('(')[0].strip()
+
+                        if table_info['name'] != 'unit_sensors_tracing' \
+                                or label != report_row['sensor']:
+                            continue
+
+                        rows = get_report_rows(
+                            self.user,
+                            table_index,
+                            rows=5,
+                            level=1,
+                            sess_id=sess_id
+                        )
+
+                        if rows:
+                            dt, place = rows[0]['c'][2], rows[0]['c'][4]
+
+                            if isinstance(dt, dict):
+                                dt = datetime.datetime.utcfromtimestamp(dt['v'])
+                                dt = utc_to_local_time(dt, self.user.wialon_tz)
+                            else:
+                                dt = parse_wialon_report_datetime(dt)
+
+                            if isinstance(place, dict) and 't' in place:
+                                place = place['t']
+
+                    if place:
+                        report_row['place'] = place
+
+                    if dt:
+                        report_row['dt'] = dt
+                        report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
+                            report_row['unit_id'],
+                            local_to_utc_time(dt, self.user.wialon_tz),
+                            report_row['job_date_end']
+                        )
+
         self.stats['total'] = len(self.stats['total'])
         self.stats['broken'] = len(self.stats['broken'])
 
@@ -317,8 +377,8 @@ class FaultsView(BaseReportView):
         if label == 'GPS антенна':  # смотрим данные геолокации (GPS)
             values = set(
                 filter(None, map(
-                    lambda x: ('%s,%s' % (x[3]['x'], x[3]['y'])) if (
-                        x[3] and isinstance(x[3], dict) and 'x' in x[3] and 'y' in x[3]
+                    lambda x: ('%s,%s' % (x[2]['x'], x[2]['y'])) if (
+                        x[2] and isinstance(x[2], dict) and 'x' in x[2] and 'y' in x[2]
                     ) else None,
                     data
                 ))
@@ -339,22 +399,26 @@ class FaultsView(BaseReportView):
         self.stats['broken'].add(unit_name)
         print(fault)
 
-        dt = place = None
+        dt, place = None, None
         if sensor is None:
             dt, place = self.get_last_data(unit_name)
 
         report_row.update(
-            unit=unit_name,
+            unit_id=int(job.unit_id),
+            job_date_end=job.date_end,
+            unit_name=unit_name,
             fault=fault,
             place=place,
             dt=dt,
-            driver_name=job.driver_fio
+            driver_name=job.driver_fio,
+            sensor=sensor
         )
 
         if dt:
             report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
                 job.unit_id,
-                local_to_utc_time(dt, self.user.wialon_tz), job.date_end
+                local_to_utc_time(dt, self.user.wialon_tz),
+                job.date_end
             )
 
         self.report_data.append(report_row)
@@ -464,7 +528,7 @@ class FaultsView(BaseReportView):
         # body
         i = 8
         for row in context['report_data']:
-            worksheet.write(i, 0, row['unit'], style=self.styles['border_left_style'])
+            worksheet.write(i, 0, row['unit_name'], style=self.styles['border_left_style'])
             worksheet.write(i, 1, row['place'], style=self.styles['border_left_style'])
             worksheet.write(
                 i, 2, date_format(row['dt'], 'Y-m-d H:i:s'), style=self.styles['border_left_style']

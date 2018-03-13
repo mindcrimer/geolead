@@ -55,7 +55,7 @@
         {%- for row in report_data -%}
           <tbody>
           <tr>
-            <td>{{ row['unit'] }}</td>
+            <td>{{ row['unit_name'] }}</td>
             <td>{{ row['place'] or '' }}</td>
             <td>{{ row['dt']|date('Y-m-d H:i:s') }}</td>
             <td class="nowrap">{{ row['driver_name'] or '' }}</td>

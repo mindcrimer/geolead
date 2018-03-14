@@ -37,7 +37,8 @@ class DrivingStyleView(BaseReportView):
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
             'normal_rating': 10,
-            'bad_rating': 30
+            'bad_rating': 30,
+            'include_details': True
         }
         return self.form_class(data)
 
@@ -52,12 +53,9 @@ class DrivingStyleView(BaseReportView):
     @staticmethod
     def get_new_period(dt_from, dt_to, job=None):
         return {
+            'details': [],
             'dt_from': dt_from,
             'dt_to': dt_to,
-            't_from': int(dt_from.timestamp()),
-            't_to': int(dt_to.timestamp()),
-            'job': job,
-            'total_time': .0,
             'facts': {
                 'speed': {
                     'count': 0,
@@ -76,6 +74,7 @@ class DrivingStyleView(BaseReportView):
                     'seconds': .0
                 }
             },
+            'job': job,
             'percentage': {
                 'speed': .0,
                 'lights': .0,
@@ -83,7 +82,9 @@ class DrivingStyleView(BaseReportView):
                 'devices': .0
             },
             'rating': 100.0,
-            'details': []
+            't_from': int(dt_from.timestamp()),
+            't_to': int(dt_to.timestamp()),
+            'total_time': .0
         }
 
     @staticmethod
@@ -301,24 +302,25 @@ class DrivingStyleView(BaseReportView):
                                         viol_key = ''
 
                                     if viol_key:
-                                        if detail_data:
-                                            detail_data['dt_from'] = parse_wialon_report_datetime(
-                                                row['c'][2]['t']
-                                                if isinstance(row['c'][2], dict)
-                                                else row['c'][2]
-                                            )
-                                            detail_data['dt_to'] = parse_wialon_report_datetime(
-                                                row['c'][3]['t']
-                                                if isinstance(row['c'][3], dict)
-                                                else row['c'][3]
-                                            )
+                                        detail_data['dt_from'] = parse_wialon_report_datetime(
+                                            row['c'][2]['t']
+                                            if isinstance(row['c'][2], dict)
+                                            else row['c'][2]
+                                        )
+                                        detail_data['dt_to'] = parse_wialon_report_datetime(
+                                            row['c'][3]['t']
+                                            if isinstance(row['c'][3], dict)
+                                            else row['c'][3]
+                                        )
 
-                                            delta = min(row['t2'], period['t_to']) - \
-                                                max(row['t1'], period['t_from'])
-                                            detail_data[viol_key]['seconds'] = delta
+                                        delta = min(row['t2'], period['t_to']) - \
+                                            max(row['t1'], period['t_from'])
+                                        detail_data[viol_key]['seconds'] = delta
+
+                                        if self.form.cleaned_data['include_details']:
                                             period['details'].append(detail_data)
-                                            period['facts'][viol_key]['count'] += 1
-                                            period['facts'][viol_key]['seconds'] += delta
+                                        period['facts'][viol_key]['count'] += 1
+                                        period['facts'][viol_key]['seconds'] += delta
 
                             for viol_key in ('speed', 'lights', 'belt', 'devices'):
                                 percentage = min(

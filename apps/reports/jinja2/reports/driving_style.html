@@ -243,6 +243,13 @@
         </div>
 
         <div class="uk-margin">
+          <input class="uk-checkbox" name="include_details" id="report_include_details"
+              {% if form.cleaned_data.get('include_details')  %} checked{% endif %} type="checkbox">
+          <label class="uk-form-label" for="report_include_details">&nbsp;Детализация</label>
+          <div class="errors">{{ form.errors.get('include_details', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
           <button class="uk-button uk-button-primary">Создать</button>
         </div>
       </div>

@@ -18,6 +18,9 @@ class DrivingStyleForm(forms.Form):
             'с возможным лишением части премии'
         ), min_value=0, max_value=99, initial=30, required=True
     )
+    include_details = forms.BooleanField(
+        label=_('Детализация'), initial=True, widget=forms.CheckboxInput, required=False
+    )
 
     def clean(self):
         cleaned_data = self.cleaned_data

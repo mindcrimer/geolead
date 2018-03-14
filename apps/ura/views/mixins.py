@@ -102,7 +102,7 @@ class BaseUraRidesView(URAResource):
             )
         except ReportException as e:
             raise WialonException(
-                'Не удалось получить в Wialon отчет о поездках. Исходная ошибка: %s' % e
+                'Не удалось получить в Wialon отчет о поездках: %s' % e
             )
 
         for table_index, table_info in enumerate(r['reportResult']['tables']):

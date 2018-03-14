@@ -10,9 +10,7 @@ from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
 from wialon.exceptions import WialonException
 
-WIALON_INTERNAL_EXCEPTION = \
-    'Произошла ошибка при получении данных. ' \
-    'Пожалуйста, повторите ваш запрос позже или сократите период отчета. Ошибка: %s'
+WIALON_INTERNAL_EXCEPTION = 'Ошибка при получении данных: %s'
 
 WIALON_SESSION_EXPIRED = 'Ваша сессия устарела. Зайдите через APPS еще раз.'
 

@@ -182,8 +182,9 @@ class URAResource(TemplateView):
                 )
 
         return error_response(
-            'Лимит попыток обращения к источнику данных (%s попыток) закончился.'
-            'Последняя найденная ошибка: %s' % (attempts_limit, last_error),
+            'Лимит попыток обращения в Wialon (%s) закончился. %s' % (
+                attempts_limit, last_error
+            ),
             status=400,
             code='attempts_limit'
         )

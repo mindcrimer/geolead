@@ -16,7 +16,6 @@ DEBUG = False
 
 ADMINS = (
     ('Rafael Kamashev', 'wizzzet@gmail.com'),
-    ('Rafael Kamashev', 'rkamashev@yandex.ru')
 )
 MANAGERS = ADMINS
 

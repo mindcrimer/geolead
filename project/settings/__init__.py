@@ -149,6 +149,7 @@ INSTALLED_APPS = (
     'base',
     # приложения проекта
     'core',
+    'notifications',
     'reports',
     'ura',
     'users'
@@ -203,6 +204,7 @@ SUIT_CONFIG = {
     'ADMIN_NAME': 'Интеграция УРА-Wialon',
     'MENU_OPEN_FIRST_CHILD': True,
     'MENU': [
+        'notifications',
         'reports',
         'ura',
         'users'

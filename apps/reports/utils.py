@@ -10,7 +10,7 @@ from django.utils.timezone import utc
 import requests
 
 from base.exceptions import ReportException
-from reports.models import ReportLog
+from reports.models import WialonReportLog
 from reports.views.base import WIALON_INTERNAL_EXCEPTION, WIALON_SESSION_EXPIRED
 from snippets.utils.datetime import utcnow
 from ura.models import Job
@@ -197,20 +197,19 @@ def throttle_report(user):
         (и на всякий случай добавим еще 5 минут)
         """
         since_dt = utcnow() - datetime.timedelta(seconds=60 + 5)
-        count = ReportLog.objects.filter(user=for_user, created__gte=since_dt).count()
-        # print('Reports since %s count: %s' % (since_dt, count))
+        count = WialonReportLog.objects.filter(user=for_user, created__gte=since_dt).count()
         return count
 
     while attempts > 0 \
             and get_executed_reports_count(user) >= settings.WIALON_REPORTS_PER_MINUTE_LIMIT:
         throttle_delta_cumulatime += settings.WIALON_REPORTS_THROTTLE_TIME
-        print('Report of user %s throttled for %s sec (attempts: %s)' % (
+        print('Report of user %s was throttled for %s sec (attempts: %s)' % (
             user.username, throttle_delta_cumulatime, attempts
         ))
         time.sleep(settings.WIALON_REPORTS_THROTTLE_TIME)
         attempts -= 1
 
-    ReportLog.objects.create(user=user)
+    WialonReportLog.objects.create(user=user)
     return True
 
 

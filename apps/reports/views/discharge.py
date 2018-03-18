@@ -30,9 +30,11 @@ class DischargeView(BaseReportView):
     def __init__(self, *args, **kwargs):
         super(DischargeView, self).__init__(*args, **kwargs)
         self.user = None
-        self.overspanding_total = .0
-        self.discharge_total = .0
-        self.overspanding_count = 0
+        self.stats = {
+            'overspanding_total': .0,
+            'discharge_total': .0,
+            'overspanding_count': 0
+        }
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -104,7 +106,8 @@ class DischargeView(BaseReportView):
                     raise ReportException(str(e))
 
                 units_dict = OrderedDict((u['id'], u) for u in units_list)
-                print('Всего ТС: %s' % len(units_dict))
+                jobs_count = len(units_dict)
+                print('Всего ТС: %s' % jobs_count)
 
                 dt_from_utc = local_to_utc_time(form.cleaned_data['dt_from'], self.user.wialon_tz)
                 dt_to_utc = local_to_utc_time(
@@ -131,7 +134,7 @@ class DischargeView(BaseReportView):
                 for unit_id, unit in units_dict.items():
                     i += 1
                     unit_name = unit['name']
-                    print('%s) %s' % (i, unit_name))
+                    print('%s/%s) %s' % (i, jobs_count, unit_name))
 
                     # норматив потребления доп.оборудования, л / час
                     extras_values = [
@@ -271,8 +274,8 @@ class DischargeView(BaseReportView):
                                     volume = .0
 
                                 period['discharge']['volume'] += volume
-                                self.discharge_total += volume
-                                self.overspanding_count += 1
+                                self.stats['discharge_total'] += volume
+                                self.stats['overspanding_count'] += 1
 
                                 period['details'].append({
                                     'place': place,
@@ -353,7 +356,7 @@ class DischargeView(BaseReportView):
                                    - total_facts
 
                                 period['overspanding'] = overspanding
-                                self.overspanding_total += overspanding
+                                self.stats['overspanding_total'] += overspanding
 
                         period['dt_from'] = utc_to_local_time(
                             period['dt_from'], self.user.wialon_tz
@@ -372,12 +375,10 @@ class DischargeView(BaseReportView):
                     )
 
         kwargs.update(
-            discharge_total=self.discharge_total,
             enumerate=enumerate,
-            overspanding_count=self.overspanding_count,
-            overspanding_total=self.overspanding_total,
             report_data=report_data,
-            today=datetime.date.today()
+            today=datetime.date.today(),
+            stats=self.stats
         )
 
         return kwargs
@@ -428,18 +429,20 @@ class DischargeView(BaseReportView):
         )
         worksheet.write_merge(
             2, 2, 0, 17, 'Итого перерасход, л: %s' % floatformat(
-                context.get('overspanding_total', 0) or 0, -2
+                context.get('stats', {}).get('overspanding_total', 0) or 0, -2
             ),
             style=self.styles['left_center_style']
         )
         worksheet.write_merge(
             3, 3, 0, 17, 'Итого слив, л: %s' % floatformat(
-                context.get('discharge_total', 0) or 0, -2
+                context.get('stats', {}).get('discharge_total', 0) or 0, -2
             ),
             style=self.styles['left_center_style']
         )
         worksheet.write_merge(
-            4, 4, 0, 17, 'Зафиксировано случаев слива: %s' % context.get('overspanding_count', 0),
+            4, 4, 0, 17,
+            'Зафиксировано случаев слива: %s' %
+            context.get('stats', {}).get('overspanding_count', 0) or 0,
             style=self.styles['left_center_style']
         )
         worksheet.write_merge(
@@ -687,7 +690,7 @@ class DischargeView(BaseReportView):
                     worksheet.row(i).height = 520
 
         worksheet.write_merge(
-            i + 1, i + 1, 0, 12,
+            i + 1, i + 1, 0, 17,
             '''* В случае превышения фактического расхода топлива на нормативы более чем на %s%%
 ** исходя из нормативов л/100км, с добавочным коэффициентом на работу оборудования
 *** исходя из нормативов л/час при заведенном двигателе на холостых оборотах, 

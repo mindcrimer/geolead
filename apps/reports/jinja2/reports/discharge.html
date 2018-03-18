@@ -7,13 +7,13 @@
     {{ form.cleaned_data.dt_to|date('d.m.Y H:i') }}
   </div>
   <div class="report__heading-row uk-margin">
-    Итого перерасход, л: {{ overspanding_total|floatformat(-2) or 0 -}}
+    Итого перерасход, л: {{ stats['overspanding_total']|floatformat(-2) or 0 -}}
   </div>
   <div class="report__heading-row uk-margin">
-    Итого слив, л: {{ discharge_total|floatformat(-2) or 0 -}}
+    Итого слив, л: {{ stats['discharge_total']|floatformat(-2) or 0 -}}
   </div>
   <div class="report__heading-row uk-margin">
-    Зафиксировано случаев слива: {{ overspanding_count or 0 -}}
+    Зафиксировано случаев слива: {{ stats['overspanding_count'] or 0 -}}
   </div>
 {%- endblock -%}
 

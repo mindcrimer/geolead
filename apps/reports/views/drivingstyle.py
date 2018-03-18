@@ -165,7 +165,8 @@ class DrivingStyleView(BaseReportView):
 
                 template_id = get_wialon_report_template_id('driving_style_individual', self.user)
 
-                print('Всего ТС: %s' % len(units_dict))
+                jobs_count = len(units_dict)
+                print('Всего ТС: %s' % jobs_count)
 
                 mobile_vehicle_types = set()
                 if self.user.wialon_mobile_vehicle_types:
@@ -178,7 +179,7 @@ class DrivingStyleView(BaseReportView):
                 for unit_id, unit in units_dict.items():
                     i += 1
                     unit_name = unit['name']
-                    print('%s) %s' % (i, unit_name))
+                    print('%s/%s) %s' % (i, jobs_count, unit_name))
 
                     vehicle_type = unit['vehicle_type'].lower()
 
@@ -462,7 +463,7 @@ class DrivingStyleView(BaseReportView):
         worksheet.write_merge(2, 2, 3, 9, '', style=self.styles['bottom_border_style'])
 
         worksheet.write_merge(
-            3, 3, 0, 16, 'Детализация нарушений ПДД и инструкции по эксплуатации техники:',
+            3, 3, 0, 17, 'Детализация нарушений ПДД и инструкции по эксплуатации техники:',
             style=self.styles['right_center_style']
         )
 

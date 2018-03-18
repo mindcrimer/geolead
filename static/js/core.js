@@ -4,13 +4,17 @@ $(document).ready(function() {
   $('.dt-input').each(function () {
     $(this).datetimepicker({
       format: 'd.m.Y H:i',
-      value: $(this).val()
+      value: $(this).val(),
+      lang:'ru',
+      dayOfWeekStart: 1
     });
   });
 
   $('.date-input').datetimepicker({
     format: 'd.m.Y',
-    timepicker: false
+    timepicker: false,
+    lang:'ru',
+    dayOfWeekStart: 1
   });
 
   $('.grouping').click(function () {

@@ -343,7 +343,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
-    cache_key = 'routes:%s' % sess_id
+    cache_key = 'routes:%s:%s' % (sess_id, '1' if with_points else '0')
     routes_list = cache.get(cache_key)
 
     if routes_list:

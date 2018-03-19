@@ -70,7 +70,7 @@ class BaseUraRidesView(URAResource):
             self.route = routes_dict[int(self.job.route_id)]
         except (ValueError, KeyError):
             raise APIProcessError(
-                'Маршрут id=%s не найден среди известных мармрутов' % self.job.route_id
+                'Маршрут id=%s не найден среди известных маршрутов' % self.job.route_id
             )
 
         self.route_point_names = [x['name'] for x in self.route['points']] if self.route else []

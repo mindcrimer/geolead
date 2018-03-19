@@ -121,7 +121,8 @@ class JobLogAdmin(ExportMixin, admin.ModelAdmin):
     list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')
     list_display_links = ('id', 'job_id')
     list_filter = ('response_status', 'user', 'resolution')
-    list_select_related = True
+    list_select_related = False
+    list_per_page = 20
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
     resource_class = import_export.JobLogResource
     search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')

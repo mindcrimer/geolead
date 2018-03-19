@@ -11,6 +11,7 @@ from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_N
     REPORT_ROW_HEIGHT
 from snippets.jinjaglobals import date as date_format
 from ura.models import Job
+from ura.utils import is_fixed_route
 from users.models import User
 from wialon.api import get_routes
 
@@ -72,8 +73,7 @@ class FinishedJobsView(BaseReportView):
 
                 routes_list = get_routes(sess_id=sess_id, user=user, with_points=True)
                 routes_dict = {
-                    x['id']: x for x in routes_list
-                    if 'фиксирован' not in x['name'].lower()
+                    x['id']: x for x in routes_list if not is_fixed_route(x['name'])
                 }
                 all_routes_dict = {x['id']: x for x in routes_list}
                 used_routes = set()
@@ -95,7 +95,7 @@ class FinishedJobsView(BaseReportView):
                     if not route:
                         possible_route_name = all_routes_dict.get(int(job.route_id), {})\
                             .get('name', '')
-                        if 'фиксирован' not in possible_route_name.lower():
+                        if not is_fixed_route(possible_route_name):
                             print(
                                 'Route not found (job_id: %s, route name: %s)' % (
                                     job.pk, possible_route_name

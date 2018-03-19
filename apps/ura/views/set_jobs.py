@@ -3,7 +3,7 @@ from snippets.utils.datetime import utcnow
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import XMLResponse, error_response
-from ura.utils import parse_xml_input_data, parse_datetime
+from ura.utils import parse_xml_input_data, parse_datetime, register_job_notifications
 from wialon.api import get_routes, get_units
 
 
@@ -44,13 +44,13 @@ class URASetJobsResource(URAResource):
                 data['user'] = request.user
 
                 units = get_units(user=request.user)
-                routes = get_routes(user=request.user)
+                routes = get_routes(user=request.user, with_points=True)
 
                 units_cache = {
                     u['id']: '%s (%s) [%s]' % (u['name'], u['number'], u['vin'])
                     for u in units
                 }
-                routes_cache = {r['id']: r['name'] for r in routes}
+                routes_cache = {r['id']: r for r in routes}
 
                 try:
                     data['unit_title'] = units_cache.get(int(data['unit_id']))
@@ -58,11 +58,18 @@ class URASetJobsResource(URAResource):
                     pass
 
                 try:
-                    data['route_title'] = routes_cache.get(int(data['route_id']))
+                    data['route_title'] = routes_cache.get(int(data['route_id']), {}).get('name')
                 except (ValueError, TypeError, AttributeError):
                     pass
 
                 self.job = self.model.objects.create(**data)
+
+                try:
+                    register_job_notifications(self.job, routes_cache=routes_cache)
+                except Exception as e:
+                    # TODO: убрать исключение, когда все точно заработает
+                    print(e)
+
                 jobs.append(self.job)
 
         context = self.get_context_data(**kwargs)

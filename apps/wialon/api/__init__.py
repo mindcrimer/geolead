@@ -50,7 +50,7 @@ def get_drivers(user=None, sess_id=None):
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -93,7 +93,7 @@ def get_group_object_id(name, user=None, sess_id=None):
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -101,7 +101,7 @@ def get_group_object_id(name, user=None, sess_id=None):
     error = 'Не найден ID группового объекта.'
     if user:
         error += ' Проверьте правильность имени группового объекта в настройках интеграции ' \
-                'у пользователя "%s".' % user
+                 'у пользователя "%s".' % user
     process_error(res, error)
 
     if 'items' not in res or len(res['items']) == 0:
@@ -119,7 +119,7 @@ def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
 
     requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=messages/unload&params={}&sid=%s' % sess_id
+                '?svc=messages/unload&params={}&sid=%s' % sess_id
         )
     )
 
@@ -133,7 +133,7 @@ def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=messages/load_interval&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=messages/load_interval&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -181,7 +181,8 @@ def get_points(user=None, sess_id=None):
     for item in res['items']:
         if item and item.get('zl'):
             points.extend([{
-                'id': '%s-%s' % (item['id'], x['id']), 'name': x['n'].strip()
+                'id': '%s-%s' % (item['id'], x['id']),
+                'name': x['n'].strip()
             } for x in item['zl'].values()])
 
     if DEFAULT_CACHE_TIMEOUT:
@@ -219,7 +220,7 @@ def get_resources(user=None, sess_id=None):
 
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -300,7 +301,7 @@ def get_report_template_id(name, user=None, sess_id=None):
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -361,13 +362,13 @@ def get_routes(user=None, sess_id=None, with_points=False):
             'propType': 'property'
         },
         'force': 1,
-        'flags': 1 if not get_points else 1 + 512,
+        'flags': 1 if not with_points else 1 + 512,
         'from': 0,
         'to': 0
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -380,7 +381,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
             'id': r['id'],
             'name': r['nm'].strip()
         }
-        if get_points:
+        if with_points:
             point_names = [x['n'] for x in r.get('rpts', [])]
             route['points'] = [
                 points_dict_by_name[n]
@@ -424,7 +425,7 @@ def get_units(user=None, sess_id=None, extra_fields=False):
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
@@ -488,7 +489,7 @@ def get_unit_settings(item_id, user=None, sess_id=None, get_sensors=True, get_fe
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-            '?svc=core/search_item&params=%s&sid=%s' % (request_params, sess_id)
+                '?svc=core/search_item&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     return r.json()['item']

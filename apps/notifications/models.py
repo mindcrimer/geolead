@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from django.contrib.postgres.fields import JSONField
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -10,14 +12,21 @@ class Notification(LastModMixin, BasicModel):
     job = models.ForeignKey(
         'ura.Job', verbose_name=_('Путевой лист'), related_name='notifications'
     )
+    wialon_id = models.IntegerField(_('ID в Wialon'))
+    sent_data = JSONField(_('Данные отправленные'), blank=True)
+    received_data = JSONField(_('Данные полученные'), blank=True)
 
     class Meta:
-        verbose_name = _('Шаблон уведомлений')
+        verbose_name = _('Шаблон уведомления')
         verbose_name_plural = _('Шаблоны уведомлений')
 
 
 class Event(LastModMixin, BasicModel):
     """События"""
+    notification = models.ForeignKey(
+        'Notification', verbose_name=_('Шаблон уведомления'), related_name='events'
+    )
+
     class Meta:
         verbose_name = _('Событие')
         verbose_name_plural = _('События')

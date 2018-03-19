@@ -13,6 +13,7 @@ from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
     REPORT_ROW_HEIGHT
 from ura.models import Job
+from ura.utils import is_fixed_route
 from users.models import User
 from wialon.api import get_routes, get_units
 
@@ -113,7 +114,7 @@ class InvalidJobStartEndView(BaseReportView):
                         continue
 
                     elif not form.cleaned_data.get('include_fixed', False) \
-                            and 'фиксирован' in route['name'].lower():
+                            and is_fixed_route(route['name']):
                         print(
                             'Fixed route was skipped. job_id=%s, route=%s' % (
                                 job.pk, route['name']

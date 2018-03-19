@@ -71,6 +71,23 @@ class JobPointInline(admin.TabularInline):
     readonly_fields = list(fields)
     readonly_fields.remove('job')
     model = models.JobPoint
+    suit_classes = 'suit-tab suit-tab-points'
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+
+class JobLogInline(admin.TabularInline):
+    """Логи путевого листа"""
+    extra = 0
+    fields = models.JobLog().collect_fields()
+    readonly_fields = list(fields)
+    readonly_fields.remove('job')
+    model = models.JobLog
+    suit_classes = 'suit-tab suit-tab-logs'
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -83,8 +100,13 @@ class JobPointInline(admin.TabularInline):
 class JobAdmin(ExportMixin, admin.ModelAdmin):
     """Путевые листы"""
     date_hierarchy = 'date_begin'
-    fields = models.Job().collect_fields()
-    inlines = (JobPointInline,)
+    fieldsets = (
+        (None, {
+            'classes': ('suit-tab', 'suit-tab-general'),
+            'fields': models.Job().collect_fields()
+        }),
+    )
+    inlines = (JobPointInline, JobLogInline)
     list_display = (
         'id', 'name', 'driver_fio', 'route_title', 'unit_title', 'user', 'date_begin', 'date_end'
     )
@@ -97,6 +119,11 @@ class JobAdmin(ExportMixin, admin.ModelAdmin):
     search_fields = (
         '=id', 'name', 'unit_title', 'driver_fio', 'route_title', 'unit_id', 'route_id',
         'driver_id'
+    )
+    suit_form_tabs = (
+        ('general', _('Общее')),
+        ('points', _('Геозоны')),
+        ('logs', _('Логи'))
     )
 
     def get_readonly_fields(self, request, obj=None):
@@ -125,7 +152,7 @@ class JobLogAdmin(ExportMixin, admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
     resource_class = import_export.JobLogResource
-    search_fields = ('=id', '=job__id', 'url', 'request', 'response', 'response_status')
+    search_fields = ('url', 'request', 'response')
 
     def has_add_permission(self, request):
         return False

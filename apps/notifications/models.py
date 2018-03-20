@@ -15,6 +15,7 @@ class Notification(LastModMixin, BasicModel):
     wialon_id = models.IntegerField(_('ID в Wialon'))
     sent_data = JSONField(_('Данные отправленные'), blank=True)
     received_data = JSONField(_('Данные полученные'), blank=True)
+    expired_at = models.DateTimeField(_('Срок жизни'), blank=True, null=True)
 
     class Meta:
         verbose_name = _('Шаблон уведомления')

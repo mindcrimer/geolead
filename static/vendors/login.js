@@ -8,7 +8,7 @@ if (args.length < 3) {
 
 var page = require('webpage').create();
 
-page.open('http://hosting.wialon.com/login.html', function() {
+page.open('http://hosting.wialon.com/login.html?access_type=-1', function() {
   page.onLoadFinished = function() {
     console.log(page.url);
     phantom.exit();

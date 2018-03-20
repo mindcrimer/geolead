@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+import datetime
 
 from django.template.defaultfilters import floatformat
 
@@ -15,7 +15,7 @@ def float_format(value, arg=0):
 
 
 def parse_datetime(str_date, timezone):
-    local_dt = datetime.strptime(str_date, '%d.%m.%Y %H:%M:%S')
+    local_dt = datetime.datetime.strptime(str_date, '%d.%m.%Y %H:%M:%S')
     return local_to_utc_time(local_dt, timezone)
 
 
@@ -64,16 +64,16 @@ def register_job_notifications(job, routes_cache=None):
     """Регистрация всех шаблонов уведомлений при создании путевого листа"""
     # Если название шаблона задания известно и он не фиксированный
     results = []
-    if job.route_title and not is_fixed_route(job.route_title):
-        wialon_id, received_data, sent_data = create_space_overstatements_notification(
-            job, routes_cache=routes_cache
-        )
-        results.append((wialon_id, received_data, sent_data))
+    wialon_id, received_data, sent_data = create_space_overstatements_notification(
+        job, routes_cache=routes_cache
+    )
+    results.append((wialon_id, received_data, sent_data))
 
     for wialon_id, received_data, sent_data in results:
         Notification.objects.create(
             job=job,
             wialon_id=wialon_id,
             sent_data=sent_data,
-            received_data=received_data
+            received_data=received_data,
+            expired_at=job.date_end + datetime.timedelta(seconds=60 * 10)
         )

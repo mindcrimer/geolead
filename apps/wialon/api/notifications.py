@@ -1,16 +1,41 @@
 # -*- coding: utf-8 -*-
 import json
+import time
 
 from django.utils.timezone import get_current_timezone
 
 from django.conf import settings
 
 import requests
-from reports.utils import get_period, get_wialon_report_resource_id
+from reports.utils import get_wialon_report_resource_id
 
 from wialon.api import process_error, get_routes
 from wialon.auth import get_wialon_session_key
 from wialon.utils import get_wialon_tz_integer
+
+
+def remove_notification(notification, user=None, sess_id=None):
+    assert sess_id or user
+
+    if sess_id is None:
+        sess_id = get_wialon_session_key(user)
+
+    r = requests.post(
+        settings.WIALON_BASE_URL + '?svc=resource/update_notification&sid=%s' % sess_id, {
+            'params': json.dumps({
+                'itemId': get_wialon_report_resource_id(user),
+                'id': notification.wialon_id,
+                'callMode': 'delete',
+            }),
+            'sid': sess_id
+        }
+    )
+    res = r.json()
+    process_error(
+        res, 'Не удалось удалить шаблон уведомлений ID="%s"' % notification.pk
+    )
+
+    return res
 
 
 def update_notification(request_params, user=None, sess_id=None):
@@ -20,7 +45,7 @@ def update_notification(request_params, user=None, sess_id=None):
         sess_id = get_wialon_session_key(user)
 
     r = requests.post(
-        settings.WIALON_BASE_URL + '?svc=core/search_items&sid=%s' % sess_id, {
+        settings.WIALON_BASE_URL + '?svc=resource/update_notification&sid=%s' % sess_id, {
             'params': json.dumps(request_params),
             'sid': sess_id
         }
@@ -38,6 +63,7 @@ def update_notification(request_params, user=None, sess_id=None):
 
 
 def create_space_overstatements_notification(job, user=None, sess_id=None, routes_cache=None):
+    """Перенахождение вне планового маршрута"""
     assert sess_id or user or job.user_id
 
     user = user if user else job.user
@@ -48,10 +74,12 @@ def create_space_overstatements_notification(job, user=None, sess_id=None, route
         routes = get_routes(user=user, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
-    dt_from, dt_to = get_period(job.date_begin, job.date_end, user.wialon_tz)
+    dt_from = int(time.mktime(job.date_begin.timetuple()))
+    dt_to = int(time.mktime(job.date_end.timetuple()))
+
     route_title = routes_cache.get(int(job.route_id), {}).get('name')
     geozones = routes_cache.get(int(job.route_id), {}).get('points', [])
-    geozones_ids = map(lambda x: x['id'].split('-')[1], geozones)
+    geozones_ids = list(map(lambda x: x['id'].split('-')[1], geozones))
 
     data = {
         'itemId': get_wialon_report_resource_id(user),
@@ -68,7 +96,7 @@ def create_space_overstatements_notification(job, user=None, sess_id=None, route
         'mast': 3 * 60,  # минимальная продолжительность тревожного состояния (секунд)
         'mpst': 10,  # минимальная продолжительность предыдущего состояния (секунд)
         'cp': 24 * 60 * 60,  # период контроля относительно текущего времени (секунд)
-        'fl': 2,  # флаги
+        'fl': 0,  # флаги
         'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),  # часовой пояс
         'la': 'ru',  # язык пользователя (двухбуквенный код)
         'un': [int(job.unit_id)],  # массив ID объектов/групп объектов
@@ -79,8 +107,7 @@ def create_space_overstatements_notification(job, user=None, sess_id=None, route
             't2': 0,
             'm': 0,
             'y': 0,
-            'w': 0,
-            'fl': 0
+            'w': 0
         },
         'ctrl_sch': {
             'f1': 0,
@@ -89,8 +116,7 @@ def create_space_overstatements_notification(job, user=None, sess_id=None, route
             't2': 0,
             'm': 0,
             'y': 0,
-            'w': 0,
-            'fl': 0
+            'w': 0
         },
         'trg': {
             't': 'geozone',
@@ -101,7 +127,8 @@ def create_space_overstatements_notification(job, user=None, sess_id=None, route
                 'upper_bound': 0,
                 'merge': 0,
                 'geozone_ids': ','.join(geozones_ids),
-                'geozone_id': '1',
+                # 'geozone_id': 1,
+                'reversed': 0,
                 'type': 1,
                 'min_speed': 0,
                 'max_speed': 0,

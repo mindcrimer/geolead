@@ -13,7 +13,6 @@ from base.exceptions import ReportException
 from reports.models import WialonReportLog
 from reports.views.base import WIALON_INTERNAL_EXCEPTION, WIALON_SESSION_EXPIRED
 from snippets.utils.datetime import utcnow
-from ura.models import Job
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
 from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
@@ -80,36 +79,12 @@ def format_timedelta(seconds):
 DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 
 
-def get_drivers_fio(units_list, unit_key, dt_from, dt_to, timezone):
-    try:
-        if isinstance(dt_from, str):
-            dt_from = local_to_utc_time(parse_wialon_report_datetime(dt_from), timezone)
-
-        if isinstance(dt_to, str):
-            dt_to = local_to_utc_time(parse_wialon_report_datetime(dt_to), timezone)
-    except ValueError:
-        raise ReportException(
-            'Не удалось найти путевой лист для получения ФИО водителя. '
-            'Период: %s - %s, Название ТС: %s' % (dt_from, dt_to, unit_key)
-        )
-
-    unit_ids = tuple(filter(lambda x: x['name'] == unit_key, units_list))
-    if not unit_ids:
+def parse_wialon_report_datetime(str_date):
+    if not str_date:
         return None
 
-    qs = Job.objects.filter(
-        unit_id=unit_ids[0]['id'],
-        date_begin__gte=dt_from,
-        date_end__lte=dt_to
-    )
-    if qs:
-        return qs[0].driver_fio
-
-    return ''
-
-
-def parse_wialon_report_datetime(str_date):
-    if not str_date or any([(str_date in x) for x in ('-----', 'неизвестно', 'unknown')]):
+    str_date = str_date.lower().strip()
+    if any([(str_date in x) for x in ('-----', 'неизвестно', 'unknown')]):
         return None
 
     pattern = '%Y-%m-%d %H:%M:%S' if str_date.count(':') >= 2 else '%Y-%m-%d %H:%M'

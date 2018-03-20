@@ -18,6 +18,10 @@ from users.models import User
 from wialon.api import get_units, get_unit_settings
 
 
+LAST_SIGNAL_STEP = 5  # дней для проверки сигнала в цикле
+LAST_SIGNAL_UNTIL = 90  # Всего дней оценки для последнего сигнала датчика
+
+
 class FaultsView(BaseReportView):
     """Отчет о состоянии оборудования ССМТ"""
     form_class = forms.FaultsForm
@@ -316,21 +320,20 @@ class FaultsView(BaseReportView):
         return kwargs
 
     def update_last_sensor_data(self, report_row, attempt=0):
-        attempts = ((0, 10), (10, 30), (30, 50), (50, 70), (70, 90))
 
-        if attempt >= len(attempts):
+        date_slice_from = attempt * LAST_SIGNAL_STEP
+        date_slice_to = (attempt + 1) * LAST_SIGNAL_STEP
+
+        if date_slice_to > LAST_SIGNAL_UNTIL:
             return report_row
 
-        date_slice = attempts[attempt]
         now = local_date_to = utc_to_local_time(utcnow(), self.user.wialon_tz)
 
-        if date_slice[0]:
-            local_date_to = now - datetime.timedelta(days=date_slice[0])
+        if date_slice_from:
+            local_date_to = now - datetime.timedelta(days=date_slice_from)
 
-        local_date_from = now - datetime.timedelta(days=date_slice[1])
-        dt_from, dt_to = get_period(
-            local_date_from, local_date_to, self.user.wialon_tz
-        )
+        local_date_from = now - datetime.timedelta(days=date_slice_to)
+        dt_from, dt_to = get_period(local_date_from, local_date_to, self.user.wialon_tz)
 
         print(
             'Пробуем период поиска последнего сигнала %s - %s (попытка %s)' % (

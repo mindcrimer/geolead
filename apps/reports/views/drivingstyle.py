@@ -388,15 +388,11 @@ class DrivingStyleView(BaseReportView):
             ), self.user.wialon_tz
         )
 
-        if isinstance(row[1], str) and row[1].lower() == 'unknown':
-            # незакрытый период, будем считать до текущего момента
-            row_dt_to = utcnow()
-        else:
-            row_dt_to = local_to_utc_time(
-                parse_wialon_report_datetime(
-                    row[1]['t'] if isinstance(row[1], dict) else row[1]
-                ), self.user.wialon_tz
-            )
+        row_dt_to = local_to_utc_time(
+            parse_wialon_report_datetime(
+                row[1]['t'] if isinstance(row[1], dict) else row[1]
+            ), self.user.wialon_tz
+        )
 
         return row_dt_from, row_dt_to
 

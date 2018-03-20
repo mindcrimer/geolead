@@ -14,6 +14,7 @@ from reports.utils import parse_wialon_report_datetime, get_wialon_report_templa
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
     REPORT_ROW_HEIGHT
 from snippets.jinjaglobals import date as date_format, floatcomma
+from snippets.utils.datetime import utcnow
 from ura.models import Job
 from users.models import User
 from wialon.api import get_units
@@ -386,11 +387,16 @@ class DrivingStyleView(BaseReportView):
                 row[0]['t'] if isinstance(row[0], dict) else row[0]
             ), self.user.wialon_tz
         )
-        row_dt_to = local_to_utc_time(
-            parse_wialon_report_datetime(
-                row[1]['t'] if isinstance(row[1], dict) else row[1]
-            ), self.user.wialon_tz
-        )
+
+        if isinstance(row[1], str) and row[1].lower() == 'unknown':
+            # незакрытый период, будем считать до текущего момента
+            row_dt_to = utcnow()
+        else:
+            row_dt_to = local_to_utc_time(
+                parse_wialon_report_datetime(
+                    row[1]['t'] if isinstance(row[1], dict) else row[1]
+                ), self.user.wialon_tz
+            )
 
         return row_dt_from, row_dt_to
 

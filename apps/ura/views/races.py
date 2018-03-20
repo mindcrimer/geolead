@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import traceback
 from collections import OrderedDict
 import datetime
 
 from base.exceptions import APIProcessError
 from reports.utils import utc_to_local_time, parse_wialon_report_datetime
 from snippets.utils.datetime import utcnow
+from snippets.utils.email import send_trigger_email
 from ura import models
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
@@ -213,8 +215,19 @@ class URARacesResource(BaseUraRidesView, URAResource):
         for row in self.report_data['unit_chronology']:
             row_data = row['c']
 
-            if row_data[0].lower() == 'parking':
-                continue
+            try:
+                if row_data[0].lower() == 'parking':
+                    continue
+
+            except AttributeError as e:
+                send_trigger_email(
+                    'Ошибка в работе интеграции Wialon', extra_data={
+                        'Exception': str(e),
+                        'Traceback': traceback.format_exc(),
+                        'data': row_data,
+                        'body': self.request.body
+                    }
+                )
 
             time_from = utc_to_local_time(
                 parse_wialon_report_datetime(

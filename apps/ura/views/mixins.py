@@ -164,7 +164,8 @@ class BaseUraRidesView(URAResource):
                 'Ошибка в работе интеграции Wialon', extra_data={
                     'Exception': str(e),
                     'Traceback': traceback.format_exc(),
-                    'data': self.report_data['unit_zones_visit']
+                    'data': self.report_data['unit_zones_visit'],
+                    'body': self.request.body
                 }
             )
 
@@ -175,8 +176,9 @@ class BaseUraRidesView(URAResource):
                 # если конец участка неизвестен, считаем, что конец участка - конец периода запроса
                 row[2] = {'v': self.request_dt_to}
 
+            geozone_name = row[0]['t'] if isinstance(row[0], dict) else row[0]
             row = {
-                'name': row[0].strip(),
+                'name': geozone_name.strip(),
                 'time_in': row[1]['v'],
                 'time_out': row[2]['v']
             }

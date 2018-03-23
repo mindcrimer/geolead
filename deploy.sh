@@ -8,4 +8,4 @@ cd static/
 npm install
 cd ../
 python manage.py collectstatic --noinput
-supervisorctl restart geolead_resource
+touch venv/uwsgi.reload

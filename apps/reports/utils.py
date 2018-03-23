@@ -171,12 +171,12 @@ def throttle_report(user):
         Изучаем сколько запросов сделано за минуту
         (и на всякий случай добавим еще 5 минут)
         """
-        since_dt = utcnow() - datetime.timedelta(seconds=60 + 5)
+        since_dt = utcnow() - datetime.timedelta(seconds=settings.WIALON_REPORTS_LIMIT_PERIOD)
         count = WialonReportLog.objects.filter(user=for_user, created__gte=since_dt).count()
         return count
 
     while attempts > 0 \
-            and get_executed_reports_count(user) >= settings.WIALON_REPORTS_PER_MINUTE_LIMIT:
+            and get_executed_reports_count(user) >= settings.WIALON_REPORTS_PER_PERIOD_LIMIT:
         throttle_delta_cumulatime += settings.WIALON_REPORTS_THROTTLE_TIME
         print('Report of user %s was throttled for %s sec (attempts: %s)' % (
             user.username, throttle_delta_cumulatime, attempts

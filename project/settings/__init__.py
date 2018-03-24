@@ -22,11 +22,11 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'geolead',
-        'USER': 'geolead',
-        'PASSWORD': 'geolead',
+        'NAME': 'geolead_resource_ura',
+        'USER': 'geolead_resource_ura',
+        'PASSWORD': 'geolead_resource_ura',
         'HOST': 'localhost',
-        'PORT': '5433',
+        'PORT': '5433'
     }
 }
 
@@ -40,7 +40,7 @@ LANGUAGE_CODES_PUBLIC = ('ru',)
 DEFAULT_LANGUAGE = LANGUAGES[0][0]
 
 SITE_ID = 1
-SITE_NAME = 'geolead.facedigital.ru'
+SITE_NAME = 'geolead-resource-ura.ru'
 SITE_PROTOCOL = 'http://'
 
 USE_I18N = True

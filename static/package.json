@@ -1,7 +1,7 @@
 {
-  "name": "geolead_resource",
+  "name": "geolead_resource_ura",
   "version": "1.0.0",
-  "description": "A Vue.js project",
+  "description": "Wialon / УРА integration",
   "author": "Raphael Kamashev <wizzzet@gmail.com>",
   "private": true,
   "dependencies": {

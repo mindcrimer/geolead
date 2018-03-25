@@ -57,7 +57,7 @@ def cache_geozones():
                         standard_point.title = name
                         standard_point.save()
 
-            sleep(.5)
+            sleep(.3)
             i += 1
 
 

@@ -12,6 +12,7 @@ from reports.utils import local_to_utc_time
 from snippets.utils.email import send_trigger_email
 from ura.models import StandardJobTemplate
 from users.models import User
+from wialon.exceptions import WialonException
 
 
 def float_format(value, arg=0):
@@ -94,6 +95,15 @@ def register_job_notifications(job, routes_cache=None):
             results.extend(tuple(result))
         except NotificationError as e:
             print(str(e))
+        except WialonException as e:
+            # TODO: убрать исключение, когда все точно заработает
+            print(str(e))
+            send_trigger_email(
+                'Ошибка при регистрации уведомления в Wialon', extra_data={
+                    'Exception': str(e),
+                    'Traceback': traceback.format_exc()
+                }
+            )
         except Exception as e:
             # TODO: убрать исключение, когда все точно заработает
             print(str(e))

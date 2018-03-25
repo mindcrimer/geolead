@@ -38,13 +38,22 @@ def cache_geozones():
                     }
                 )
 
+                existing_points = set()
                 if not created:
                     if job_template.title != name:
                         job_template.title = name
                     job_template.user = user
                     job_template.save()
 
-                print('%s points found' % len(route['points']))
+                    existing_points = {p for p in job_template.points.all()}
+
+                # убираем дубли (когда одна и та же геозона дублируется в маршруте)
+                route['points'] = {r['id']: r for r in route['points']}.values()
+
+                print('%s points found, already exist: %s' % (
+                    len(route['points']), len(existing_points)
+                ))
+
                 for point in route['points']:
                     name = point['name'].strip()
                     standard_point, created = StandardPoint.objects.get_or_create(
@@ -53,9 +62,17 @@ def cache_geozones():
                         defaults={'title': name}
                     )
 
-                    if not created and standard_point.title != name:
-                        standard_point.title = name
-                        standard_point.save()
+                    if not created:
+                        existing_points.discard(standard_point)
+
+                        if standard_point.title != name:
+                            standard_point.title = name
+                            standard_point.save()
+
+                if existing_points:
+                    print('Points to remove: %s' % ', '.join([str(x) for x in existing_points]))
+                    for existing_point in existing_points:
+                        existing_point.delete()
 
             sleep(.3)
             i += 1

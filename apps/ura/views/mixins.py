@@ -220,10 +220,25 @@ class BaseUraRidesView(URAResource):
         if self.unit_zones_visit:
             # обработаем концевые участки: сигнал с объекта мог не успеть прийти в начале
             # и конце диапазона запроса, поэтому если сигнал не приходил в приемлимое время
-            # (1.5 минуты), считаем, что объект там и находился
-            delta = 60 * 1.5
+            # (3 минуты), считаем, что объект там и находился
+            delta = 60 * 3
             if self.unit_zones_visit[0]['time_in'] - self.request_dt_from < delta:
                 self.unit_zones_visit[0]['time_in'] = self.request_dt_from
+
+            # добавляем SPACE, так как точное местоположение на момент начала смены неизвестно
+            elif self.unit_zones_visit[0]['time_in'] - self.request_dt_from > 0:
+
+                # если первая точка уже SPACE, просто расширяем ее период до начала смены
+                if self.unit_zones_visit[0]['name'].lower() == 'space':
+                    self.unit_zones_visit[0]['time_in'] = self.request_dt_from
+
+                # иначе добавляем SPACE
+                else:
+                    self.unit_zones_visit.insert(0, {
+                        'name': 'SPACE',
+                        'time_in': self.request_dt_from,
+                        'time_out': self.unit_zones_visit[0]['time_in']
+                    })
 
             if self.request_dt_to - self.unit_zones_visit[-1]['time_out'] < delta:
                 self.unit_zones_visit[-1]['time_out'] = self.request_dt_to

@@ -90,6 +90,7 @@ class JobPoint(BasicModel, LastModMixin):
 
 
 class StandardJobTemplate(BasicModel, LastModMixin):
+    """Маршруты (шаблоны заданий) Wialon"""
     user = models.ForeignKey(
         'users.User', blank=True, null=True, verbose_name=_('Пользователь'),
         related_name='standard_job_templates'

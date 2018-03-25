@@ -4,8 +4,10 @@ import datetime
 from django.template.defaultfilters import floatformat
 
 from base.exceptions import APIProcessError, AuthenticationFailed
+from notifications.exceptions import NotificationError
 from notifications.models import Notification
 from reports.utils import local_to_utc_time
+from ura.models import StandardJobTemplate
 from users.models import User
 from wialon.api.notifications import create_space_overstatements_notification
 
@@ -64,10 +66,22 @@ def register_job_notifications(job, routes_cache=None):
     """Регистрация всех шаблонов уведомлений при создании путевого листа"""
     # Если название шаблона задания известно и он не фиксированный
     results = []
-    wialon_id, received_data, sent_data = create_space_overstatements_notification(
-        job, routes_cache=routes_cache
+
+    available_notification_backends = (
+        create_space_overstatements_notification,
     )
-    results.append((wialon_id, received_data, sent_data))
+
+    job_template = StandardJobTemplate.objects.filter(wialon_id=job.route_id).first()
+
+    for backend in available_notification_backends:
+        try:
+            wialon_id, received_data, sent_data = backend(
+                job, routes_cache=routes_cache, job_template=job_template
+            )
+        except NotificationError as e:
+            print(str(e))
+        else:
+            results.append((wialon_id, received_data, sent_data))
 
     for wialon_id, received_data, sent_data in results:
         Notification.objects.create(

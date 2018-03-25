@@ -63,13 +63,7 @@ class URASetJobsResource(URAResource):
                     pass
 
                 self.job = self.model.objects.create(**data)
-
-                try:
-                    register_job_notifications(self.job, routes_cache=routes_cache)
-                except Exception as e:
-                    # TODO: убрать исключение, когда все точно заработает
-                    print(e)
-
+                register_job_notifications(self.job, routes_cache=routes_cache)
                 jobs.append(self.job)
 
         context = self.get_context_data(**kwargs)

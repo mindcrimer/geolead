@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 import datetime
+import traceback
 
 from django.template.defaultfilters import floatformat
 
 from base.exceptions import APIProcessError, AuthenticationFailed
 from notifications.exceptions import NotificationError
 from notifications.models import Notification
+from notifications import notifications
 from reports.utils import local_to_utc_time
+from snippets.utils.email import send_trigger_email
 from ura.models import StandardJobTemplate
 from users.models import User
-from wialon.api.notifications import create_space_overstatements_notification
 
 
 def float_format(value, arg=0):
@@ -68,20 +70,39 @@ def register_job_notifications(job, routes_cache=None):
     results = []
 
     available_notification_backends = (
-        create_space_overstatements_notification,
+        # 1. Съезд с маршрута
+        notifications.route_coming_off_notification,
+        # 2. Перепростой вне планового маршрута
+        notifications.space_overstatements_notification,
+        # 3. Перепростой на маршруте
+        notifications.route_overparking_notification,
+        # 4. Превышение времени нахождения на погрузке
+        notifications.load_overtime_notification,
+        # 5. Превышение времени нахождения на разгрузке
+        notifications.unload_overtime_notification,
+        # 6. Нахождение объекта вне планового маршрута
+        notifications.space_notification,
+        # 7. Превышение времени нахождения на маршруте
+        notifications.route_overstatement_notification
     )
 
     job_template = StandardJobTemplate.objects.filter(wialon_id=job.route_id).first()
 
     for backend in available_notification_backends:
         try:
-            wialon_id, received_data, sent_data = backend(
-                job, routes_cache=routes_cache, job_template=job_template
-            )
+            result = backend(job, routes_cache=routes_cache, job_template=job_template)
+            results.extend(tuple(result))
         except NotificationError as e:
             print(str(e))
-        else:
-            results.append((wialon_id, received_data, sent_data))
+        except Exception as e:
+            # TODO: убрать исключение, когда все точно заработает
+            print(str(e))
+            send_trigger_email(
+                'Ошибка при регистрации уведомления в Wialon', extra_data={
+                    'Exception': str(e),
+                    'Traceback': traceback.format_exc()
+                }
+            )
 
     for wialon_id, received_data, sent_data in results:
         Notification.objects.create(

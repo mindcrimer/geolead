@@ -53,7 +53,9 @@ def update_notification(request_params, user=None, sess_id=None):
         action = 'удалить'
 
     process_error(
-        res, ('Не удалось %s шаблон уведомлений "%s"' % (action, request_params.get('n', '')))
+        res, ('Не удалось %s шаблон уведомлений "%s". Данные: %s' % (
+            action, request_params.get('n', ''), request_params
+        ))
     )
 
     return res

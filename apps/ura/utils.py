@@ -68,6 +68,9 @@ def is_fixed_route(route_title):
 def register_job_notifications(job, routes_cache=None):
     """Регистрация всех шаблонов уведомлений при создании путевого листа"""
     # Если название шаблона задания известно и он не фиксированный
+    if not job.route_title or is_fixed_route(job.route_title):
+        return False
+
     results = []
 
     available_notification_backends = (
@@ -122,3 +125,5 @@ def register_job_notifications(job, routes_cache=None):
             received_data=received_data,
             expired_at=job.date_end + datetime.timedelta(seconds=60 * 10)
         )
+
+    return True

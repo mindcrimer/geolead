@@ -39,7 +39,7 @@ def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=Non
         'callMode': 'create',
         'n': 'Съезд с маршрута %s' % route_title,
         'txt': '%UNIT% съехал с маршрута. %POS_TIME% он двигался со скоростью %SPEED% около '
-               '\'%LOCATION%\'',
+               '%LOCATION%',
         # время активации (UNIX формат)
         'ta': dt_from,
         # время деактивации (UNIX формат)
@@ -270,7 +270,7 @@ def route_overparking_notification(job, user=None, sess_id=None, routes_cache=No
             'n': 'Перепростой на маршруте %s' % geozone['name'],
             'txt': '%UNIT% %CURR_TIME% стоял в ' + geozone['name'] +
                    ' более нормы (' + str(standard.parking_time_standard) + ' мин.) ' +
-                   'около \'%LOCATION%\'',
+                   'около %LOCATION%',
             # время активации (UNIX формат)
             'ta': dt_from,
             # время деактивации (UNIX формат)
@@ -399,7 +399,7 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
             'n': 'Превысил время нахождения на погрузке в %s' % geozone['name'],
             'txt': '%UNIT% превысил время нахождения на погрузке (' +
                    str(standard.total_time_standard) + ' мин.)' +
-                   ' в ' + geozone['name'] + '. %POS_TIME% около \'%LOCATION%\'',
+                   ' в ' + geozone['name'] + '. %POS_TIME% около %LOCATION%',
             # время активации (UNIX формат)
             'ta': dt_from,
             # время деактивации (UNIX формат)
@@ -524,7 +524,7 @@ def unload_overtime_notification(job, user=None, sess_id=None, routes_cache=None
             'n': 'Превысил время нахождения на разгрузке в %s' % geozone['name'],
             'txt': '%UNIT% превысил время нахождения на разгрузке (' +
                    str(standard.total_time_standard) + ' мин.)' +
-                   ' в ' + geozone['name'] + '. %POS_TIME% около \'%LOCATION%\'',
+                   ' в ' + geozone['name'] + '. %POS_TIME% около %LOCATION%',
             # время активации (UNIX формат)
             'ta': dt_from,
             # время деактивации (UNIX формат)

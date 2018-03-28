@@ -130,7 +130,7 @@ class JobAdmin(ExportMixin, admin.ModelAdmin):
         if request.user.is_superuser:
             return self.readonly_fields
 
-        return self.fields
+        return models.Job().collect_fields()
 
     def has_add_permission(self, request):
         return False

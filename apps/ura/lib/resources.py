@@ -181,6 +181,12 @@ class URAResource(TemplateView):
                     code='internal_server_error'
                 )
 
+        send_trigger_email(
+            'Лимит попыток обращения в Wialon (%s) закончился' % attempts_limit,
+            extra_data={
+                'Последняя ошибка': last_error
+            }
+        )
         return error_response(
             'Лимит попыток обращения в Wialon (%s) закончился. %s' % (
                 attempts_limit, last_error

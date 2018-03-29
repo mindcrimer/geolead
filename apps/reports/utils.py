@@ -12,6 +12,7 @@ import requests
 from base.exceptions import ReportException
 from reports.models import WialonReportLog
 from reports.views.base import WIALON_INTERNAL_EXCEPTION, WIALON_SESSION_EXPIRED
+from simplejson import JSONDecodeError
 from snippets.utils.datetime import utcnow
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
 from wialon.auth import get_wialon_session_key
@@ -273,7 +274,7 @@ def get_report_rows(user, table_index, rows, offset=0, level=0, sess_id=None):
     if sess_id is None:
         sess_id = get_wialon_session_key(user)
 
-    rows = requests.post(
+    result = requests.post(
         settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +
         sess_id, {
             'params': json.dumps({
@@ -289,7 +290,12 @@ def get_report_rows(user, table_index, rows, offset=0, level=0, sess_id=None):
             }),
             'sid': sess_id
         }
-    ).json()
+    )
+
+    try:
+        rows = result.json()
+    except JSONDecodeError:
+        raise ReportException('Ошибка раскодирования ответа Wialon: %s' % result.text)
 
     if 'error' in rows:
         if rows['error'] == 1:

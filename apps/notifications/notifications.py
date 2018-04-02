@@ -370,7 +370,7 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
     dt_to = int(time.mktime(job.date_end.timetuple()))
 
     route = routes_cache.get(int(job.route_id), {})
-    # ищем только геозоны погрузки
+    # ищем только геозоны погрузки или базы
     geozones = list(
         filter(
             lambda x: 'погрузка' in x['name'].lower() or 'база' in x['name'].lower(),
@@ -385,19 +385,21 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
         standard = StandardPoint.objects.filter(wialon_id=geozone['id'].strip()).first()
         if not standard or not standard.total_time_standard:
             print(
-                'Не найдена геозона погрузки или отсутствует норматив нахождения для нее. '
+                'Не найдена геозона погрузки/базы или отсутствует норматив нахождения для нее. '
                 'ID ПЛ=%s, ID геозоны=%s' % (
                     job.pk, geozone['id']
                 )
             )
             continue
 
+        place = 'погрузке' if 'погрузка' in geozone['name'].lower() else 'базе'
+
         data = {
             'itemId': get_wialon_report_resource_id(user),
             'id': 0,
             'callMode': 'create',
-            'n': 'Превысил время нахождения на погрузке в %s' % geozone['name'],
-            'txt': '%UNIT% превысил время нахождения на погрузке (' +
+            'n': 'Превысил время нахождения на %s в %s' % (place, geozone['name']),
+            'txt': '%UNIT% превысил время нахождения на ' + place + ' (' +
                    str(standard.total_time_standard) + ' мин.)' +
                    ' в ' + geozone['name'] + '. %POS_TIME% около %LOCATION%',
             # время активации (UNIX формат)
@@ -462,7 +464,7 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
                 {
                     't': 'message',
                     'p': {
-                        'name': 'Превысил время нахождения на погрузке в %s' % geozone['name'],
+                        'name': 'Превысил время нахождения на %s в %s' % (place, geozone['name']),
                         'url': '',
                         'color': '',
                         'blink': 0

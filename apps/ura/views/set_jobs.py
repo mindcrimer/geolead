@@ -34,34 +34,39 @@ class URASetJobsResource(URAResource):
                 if not name:
                     return error_response('Не указан параметр jobName', code='jobName_not_found')
 
-                routes_ids = [x['id'] for x in get_routes(user=request.user)]
+                routes = get_routes(user=request.user, with_points=True)
+                routes_ids = [x['id'] for x in routes]
                 if data['route_id'] not in routes_ids:
                     return error_response(
                         'Шаблон задания idRoute неверный или не принадлежит текущей организации',
                         code='route_permission'
                     )
 
-                data['user'] = request.user
-
                 units = get_units(user=request.user)
-                routes = get_routes(user=request.user, with_points=True)
 
                 units_cache = {
                     u['id']: '%s (%s) [%s]' % (u['name'], u['number'], u['vin'])
                     for u in units
                 }
-                routes_cache = {r['id']: r for r in routes}
 
                 try:
                     data['unit_title'] = units_cache.get(int(data['unit_id']))
                 except (ValueError, TypeError, AttributeError):
                     pass
 
+                if not data['unit_title']:
+                    return error_response(
+                        'Объект ID=%s не найден в текущем ресурсе организации' % data['unit_id'],
+                        code='unit_not_found_permission'
+                    )
+
+                routes_cache = {r['id']: r for r in routes}
                 try:
                     data['route_title'] = routes_cache.get(int(data['route_id']), {}).get('name')
                 except (ValueError, TypeError, AttributeError):
                     pass
 
+                data['user'] = request.user
                 self.job = self.model.objects.create(**data)
                 register_job_notifications(self.job, routes_cache=routes_cache)
                 jobs.append(self.job)

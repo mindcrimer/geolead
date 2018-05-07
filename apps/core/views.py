@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-from snippets.views import BaseTemplateView
+from django.urls import reverse
+
+from django.http import HttpResponseRedirect
+from snippets.views import BaseTemplateView, BaseView
 
 
 class HomeView(BaseTemplateView):
@@ -22,3 +25,9 @@ class HomeView(BaseTemplateView):
         kwargs['user'] = request.session.get('user')
 
         return super(HomeView, self).get(request, **kwargs)
+
+
+class ExitView(BaseView):
+    def get(self, request, **kwargs):
+        request.session.flush()
+        return HttpResponseRedirect(reverse('core:home'))

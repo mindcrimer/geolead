@@ -9,4 +9,8 @@ urlpatterns = (
         r'^$',
         views.HomeView.as_view(), name='home'
     ),
+    url(
+        r'^exit/$',
+        views.ExitView.as_view(), name='exit'
+    ),
 )

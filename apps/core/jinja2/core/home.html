@@ -1,85 +1,74 @@
 {%- extends 'layouts/main.html' -%}
 
 {%- block PAGE_CONTENT -%}
-	{%- if not user or not sid -%}
-		<div class="global-warning">
-			<div class="global-warning__inner">
-				<ul class="messages">
-					<li>Требуется войти через APPS</li>
-				</ul>
-			</div>
-		</div>
+  <div class="uk-margin-top">
+    <ul class="reports-list">
+      <li>
+        <a href="{{ url('reports:discharge') }}">
+          <span class="icon fa fa-tint"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет по перерасходу топлива
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
 
-	{%- else -%}
-		<div class="uk-margin-top">
-			<ul class="reports-list">
-				<li>
-					<a href="{{ url('reports:discharge') }}">
-						<span class="icon fa fa-tint"></span>
-						<span class="title">
-							<span class="inner">
-								Отчет по перерасходу топлива
-							</span>
-						</span>
-					</a>
-				</li>{# -#}
+      <li>
+        <a href="{{ url('reports:driving_style') }}">
+          <span class="icon fa fa-road"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет нарушений ПДД и инструкции по эксплуатации техники
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
 
-				<li>
-					<a href="{{ url('reports:driving_style') }}">
-						<span class="icon fa fa-road"></span>
-						<span class="title">
-							<span class="inner">
-								Отчет нарушений ПДД и инструкции по эксплуатации техники
-							</span>
-						</span>
-					</a>
-				</li>{# -#}
+      <li>
+        <a href="{{ url('reports:faults') }}">
+          <span class="icon fa fa-chain-broken"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет о состоянии оборудования ССМТ
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
 
-				<li>
-					<a href="{{ url('reports:faults') }}">
-						<span class="icon fa fa-chain-broken"></span>
-						<span class="title">
-							<span class="inner">
-								Отчет о состоянии оборудования ССМТ
-							</span>
-						</span>
-					</a>
-				</li>{# -#}
+      <li>
+        <a href="{{ url('reports:finished_jobs') }}">
+          <span class="icon fa fa-hourglass-end"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет по актуальности шаблонов заданий
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
 
-				<li>
-					<a href="{{ url('reports:finished_jobs') }}">
-						<span class="icon fa fa-hourglass-end"></span>
-						<span class="title">
-							<span class="inner">
-								Отчет по актуальности шаблонов заданий
-							</span>
-						</span>
-					</a>
-				</li>{# -#}
+      <li>
+        <a href="{{ url('reports:overstatements') }}">
+          <span class="icon fa fa-coffee"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет о сверхнормативных простоях
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
 
-				<li>
-					<a href="{{ url('reports:overstatements') }}">
-						<span class="icon fa fa-coffee"></span>
-						<span class="title">
-							<span class="inner">
-								Отчет о сверхнормативных простоях
-							</span>
-						</span>
-					</a>
-				</li>{# -#}
+      <li>
+        <a href="{{ url('reports:invalid_job_start_end') }}">
+          <span class="icon fa fa-calendar-check-o"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет о несвоевременном начале и окончании выполнения задания
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
 
-				<li>
-					<a href="{{ url('reports:invalid_job_start_end') }}">
-						<span class="icon fa fa-calendar-check-o"></span>
-						<span class="title">
-							<span class="inner">
-								Отчет о несвоевременном начале и окончании выполнения задания
-							</span>
-						</span>
-					</a>
-				</li>{# -#}
-
-			</ul>
-		</div>
-	{%- endif -%}
+    </ul>
+  </div>
 {%- endblock -%}

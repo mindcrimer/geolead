@@ -9,6 +9,14 @@
   text-align: right;
 }
 
+.red {
+  color: red;
+}
+
+.float-right {
+  float: right;
+}
+
 .form {
   .errors {
     color: red;
@@ -35,11 +43,15 @@
   }
 }
 
+.header {
+  max-width: 460px;
+}
+
 .report-settings {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 20px);
+  padding: 40px 0;
 
   .inner {
     display: block;

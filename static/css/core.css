@@ -7,6 +7,12 @@
 .tright {
   text-align: right; }
 
+.red {
+  color: red; }
+
+.float-right {
+  float: right; }
+
 .form .errors {
   color: red; }
 .form-controls {
@@ -23,11 +29,14 @@
   .messages .error {
     color: #C10600; }
 
+.header {
+  max-width: 460px; }
+
 .report-settings {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 20px); }
+  padding: 40px 0; }
   .report-settings .inner {
     display: block; }
   .report-settings .form {

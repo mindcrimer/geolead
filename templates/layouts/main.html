@@ -1,3 +1,6 @@
+{%- set user = get_session_user(request) -%}
+{%- set sid = get_session_sid(request) -%}
+
 <!doctype html>
 <html lang="ru">
 <head>
@@ -11,7 +14,21 @@
 </head>
 <body>
 	<div class="wrapper">
-		{%- block PAGE_CONTENT %}{% endblock -%}
+    {%- if not user or not sid -%}
+      <div class="global-warning">
+        <div class="global-warning__inner">
+          <ul class="messages">
+            <li>Требуется войти через APPS</li>
+          </ul>
+        </div>
+      </div>
+    {%- else -%}
+      <header class="uk-margin-top uk-margin-bottom header uk-align-center">
+        <span class="uk-text-large">Пользователь: {{ user }}</span>&nbsp;
+        <a href="{{ url('core:exit') }}" class="uk-link red"><span class="icon fa fa-sign-out"></span>Выход</a>
+      </header>
+      {%- block PAGE_CONTENT %}{% endblock -%}
+    {%- endif -%}
 	</div>
 
 	<link rel="stylesheet" href="{{ static('css/uikit.min.css') }}" />

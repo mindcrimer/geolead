@@ -9,27 +9,9 @@ from django.template.loader import render_to_string
 
 from markupsafe import escape
 
-from snippets.db_config import db_vars
 
-
-def get_admin_emails(force_system=False, language=settings.DEFAULT_LANGUAGE):
-    """
-    Получение списка email администраторов
-    force_system - получение списка администраторов из файловых настроек Django
-    """
-    if force_system:
-        return [x[1] for x in settings.ADMINS]
-
-    admins = db_vars.get('ADMINS', language, '')
-    return admins.split(',') if admins else [x[1] for x in settings.ADMINS]
-
-
-def get_default_from_email(force_system=False):
-    if force_system:
-        return settings.DEFAULT_FROM_EMAIL
-
-    email = db_vars.get('DEFAULT_FROM_EMAIL', None)
-    return email if email else settings.DEFAULT_FROM_EMAIL
+def get_default_from_email():
+    return settings.DEFAULT_FROM_EMAIL
 
 
 def send_email(template, emails, subject, params=None,  extra_headers=None, from_email=None):
@@ -61,7 +43,7 @@ def send_trigger_email(event, obj=None, fields=None, emails=None, from_email=Non
         emails = [x[1] for x in settings.ADMINS]
 
     if from_email is None:
-        from_email = get_default_from_email(force_system=True)
+        from_email = get_default_from_email()
 
     if event is None:
         if obj:

@@ -2,14 +2,12 @@ beautifulsoup4
 bpython
 django==1.11.8
 django-ckeditor
-django-image-cropping
 django-import-export
 django-mptt
 django-redis-cache
 django-suit
 django-solo
 django-timezone-field
-easy-thumbnails
 flake8
 hiredis
 Jinja2

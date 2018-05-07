@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-from easy_thumbnails.conf import Settings as ThumbnailSettings
-
 
 def gettext_noop(s):
     return s
@@ -39,7 +37,6 @@ LANGUAGE_CODES = tuple([x[0] for x in LANGUAGES])
 LANGUAGE_CODES_PUBLIC = ('ru',)
 DEFAULT_LANGUAGE = LANGUAGES[0][0]
 
-SITE_ID = 1
 SITE_NAME = 'geolead-resource-ura.ru'
 SITE_PROTOCOL = 'http://'
 
@@ -118,9 +115,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'snippets.middlewares.language.LanguageMiddleware',
-    # 'snippets.seo.middleware.SEOMiddleware',
-    # 'snippets.middlewares.compress.CompressMiddleware'
+    'snippets.middlewares.language.LanguageMiddleware'
 )
 
 ROOT_URLCONF = 'project.urls'
@@ -130,7 +125,6 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'suit',
@@ -140,12 +134,9 @@ INSTALLED_APPS = (
     'ckeditor_uploader',
     'timezone_field',
     'solo',
-    'easy_thumbnails',
-    'image_cropping',
     'import_export',
     # базовые компоненты проекта (переопределяет контрибы веб-студии)
     'snippets.general',
-    # 'snippets.seo',
     'base',
     # приложения проекта
     'core',
@@ -270,15 +261,6 @@ CACHES = {
         }
     }
 }
-
-# cropper
-THUMBNAIL_QUALITY = 85
-THUMBNAIL_PROGRESSIVE = 100
-THUMBNAIL_PRESERVE_EXTENSIONS = ('jpg',)
-THUMBNAIL_PROCESSORS = (
-    'image_cropping.thumbnail_processors.crop_corners',
-    'snippets.utils.thumbnail_processors.remove_alpha_processor'
-) + ThumbnailSettings.THUMBNAIL_PROCESSORS
 
 WIALON_BASE_URL = 'https://hst-api.wialon.com/wialon/ajax.html'
 

@@ -17,8 +17,7 @@ urlpatterns = (
     url(r'^admin/', include(admin.site.urls)),
     url(r'^ura/', include('ura.urls', namespace='ura')),
     url(r'^', include('reports.urls', namespace='reports')),
-    url(r'^', include('base.urls', namespace='base')),
-    # url(r'^', include('snippets.seo.urls', namespace='seo')),
+    url(r'^', include('base.urls', namespace='base'))
 )
 
 if settings.DEBUG is True:

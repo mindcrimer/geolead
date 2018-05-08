@@ -17,7 +17,7 @@ marshmallow
 pep8
 Pillow
 pytz
-psycopg2
+psycopg2-binary
 redis
 six
 ujson

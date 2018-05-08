@@ -11,4 +11,5 @@ cd ../
 python manage.py collectstatic --noinput
 chown rtadmin:rtadmin -R .
 chmod o+r -R public/
+chmod 0777 public/static/node_modules/phantomjs/bin/phantomjs
 touch venv/uwsgi.reload

@@ -45,7 +45,8 @@ class User(AbstractUser, LastModMixin, BasicModel):
         blank=True, null=True
     )
     wialon_discharge_individual_report_template_name = models.CharField(
-        _('Наименование отчета "Перерасход топлива индивидуальный"'), max_length=255, blank=True, null=True
+        _('Наименование отчета "Перерасход топлива индивидуальный"'), max_length=255, blank=True,
+        null=True
     )
 
     wialon_driving_style_report_template_name = models.CharField(

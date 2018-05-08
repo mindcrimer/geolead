@@ -14,7 +14,6 @@ from reports.utils import parse_wialon_report_datetime, get_wialon_report_templa
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
     REPORT_ROW_HEIGHT
 from snippets.jinjaglobals import date as date_format, floatcomma
-from snippets.utils.datetime import utcnow
 from ura.models import Job
 from users.models import User
 from wialon.api import get_units

@@ -9,4 +9,6 @@ cd static/
 npm install
 cd ../
 python manage.py collectstatic --noinput
+chown rtadmin:www-data -R .
+chown rtadmin:www-data -R .git
 touch venv/uwsgi.reload

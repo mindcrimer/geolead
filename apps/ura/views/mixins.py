@@ -2,6 +2,7 @@
 import datetime
 import traceback
 from collections import OrderedDict
+from smtplib import SMTPException
 
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type, parse_float
@@ -273,14 +274,26 @@ class BaseUraRidesView(URAResource):
             message['distance'] = .0
 
             if prev_message:
-                # получаем пройденное расстояние для предыдущей точки
-                # TODO: попробовать через geopy
-                prev_message['distance'] = get_distance(
-                    prev_message['pos']['x'],
-                    prev_message['pos']['y'],
-                    message['pos']['x'],
-                    message['pos']['y']
-                )
+                try:
+                    # получаем пройденное расстояние для предыдущей точки
+                    # TODO: попробовать через geopy
+                    prev_message['distance'] = get_distance(
+                        prev_message['pos']['x'],
+                        prev_message['pos']['y'],
+                        message['pos']['x'],
+                        message['pos']['y']
+                    )
+                except (ValueError, IndexError, KeyError, AttributeError, TypeError) as e:
+                    try:
+                        send_trigger_email(
+                            'Ошибка в работе интеграции Wialon', extra_data={
+                                'POST': self.request.body,
+                                'Exception': str(e),
+                                'Traceback': traceback.format_exc()
+                            }
+                        )
+                    except (ConnectionError, SMTPException):
+                        pass
 
             # находим по времени в сообщении наличие на момент времени в геозоне
             found_geozone = False

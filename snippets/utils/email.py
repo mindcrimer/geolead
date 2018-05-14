@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+from smtplib import SMTPException
 
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -33,7 +34,7 @@ def send_email(template, emails, subject, params=None,  extra_headers=None, from
 
 
 def send_trigger_email(event, obj=None, fields=None, emails=None, from_email=None,
-                       extra_data=None, extra_headers=None):
+                       extra_data=None, extra_headers=None, raise_error=False):
     """
     Отправка триггерного сообщения при новом событии:
     @:param obj - объект события
@@ -102,4 +103,14 @@ def send_trigger_email(event, obj=None, fields=None, emails=None, from_email=Non
     )
 
     msg = EmailMessage(subject, message_txt, from_email, emails, headers=extra_headers)
-    return msg.send()
+
+    if settings.DEBUG:
+        print('EMAIL:', params)
+
+    try:
+        msg.send()
+    except (ConnectionError, SMTPException):
+        if raise_error:
+            raise
+
+    return True

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import traceback
-from smtplib import SMTPException
 from time import sleep
 
 from django.conf import settings
@@ -80,37 +79,29 @@ class URAResource(TemplateView):
                 code=e.code
             )
         except (ValueError, IndexError, KeyError, AttributeError, TypeError) as e:
-            if not settings.DEBUG:
-                try:
-                    send_trigger_email(
-                        'Ошибка в работе интеграции Wialon', extra_data={
-                            'POST': request.body,
-                            'Exception': str(e),
-                            'Traceback': traceback.format_exc()
-                        }
-                    )
-                except (ConnectionError, SMTPException):
-                    pass
+            send_trigger_email(
+                'Ошибка в работе интеграции Wialon', extra_data={
+                    'POST': request.body,
+                    'Exception': str(e),
+                    'Traceback': traceback.format_exc()
+                }
+            )
 
-                return error_response(
-                    'Ошибка входящих данных из источника данных. '
-                    'Попробуйте повторить запрос позже.',
-                    status=400,
-                    code='source_data_invalid'
-                )
-            raise
+            return error_response(
+                'Ошибка входящих данных из источника данных. '
+                'Попробуйте повторить запрос позже.',
+                status=400,
+                code='source_data_invalid'
+            )
 
         except Exception as e:
-            try:
-                send_trigger_email(
-                    'Ошибка в работе интеграции Wialon', extra_data={
-                        'POST': request.body,
-                        'Exception': str(e),
-                        'Traceback': traceback.format_exc()
-                    }
-                )
-            except (ConnectionError, SMTPException):
-                pass
+            send_trigger_email(
+                'Ошибка в работе интеграции Wialon', extra_data={
+                    'POST': request.body,
+                    'Exception': str(e),
+                    'Traceback': traceback.format_exc()
+                }
+            )
 
             return error_response(
                 'Внутренняя ошибка сервера',
@@ -143,37 +134,29 @@ class URAResource(TemplateView):
                 sleep(5)
 
             except (ValueError, IndexError, KeyError, AttributeError, TypeError) as e:
-                if not settings.DEBUG:
-                    try:
-                        send_trigger_email(
-                            'Ошибка в работе интеграции Wialon', extra_data={
-                                'POST': request.body,
-                                'Exception': str(e),
-                                'Traceback': traceback.format_exc()
-                            }
-                        )
-                    except (ConnectionError, SMTPException):
-                        pass
+                send_trigger_email(
+                    'Ошибка в работе интеграции Wialon', extra_data={
+                        'POST': request.body,
+                        'Exception': str(e),
+                        'Traceback': traceback.format_exc()
+                    }
+                )
 
-                    return error_response(
-                        'Ошибка входящих данных из источника данных. '
-                        'Попробуйте повторить запрос позже',
-                        status=400,
-                        code='source_data_invalid'
-                    )
-                raise
+                return error_response(
+                    'Ошибка входящих данных из источника данных. '
+                    'Попробуйте повторить запрос позже',
+                    status=400,
+                    code='source_data_invalid'
+                )
 
             except Exception as e:
-                try:
-                    send_trigger_email(
-                        'Ошибка в работе интеграции Wialon', extra_data={
-                            'POST': request.body,
-                            'Exception': str(e),
-                            'Traceback': traceback.format_exc()
-                        }
-                    )
-                except (ConnectionError, SMTPException):
-                    pass
+                send_trigger_email(
+                    'Ошибка в работе интеграции Wialon', extra_data={
+                        'POST': request.body,
+                        'Exception': str(e),
+                        'Traceback': traceback.format_exc()
+                    }
+                )
 
                 return error_response(
                     'Внутренняя ошибка сервера',

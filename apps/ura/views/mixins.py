@@ -2,7 +2,6 @@
 import datetime
 import traceback
 from collections import OrderedDict
-from smtplib import SMTPException
 
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type, parse_float
@@ -284,16 +283,15 @@ class BaseUraRidesView(URAResource):
                         message['pos']['y']
                     )
                 except (ValueError, IndexError, KeyError, AttributeError, TypeError) as e:
-                    try:
-                        send_trigger_email(
-                            'Ошибка в работе интеграции Wialon', extra_data={
-                                'POST': self.request.body,
-                                'Exception': str(e),
-                                'Traceback': traceback.format_exc()
-                            }
-                        )
-                    except (ConnectionError, SMTPException):
-                        pass
+                    send_trigger_email(
+                        'Ошибка в работе интеграции Wialon', extra_data={
+                            'POST': self.request.body,
+                            'prev_message': prev_message,
+                            'message': message,
+                            'Exception': str(e),
+                            'Traceback': traceback.format_exc()
+                        }
+                    )
 
             # находим по времени в сообщении наличие на момент времени в геозоне
             found_geozone = False
@@ -360,6 +358,13 @@ class BaseUraRidesView(URAResource):
 
     def add_new_point(self, message, prev_message, geozone):
         fuel_level = round(self.get_fuel_level(message), 2)
+
+        if not isinstance(message, dict):
+            send_trigger_email(
+                'Объект message не словарь', extra_data={
+                    'message': message
+                }
+            )
 
         new_point = {
             'name': geozone['name'],

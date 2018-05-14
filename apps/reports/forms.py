@@ -56,6 +56,7 @@ class FuelDischargeForm(forms.Form):
     """Форма отчета "Слив топлива" """
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
+    unit = forms.IntegerField(required=False, label=_('Объект'))
     overspanding_percentage = forms.IntegerField(
         label=_('Показатель превышения фактического расхода топлива на нормативы, %'),
         min_value=0, max_value=1000, initial=5, required=True

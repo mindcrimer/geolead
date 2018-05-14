@@ -84,13 +84,20 @@ class DischargeView(BaseReportView):
         form = kwargs['form']
         report_data = None
 
+        sess_id = self.request.session.get('sid')
+        if not sess_id:
+            raise ReportException(WIALON_NOT_LOGINED)
+
+        try:
+            units_list = get_units(sess_id=sess_id, extra_fields=True)
+        except WialonException as e:
+            raise ReportException(str(e))
+
+        kwargs['units'] = units_list
+
         if self.request.POST:
             if form.is_valid():
                 report_data = OrderedDict()
-
-                sess_id = self.request.session.get('sid')
-                if not sess_id:
-                    raise ReportException(WIALON_NOT_LOGINED)
 
                 self.user = User.objects.filter(is_active=True)\
                     .filter(wialon_username=self.request.session.get('user')).first()
@@ -100,12 +107,14 @@ class DischargeView(BaseReportView):
 
                 normal_ratio = 1 + (form.cleaned_data['overspanding_percentage'] / 100)
 
-                try:
-                    units_list = get_units(sess_id=sess_id, extra_fields=True)
-                except WialonException as e:
-                    raise ReportException(str(e))
-
                 units_dict = OrderedDict((u['id'], u) for u in units_list)
+                selected_unit = form.cleaned_data.get('unit')
+
+                if selected_unit and selected_unit in units_dict:
+                    units_dict = {
+                        selected_unit: units_dict[selected_unit]
+                    }
+
                 jobs_count = len(units_dict)
                 print('Всего ТС: %s' % jobs_count)
 

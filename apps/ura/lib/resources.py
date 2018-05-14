@@ -2,7 +2,6 @@
 import traceback
 from time import sleep
 
-from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -61,7 +60,6 @@ class URAResource(TemplateView):
                 and not getattr(handler, 'is_public_http_method', False):
             try:
                 request.user = self.authenticate(request)
-
             except AuthenticationFailed as e:
                 # обновлять токен не имеет смысла, он неправильный. Просим войти заново.
                 return error_response(
@@ -83,7 +81,8 @@ class URAResource(TemplateView):
                 'Ошибка в работе интеграции Wialon', extra_data={
                     'POST': request.body,
                     'Exception': str(e),
-                    'Traceback': traceback.format_exc()
+                    'Traceback': traceback.format_exc(),
+                    'user': request.user
                 }
             )
 
@@ -99,7 +98,8 @@ class URAResource(TemplateView):
                 'Ошибка в работе интеграции Wialon', extra_data={
                     'POST': request.body,
                     'Exception': str(e),
-                    'Traceback': traceback.format_exc()
+                    'Traceback': traceback.format_exc(),
+                    'user': request.user
                 }
             )
 
@@ -138,7 +138,8 @@ class URAResource(TemplateView):
                     'Ошибка в работе интеграции Wialon', extra_data={
                         'POST': request.body,
                         'Exception': str(e),
-                        'Traceback': traceback.format_exc()
+                        'Traceback': traceback.format_exc(),
+                        'user': request.user
                     }
                 )
 
@@ -154,7 +155,8 @@ class URAResource(TemplateView):
                     'Ошибка в работе интеграции Wialon', extra_data={
                         'POST': request.body,
                         'Exception': str(e),
-                        'Traceback': traceback.format_exc()
+                        'Traceback': traceback.format_exc(),
+                        'user': request.user
                     }
                 )
 
@@ -167,7 +169,8 @@ class URAResource(TemplateView):
         send_trigger_email(
             'Лимит попыток обращения в Wialon (%s) закончился' % attempts_limit,
             extra_data={
-                'Последняя ошибка': last_error
+                'Последняя ошибка': last_error,
+                'user': request.user
             }
         )
         return error_response(

@@ -165,7 +165,8 @@ class BaseUraRidesView(URAResource):
                     'Exception': str(e),
                     'Traceback': traceback.format_exc(),
                     'data': self.report_data['unit_zones_visit'],
-                    'body': self.request.body
+                    'body': self.request.body,
+                    'user': self.request.user
                 }
             )
 
@@ -177,11 +178,22 @@ class BaseUraRidesView(URAResource):
                 row[2] = {'v': self.request_dt_to}
 
             geozone_name = row[0]['t'] if isinstance(row[0], dict) else row[0]
-            row = {
-                'name': geozone_name.strip(),
-                'time_in': row[1]['v'],
-                'time_out': row[2]['v']
-            }
+            try:
+                row = {
+                    'name': geozone_name.strip(),
+                    'time_in': row[1]['v'],
+                    'time_out': row[2]['v']
+                }
+            except (IndexError, KeyError, ValueError, AttributeError) as e:
+                send_trigger_email(
+                    'Нет необходимого атрибута v в результате', extra_data={
+                        'Exception': str(e),
+                        'Traceback': traceback.format_exc(),
+                        'row': row,
+                        'body': self.request.body,
+                        'user': self.request.user
+                    }
+                )
 
             # проверим интервалы между отрезками
             try:
@@ -289,7 +301,8 @@ class BaseUraRidesView(URAResource):
                             'prev_message': prev_message,
                             'message': message,
                             'Exception': str(e),
-                            'Traceback': traceback.format_exc()
+                            'Traceback': traceback.format_exc(),
+                            'user': self.request.user
                         }
                     )
 
@@ -362,7 +375,10 @@ class BaseUraRidesView(URAResource):
         if not isinstance(message, dict):
             send_trigger_email(
                 'Объект message не словарь', extra_data={
-                    'message': message
+                    'POST': self.request.body,
+                    'message': message,
+                    'prev_message': prev_message,
+                    'user': self.request.user
                 }
             )
 

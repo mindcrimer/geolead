@@ -5,6 +5,7 @@ from base.exceptions import APIProcessError
 from base.utils import parse_float
 from reports.utils import utc_to_local_time, parse_wialon_report_datetime
 from snippets.utils.datetime import utcnow
+from snippets.utils.email import send_trigger_email
 from ura import models
 from ura.lib.response import XMLResponse, error_response
 from ura.views.mixins import BaseUraRidesView
@@ -129,6 +130,16 @@ class URAMovingResource(BaseUraRidesView):
 
         for row in self.report_data['unit_chronology']:
             row_data = row['c']
+            if not isinstance(row_data[0], str):
+                send_trigger_email(
+                    'В хронологии первое поле отчета не строка!', extra_data={
+                        'POST': self.request.body,
+                        'row_data': row_data,
+                        'user': self.request.user
+                    }
+                )
+                continue
+
             if row_data[0].lower() not in ('parking', 'стоянка', 'остановка'):
                 continue
 

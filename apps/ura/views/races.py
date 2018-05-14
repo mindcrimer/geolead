@@ -225,7 +225,8 @@ class URARacesResource(BaseUraRidesView, URAResource):
                         'Exception': str(e),
                         'Traceback': traceback.format_exc(),
                         'data': row_data,
-                        'body': self.request.body
+                        'POST': self.request.body,
+                        'user': self.request.user
                     }
                 )
 

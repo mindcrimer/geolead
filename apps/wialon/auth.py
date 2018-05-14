@@ -10,7 +10,7 @@ from django.core.cache import cache
 import requests
 
 from base.exceptions import APIProcessError
-
+from snippets.utils.email import send_trigger_email
 
 SESSION_TIMEOUT = 60 * 4.5
 
@@ -78,6 +78,15 @@ def authenticate_at_wialon(user):
     parts = [x.split('=') for x in result.split('?')[1].split('&')]
     parts = {x[0]: x[1] for x in parts}
     token = parts.get(token_key)
+
+    if not token:
+        print(result)
+        send_trigger_email(
+            'Ошибка входа в Wialon', extra_data={
+                'result': result,
+                'user': user
+            }
+        )
 
     return token
 

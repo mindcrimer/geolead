@@ -73,6 +73,13 @@ def authenticate_at_wialon(user):
 
     token_key = 'access_token'
     if token_key not in result:
+        print(result)
+        send_trigger_email(
+            'Ошибка входа в Wialon', extra_data={
+                'result': result,
+                'user': user
+            }
+        )
         return None
 
     parts = [x.split('=') for x in result.split('?')[1].split('&')]

@@ -122,14 +122,22 @@ class DrivingStyleView(BaseReportView):
         self.form = kwargs['form']
         kwargs['today'] = datetime.date.today()
 
+        sess_id = self.request.session.get('sid')
+        if not sess_id:
+            raise ReportException(WIALON_NOT_LOGINED)
+
+        try:
+            units_list = get_units(sess_id=sess_id, extra_fields=True)
+        except WialonException as e:
+            raise ReportException(str(e))
+
+        kwargs['units'] = units_list
+
         if self.request.POST:
             report_data = None
 
             if self.form.is_valid():
                 report_data = OrderedDict()
-                sess_id = self.request.session.get('sid')
-                if not sess_id:
-                    raise ReportException(WIALON_NOT_LOGINED)
 
                 self.user = User.objects.filter(is_active=True) \
                     .filter(wialon_username=self.request.session.get('user')).first()
@@ -137,12 +145,13 @@ class DrivingStyleView(BaseReportView):
                 if not self.user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                try:
-                    units_list = get_units(sess_id=sess_id, extra_fields=True)
-                except WialonException as e:
-                    raise ReportException(str(e))
-
                 units_dict = OrderedDict((u['id'], u) for u in units_list)
+                selected_unit = self.form.cleaned_data.get('unit')
+
+                if selected_unit and selected_unit in units_dict:
+                    units_dict = {
+                        selected_unit: units_dict[selected_unit]
+                    }
 
                 dt_from_utc = local_to_utc_time(
                     self.form.cleaned_data['dt_from'], self.user.wialon_tz

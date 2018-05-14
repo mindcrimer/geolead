@@ -8,6 +8,7 @@ class DrivingStyleForm(forms.Form):
     """Форма отчета "Стиль вождения" """
     dt_from = forms.DateTimeField(label=_('С'))
     dt_to = forms.DateTimeField(label=_('По'))
+    unit = forms.IntegerField(required=False, label=_('Объект'))
     normal_rating = forms.IntegerField(
         label=_('Процент нарушений, при котором требуется профилактическая беседа'), min_value=0,
         max_value=99, initial=10, required=True

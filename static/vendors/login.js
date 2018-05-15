@@ -8,7 +8,8 @@ if (args.length < 3) {
 
 var page = require('webpage').create();
 
-page.open('http://hosting.wialon.com/login.html?access_type=-1', function() {
+// 1 year duration
+page.open('http://hosting.wialon.com/login.html?access_type=-1&duration=31536000', function() {
   page.onLoadFinished = function() {
     console.log(page.url);
     phantom.exit();
@@ -17,6 +18,8 @@ page.open('http://hosting.wialon.com/login.html?access_type=-1', function() {
   setTimeout(function() {
     page.evaluate(function(args) {
       console.log(args);
+      document.forms[0].access_type.value = '-1';
+      document.forms[0].duration.value = '31536000';
       document.forms[0].login.value = args[1];
       document.forms[0].passw.value = args[2];
       document.forms[0].submit();

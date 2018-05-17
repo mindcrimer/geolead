@@ -9,7 +9,7 @@ if (args.length < 3) {
 var page = require('webpage').create();
 
 // 1 year duration
-page.open('https://hosting.wialon.com/login.html?access_type=-1&duration=31536000', function() {
+page.open('https://hosting.wialon.com/login.html?access_type=-1&duration=0', function() {
   page.onLoadFinished = function() {
     console.log(page.url);
     phantom.exit();

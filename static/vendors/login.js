@@ -19,7 +19,7 @@ page.open('https://hosting.wialon.com/login.html?access_type=-1&duration=0', fun
     page.evaluate(function(args) {
       console.log(args);
       document.forms[0].access_type.value = '-1';
-      document.forms[0].duration.value = '31536000';
+      document.forms[0].duration.value = '0';
       document.forms[0].login.value = args[1];
       document.forms[0].passw.value = args[2];
       document.forms[0].submit();

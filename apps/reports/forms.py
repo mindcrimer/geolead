@@ -86,3 +86,21 @@ class OverstatementsForm(forms.Form):
         label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),
         min_value=0, max_value=99, initial=5, required=True
     )
+
+
+class VchmDrivingStyleForm(forms.Form):
+    """Форма отчета по БДД (ВЧМ)"""
+    dt_from = forms.DateTimeField(label=_('С'))
+    dt_to = forms.DateTimeField(label=_('По'))
+
+
+class VchmIdleTimesForm(forms.Form):
+    """Форма отчета по простоям за смену"""
+    dt_from = forms.DateTimeField(label=_('С'))
+    dt_to = forms.DateTimeField(label=_('По'))
+
+
+class VchmTixiingForm(forms.Form):
+    """Форма cуточного отчета для таксировки ПЛ"""
+    dt_from = forms.DateTimeField(label=_('С'))
+    dt_to = forms.DateTimeField(label=_('По'))

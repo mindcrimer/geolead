@@ -44,6 +44,7 @@ class BaseReportView(BaseTemplateView):
             'report_name': self.report_name,
             'messages': get_messages(self.request) or [],
             'sid': self.request.session.get('sid', ''),
+            'scope': 'nlmk',
             'user': self.request.session.get('user', '')
         }
 
@@ -162,3 +163,28 @@ class BaseReportView(BaseTemplateView):
             raise ReportException(WIALON_USER_NOT_FOUND)
 
         return kwargs
+
+
+class BaseVchmReportView(BaseReportView):
+    def post(self, request, *args, **kwargs):
+        try:
+            context = self.get_context_data(**kwargs)
+            if 'report_data' in context:
+                dump_context = self.get_dump_context(context)
+                dump_context['cleaned_data'] = context['form'].cleaned_data
+                dump_context['stats'] = context.get('stats', {})
+                request.session[self.get_session_key()] = dump_context
+                return self.download_xls(request, *args, **kwargs)
+
+        except (ReportException, WialonException) as e:
+            messages.error(request, str(e))
+            context = super(BaseReportView, self).get_context_data(**kwargs)
+            context = self.get_default_context_data(**context)
+            return self.render_to_response(context)
+
+        return self.render_to_response(context)
+
+    def get_default_context_data(self, **kwargs):
+        context = super(BaseVchmReportView, self).get_default_context_data(**kwargs)
+        context['scope'] = 'vchm'
+        return context

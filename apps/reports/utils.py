@@ -68,13 +68,17 @@ def parse_timedelta(delta_string):
 
 
 def format_timedelta(seconds):
-    hours = math.floor(seconds / 3600)
+    hours = int(math.floor(seconds / 3600))
     rest = seconds - (3600 * hours)
 
-    minutes = math.floor(rest / 60)
+    minutes = int(math.floor(rest / 60))
     secs = rest - (60 * minutes)
 
-    return '%s:%s:%s' % tuple(str(x).rjust(2, '0') for x in (hours, minutes, secs))
+    return '%s:%s:%s' % (
+        str(hours),
+        str(minutes).rjust(2, '0'),
+        str(int(secs)).rjust(2, '0')
+    )
 
 
 DATETIME_FORMAT = '%Y-%m-%d %H:%M'

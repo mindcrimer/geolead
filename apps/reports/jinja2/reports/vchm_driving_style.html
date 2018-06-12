@@ -1,7 +1,7 @@
 {%- extends 'reports/base.html' -%}
 
 {%- block FORM -%}
-  <form class="form" method="post" action="">
+  <form class="form" method="post" action="" autocomplete="off">
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
     <fieldset class="uk-fieldset">
 
@@ -10,16 +10,29 @@
       <div class="form-controls">
         <div class="uk-margin">
           <label class="uk-form-label" for="report_from">С</label>
-          <input class="uk-input dt-input" name="dt_from" id="report_from"
-                 value="{{ form.cleaned_data['dt_from']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
+          <input class="uk-input date-input" name="dt_from" id="report_from"
+                 value="{{ form.cleaned_data['dt_from']|date('d.m.Y') if form.cleaned_data and form.cleaned_data.get('dt_from') else '' }}">
           <div class="errors">{{ form.errors.get('dt_from', '') }}</div>
         </div>
 
         <div class="uk-margin">
           <label class="uk-form-label" for="report_to">По</label>
-          <input class="uk-input dt-input" name="dt_to" id="report_to"
-                 value="{{ form.cleaned_data['dt_to']|date('d.m.Y H:i') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
+          <input class="uk-input date-input" name="dt_to" id="report_to"
+                 value="{{ form.cleaned_data['dt_to']|date('d.m.Y') if form.cleaned_data and form.cleaned_data.get('dt_to') else '' }}">
           <div class="errors">{{ form.errors.get('dt_to', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
+          <label class="uk-form-label" for="unit">Объект</label>
+          <select class="uk-select" name="unit" id="unit">
+            <option value="">Все</option>
+            {%- for unit in units -%}
+              <option value="{{ unit['id'] }}"{% if form.cleaned_data and form.cleaned_data.get('unit') == unit['id'] %} selected="selected"{% endif %}>
+                {{- unit['name'] -}}
+              </option>
+            {%- endfor -%}
+          </select>
+          <div class="errors">{{ form.errors.get('unit', '') }}</div>
         </div>
 
         <div class="uk-margin">

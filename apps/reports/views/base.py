@@ -8,6 +8,7 @@ import xlwt
 from base.exceptions import ReportException
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
+from users.models import User
 from wialon.exceptions import WialonException
 
 WIALON_INTERNAL_EXCEPTION = 'Ошибка при получении данных: %s'
@@ -90,6 +91,8 @@ class BaseReportView(BaseTemplateView):
         return {x: y for x, y in context.items() if x in self.context_dump_fields}
 
     def download_xls(self, request, *args, **kwargs):
+        from reports.utils import utc_to_local_time
+
         context = request.session.get(self.get_session_key())
         if not context:
             messages.error(request, 'Данные отчета не найдены. Сначала выполните отчет')
@@ -97,7 +100,17 @@ class BaseReportView(BaseTemplateView):
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
-        filename = 'report_%s.xls' % utcnow().strftime('%Y%m%d_%H%M%S')
+        dt = utcnow()
+        if request.session.get('user'):
+            user = User.objects.filter(
+                is_active=True,
+                wialon_username=self.request.session.get('user')
+            ).first()
+
+            if user and user.wialon_tz:
+                dt = utc_to_local_time(dt, user.wialon_tz)
+
+        filename = 'report_%s.xls' % dt.strftime('%Y%m%d_%H%M%S')
 
         self.workbook = xlwt.Workbook()
         worksheet = self.workbook.add_sheet('Отчет')

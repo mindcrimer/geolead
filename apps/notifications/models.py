@@ -10,7 +10,8 @@ from snippets.models import BasicModel, LastModMixin
 class Notification(LastModMixin, BasicModel):
     """Шаблоны уведомлений"""
     job = models.ForeignKey(
-        'ura.Job', verbose_name=_('Путевой лист'), related_name='notifications'
+        'ura.Job', verbose_name=_('Путевой лист'), related_name='notifications',
+        on_delete=models.CASCADE
     )
     wialon_id = models.IntegerField(_('ID в Wialon'))
     sent_data = JSONField(_('Данные отправленные'), blank=True)
@@ -25,7 +26,8 @@ class Notification(LastModMixin, BasicModel):
 class Event(LastModMixin, BasicModel):
     """События"""
     notification = models.ForeignKey(
-        'Notification', verbose_name=_('Шаблон уведомления'), related_name='events'
+        'Notification', verbose_name=_('Шаблон уведомления'), related_name='events',
+        on_delete=models.CASCADE
     )
 
     class Meta:

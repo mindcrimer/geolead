@@ -95,14 +95,16 @@ class User(AbstractUser, LastModMixin, BasicModel):
         help_text=_(
             'В случае отсутствия будет показывать все данные УРА (ПЛ, нормативы). При задании '
             'позволяет операторам получать отчеты от лица головной учетной записи'
-        )
+        ),
+        on_delete=models.SET_NULL
     )
     supervisor = models.ForeignKey(
         'self', blank=True, null=True, verbose_name=_('Супервайзер'),
         help_text=_(
             'Указание супервайзера позволит УРА работать сразу с несколькими учетными записями '
             'под одним логин/паролем'
-        )
+        ),
+        on_delete=models.SET_NULL
     )
 
     class Meta:

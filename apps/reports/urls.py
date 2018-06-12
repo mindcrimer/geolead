@@ -7,7 +7,9 @@ from reports.views.finished_jobs import FinishedJobsView
 from reports.views.invalid_job_start_end import InvalidJobStartEndView
 from reports.views.faults import FaultsView
 from reports.views.overstatements import OverstatementsView
-
+from reports.views.vchm_driving_style import VchmDrivingStyleView
+from reports.views.vchm_idle_times import VchmIdleTimesView
+from reports.views.vchm_taxiing import VchmTixiingView
 
 urlpatterns = (
     url(
@@ -33,5 +35,17 @@ urlpatterns = (
     url(
         r'^overstatements/$',
         OverstatementsView.as_view(), name='overstatements'
+    ),
+    url(
+        r'^vchm/driving_style/$',
+        VchmDrivingStyleView.as_view(), name='vchm_driving_style'
+    ),
+    url(
+        r'^vchm/idle_times/$',
+        VchmIdleTimesView.as_view(), name='vchm_idle_times'
+    ),
+    url(
+        r'^vchm/taxiing/$',
+        VchmTixiingView.as_view(), name='vchm_taxiing'
     )
 )

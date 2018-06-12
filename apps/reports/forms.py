@@ -86,3 +86,28 @@ class OverstatementsForm(forms.Form):
         label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),
         min_value=0, max_value=99, initial=5, required=True
     )
+
+
+class VchmDrivingStyleForm(forms.Form):
+    """Форма отчета по БДД (ВЧМ)"""
+    dt_from = forms.DateField(label=_('С'))
+    dt_to = forms.DateField(label=_('По'))
+    unit = forms.IntegerField(required=False, label=_('Объект'))
+
+
+class VchmIdleTimesForm(forms.Form):
+    """Форма отчета по простоям за смену"""
+    dt_from = forms.DateField(label=_('С'))
+    dt_to = forms.DateField(label=_('По'))
+    unit = forms.IntegerField(required=False, label=_('Объект'))
+
+
+class VchmTixiingForm(forms.Form):
+    """Форма cуточного отчета для таксировки ПЛ"""
+    dt_from = forms.DateField(label=_('С'))
+    dt_to = forms.DateField(label=_('По'))
+    unit = forms.IntegerField(required=False, label=_('Объект'))
+    default_overstatements_standard = forms.IntegerField(
+        label=_('Норматив нахождения в геозонах, если не указано в таблице нормативов'),
+        min_value=0, max_value=10000, initial=3, required=True
+    )

@@ -12,7 +12,8 @@ class Report(LastModMixin, BasicModel):
         _('Идентификатор'), unique=True, max_length=36, default=generate_uuid4
     )
     user = models.ForeignKey(
-        'users.User', related_name='report_logs', verbose_name=_('Пользователь')
+        'users.User', related_name='report_logs', verbose_name=_('Пользователь'),
+        on_delete=models.CASCADE
     )
 
     class Meta:
@@ -22,7 +23,9 @@ class Report(LastModMixin, BasicModel):
 
 class ReportLog(LastModMixin, BasicModel):
     """Лог отчетов"""
-    report = models.ForeignKey('reports.Report', verbose_name=_('Отчет'), related_name='logs')
+    report = models.ForeignKey(
+        'reports.Report', verbose_name=_('Отчет'), related_name='logs', on_delete=models.CASCADE
+    )
     log_message = models.TextField(_('Сообщение'), blank=True)
 
     class Meta:
@@ -33,7 +36,8 @@ class ReportLog(LastModMixin, BasicModel):
 class WialonReportLog(LastModMixin, BasicModel):
     """Лог отчетов"""
     user = models.ForeignKey(
-        'users.User', related_name='wialon_report_logs', verbose_name=_('Пользователь')
+        'users.User', related_name='wialon_report_logs', verbose_name=_('Пользователь'),
+        on_delete=models.CASCADE
     )
 
     class Meta:

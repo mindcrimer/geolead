@@ -28,7 +28,8 @@ class Job(BasicModel, LastModMixin):
     return_time = models.DateTimeField(_('Время заезда'), blank=True, null=True)
 
     user = models.ForeignKey(
-        'users.User', verbose_name=_('Организация'), blank=True, null=True, related_name='jobs'
+        'users.User', verbose_name=_('Организация'), blank=True, null=True, related_name='jobs',
+        on_delete=models.SET_NULL
     )
 
     class Meta:
@@ -42,13 +43,15 @@ class Job(BasicModel, LastModMixin):
 class JobLog(BasicModel, LastModMixin):
     """Журнал изменения и запроса данных по путевым листам"""
     job = models.ForeignKey(
-        'Job', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True
+        'Job', verbose_name=_('Путевой лист'), related_name='log', blank=True, null=True,
+        on_delete=models.SET_NULL
     )
     url = models.CharField(_('URL'), max_length=255, blank=True, null=True, db_index=True)
 
     request = models.TextField(_('Запрос'), blank=True, null=True)
     user = models.ForeignKey(
-        'users.User', verbose_name=_('Пользователь'), blank=True, null=True, related_name='logs'
+        'users.User', verbose_name=_('Пользователь'), blank=True, null=True, related_name='logs',
+        on_delete=models.SET_NULL
     )
     response = models.TextField(_('Ответ'), blank=True, null=True)
     response_status = models.PositiveSmallIntegerField(_('Статус ответа'), blank=True, null=True)
@@ -67,7 +70,9 @@ class JobLog(BasicModel, LastModMixin):
 
 class JobPoint(BasicModel, LastModMixin):
     """Точки (геозоны путевого листа по мере прохождения"""
-    job = models.ForeignKey('Job', verbose_name=_('Путевой лист'), related_name='points')
+    job = models.ForeignKey(
+        'Job', verbose_name=_('Путевой лист'), related_name='points', on_delete=models.CASCADE
+    )
 
     title = models.CharField(_('Заголовок'), max_length=255, blank=True, null=True)
     point_type = models.PositiveIntegerField(_('Тип геозоны'), blank=True, null=True)
@@ -93,7 +98,7 @@ class StandardJobTemplate(BasicModel, LastModMixin):
     """Маршруты (шаблоны заданий) Wialon"""
     user = models.ForeignKey(
         'users.User', blank=True, null=True, verbose_name=_('Пользователь'),
-        related_name='standard_job_templates'
+        related_name='standard_job_templates', on_delete=models.SET_NULL
     )
     wialon_id = models.CharField(_('ID в Wialon'), max_length=64, unique=True)
     title = models.CharField(_('Заголовок'), max_length=255)
@@ -112,7 +117,8 @@ class StandardJobTemplate(BasicModel, LastModMixin):
 class StandardPoint(BasicModel, LastModMixin):
     """Плановые геозоны маршрута (шаблона задания)"""
     job_template = models.ForeignKey(
-        'StandardJobTemplate', related_name='points', verbose_name=_('Шаблон отчетов (маршрут)')
+        'StandardJobTemplate', related_name='points', verbose_name=_('Шаблон отчетов (маршрут)'),
+        on_delete=models.CASCADE
     )
     wialon_id = models.CharField(_('ID в Wialon'), max_length=64)
     title = models.CharField(_('Заголовок'), max_length=255)

@@ -8,6 +8,7 @@ import xlwt
 from base.exceptions import ReportException
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
+from users.models import User
 from wialon.exceptions import WialonException
 
 WIALON_INTERNAL_EXCEPTION = 'Ошибка при получении данных: %s'
@@ -44,6 +45,7 @@ class BaseReportView(BaseTemplateView):
             'report_name': self.report_name,
             'messages': get_messages(self.request) or [],
             'sid': self.request.session.get('sid', ''),
+            'scope': 'nlmk',
             'user': self.request.session.get('user', '')
         }
 
@@ -89,6 +91,8 @@ class BaseReportView(BaseTemplateView):
         return {x: y for x, y in context.items() if x in self.context_dump_fields}
 
     def download_xls(self, request, *args, **kwargs):
+        from reports.utils import utc_to_local_time
+
         context = request.session.get(self.get_session_key())
         if not context:
             messages.error(request, 'Данные отчета не найдены. Сначала выполните отчет')
@@ -96,7 +100,17 @@ class BaseReportView(BaseTemplateView):
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
-        filename = 'report_%s.xls' % utcnow().strftime('%Y%m%d_%H%M%S')
+        dt = utcnow()
+        if request.session.get('user'):
+            user = User.objects.filter(
+                is_active=True,
+                wialon_username=self.request.session.get('user')
+            ).first()
+
+            if user and user.wialon_tz:
+                dt = utc_to_local_time(dt, user.wialon_tz)
+
+        filename = 'report_%s.xls' % dt.strftime('%Y%m%d_%H%M%S')
 
         self.workbook = xlwt.Workbook()
         worksheet = self.workbook.add_sheet('Отчет')
@@ -162,3 +176,28 @@ class BaseReportView(BaseTemplateView):
             raise ReportException(WIALON_USER_NOT_FOUND)
 
         return kwargs
+
+
+class BaseVchmReportView(BaseReportView):
+    def post(self, request, *args, **kwargs):
+        try:
+            context = self.get_context_data(**kwargs)
+            if 'report_data' in context:
+                dump_context = self.get_dump_context(context)
+                dump_context['cleaned_data'] = context['form'].cleaned_data
+                dump_context['stats'] = context.get('stats', {})
+                request.session[self.get_session_key()] = dump_context
+                return self.download_xls(request, *args, **kwargs)
+
+        except (ReportException, WialonException) as e:
+            messages.error(request, str(e))
+            context = super(BaseReportView, self).get_context_data(**kwargs)
+            context = self.get_default_context_data(**context)
+            return self.render_to_response(context)
+
+        return self.render_to_response(context)
+
+    def get_default_context_data(self, **kwargs):
+        context = super(BaseVchmReportView, self).get_default_context_data(**kwargs)
+        context['scope'] = 'vchm'
+        return context

@@ -1,0 +1,41 @@
+{%- extends 'layouts/main.html' -%}
+
+{%- block PAGE_CONTENT -%}
+  <div class="uk-margin-top">
+    <ul class="reports-list">
+      <li>
+        <a href="{{ url('reports:vchm_taxiing') }}">
+          <span class="icon fa fa-taxi"></span>
+          <span class="title">
+            <span class="inner">
+              Суточный отчет для таксировки ПЛ
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
+
+      <li>
+        <a href="{{ url('reports:vchm_driving_style') }}">
+          <span class="icon fa fa-bolt"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет по БДД (ВЧМ)
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
+
+      <li>
+        <a href="{{ url('reports:vchm_idle_times') }}">
+          <span class="icon fa fa-parking"></span>
+          <span class="title">
+            <span class="inner">
+              Отчет по простоям за смену
+            </span>
+          </span>
+        </a>
+      </li>{# -#}
+
+    </ul>
+  </div>
+{%- endblock -%}

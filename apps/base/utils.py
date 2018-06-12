@@ -2,11 +2,11 @@
 from math import sin, cos, sqrt, atan2, radians
 
 
-def parse_float(data):
+def parse_float(data, default=''):
     if '-' in data or not data:
-        return ''
+        return default
 
-    return float(data.split(' ')[0]) if data else ''
+    return float(data.split(' ')[0]) if data else default
 
 
 def get_distance(lon1, lat1, lon2, lat2):

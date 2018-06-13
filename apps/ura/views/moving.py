@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+from collections import OrderedDict
 
 from base.exceptions import APIProcessError
 from base.utils import parse_float
@@ -13,14 +14,26 @@ from ura.views.mixins import BaseUraRidesView
 
 class URAMovingResource(BaseUraRidesView):
     """getMoving - движение машины"""
+    point_params = (
+        'startFuelLevel',
+        'endFuelLevel',
+        'fuelRefill',
+        'fuelDrain',
+        'stopMinutes',
+        'moveMinutes',
+        'motoHours',
+        'odoMeter'
+    )
+
     def get_report_data_tables(self):
         self.report_data = {
-            'unit_fillings': [],
-            'unit_thefts': [],
-            'unit_engine_hours': [],
-            'unit_zones_visit': [],
             'unit_chronology': [],
-            'unit_sensors_tracing': []
+            'unit_digital_sensors': [],
+            'unit_engine_hours': [],
+            'unit_fillings': [],
+            'unit_sensors_tracing': [],
+            'unit_thefts': [],
+            'unit_zones_visit': []
         }
 
     def report_post_processing(self, unit_info):
@@ -121,7 +134,7 @@ class URAMovingResource(BaseUraRidesView):
 
                 delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
                 # не пересекаются:
-                if delta.total_seconds() < 0:
+                if delta.total_seconds() <= 0:
                     continue
 
                 point['params']['motoHours'] += delta.total_seconds()
@@ -138,9 +151,6 @@ class URAMovingResource(BaseUraRidesView):
                         'user': self.request.user
                     }
                 )
-                continue
-
-            if row_data[0].lower() not in ('parking', 'стоянка', 'остановка'):
                 continue
 
             time_from = utc_to_local_time(
@@ -177,26 +187,74 @@ class URAMovingResource(BaseUraRidesView):
                 if delta.total_seconds() < 0:
                     continue
 
-                point['params']['stopMinutes'] += delta.total_seconds()
+                if row_data[0].lower() in ('поездка', 'trip'):
+                    point['params']['moveMinutes'] += delta.total_seconds()
+                elif row_data[0].lower() in ('стоянка', 'parking'):
+                    self.add_stop(point, time_from, time_until, row_data[3])
 
-        self.print_time_needed('MoveTime')
+        self.print_time_needed('moveMinutes')
+
+        # рассчитываем время работы крановой установки пропорционально интервалам
+        # (только лишь ради кэша, необходимости в расчетах нет)
+        for row in self.report_data['unit_digital_sensors']:
+            time_from = utc_to_local_time(
+                parse_wialon_report_datetime(
+                    row['c'][0]['t']
+                    if isinstance(row['c'][0], dict)
+                    else row['c'][0]
+                ),
+                self.request.user.ura_tz
+            )
+
+            time_until_value = row['c'][1]['t'] \
+                if isinstance(row['c'][1], dict) else row['c'][1]
+
+            if 'unknown' in time_until_value.lower():
+                time_until = utc_to_local_time(
+                    self.input_data['date_end'], self.request.user.ura_tz
+                )
+            else:
+                time_until = utc_to_local_time(
+                    parse_wialon_report_datetime(time_until_value),
+                    self.request.user.ura_tz
+                )
+
+            for point in self.ride_points:
+                if point['time_in'] > time_until:
+                    # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
+                    break
+
+                # если интервал точки меньше даты начала моточасов, значит еще не дошли
+                if point['time_out'] < time_from:
+                    continue
+
+                delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
+                # не пересекаются:
+                if delta.total_seconds() <= 0:
+                    continue
+
+                point['params']['GPMTime'] += delta.total_seconds()
+
+        self.print_time_needed('GPMTime')
+
+        #
+        for point in self.ride_points:
+            point['params']['stopMinutes'] = (
+                point['time_out'] - point['time_in']
+            ).total_seconds() - point['params']['moveMinutes']
 
     def prepare_output_data(self):
         # преобразуем секунды в минуты и часы
         for i, point in enumerate(self.ride_points):
-            point['params']['moveMinutes'] = round(
-                (
-                    (point['time_out'] - point['time_in']).total_seconds()
-                    - point['params']['stopMinutes']
-                ) / 60.0, 2
-            )
-            point['params']['stopMinutes'] = round(
-                point['params']['stopMinutes'] / 60.0, 2
-            )
-            point['params']['motoHours'] = round(
-                point['params']['motoHours'] / 3600.0, 2
-            )
+            point['params']['stopMinutes'] = round(point['params']['stopMinutes'] / 60.0, 2)
+            point['params']['moveMinutes'] = round(point['params']['moveMinutes'] / 60.0, 2)
+            point['params']['motoHours'] = round(point['params']['motoHours'] / 3600.0, 2)
             point['params']['odoMeter'] = round(point['params']['odoMeter'], 2)
+
+            # убираем лишние параметры, которые уходили в кэш прохождения маршрута
+            point['params'] = OrderedDict([
+                (k, v) for k, v in point['params'].items() if k in self.point_params
+            ])
 
     def get_job(self):
         self.job = models.Job.objects.filter(

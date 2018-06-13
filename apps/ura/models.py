@@ -81,7 +81,12 @@ class JobPoint(BasicModel, LastModMixin):
     leave_date_time = models.DateTimeField(_('Время выхода'), blank=True, null=True)
 
     total_time = models.FloatField(_('Время в геозоне, сек'), blank=True, null=True)
+    move_time = models.FloatField(_('Время движения в геозоне, сек'), blank=True, null=True)
     parking_time = models.FloatField(_('Время стоянки в геозоне, сек'), blank=True, null=True)
+    motohours_time = models.FloatField(
+        _('Время работающего двигателя, сек'), blank=True, null=True
+    )
+    gpm_time = models.FloatField(_('Время работы ГПМ, сек'), blank=True, null=True)
 
     lat = models.FloatField(_('Широта входа в геозону'), null=True, blank=True)
     lng = models.FloatField(_('Долгота входа в геозону'), null=True, blank=True)
@@ -91,7 +96,27 @@ class JobPoint(BasicModel, LastModMixin):
         verbose_name_plural = _('Геозоны путевого листа')
 
     def __str__(self):
-        return str(self.pk)
+        return 'ПЛ ID=%s: %s' % (self.job_id, self.title)
+
+
+class JobPointStop(BasicModel, LastModMixin):
+    """Остановки по маршруту ПЛ"""
+    job_point = models.ForeignKey(
+        'JobPoint', verbose_name=_('Геозона путевого листа'), related_name='stops',
+        on_delete=models.CASCADE
+    )
+    start_date_time = models.DateTimeField(_('Время начала'), blank=True, null=True)
+    finish_date_time = models.DateTimeField(_('Время конца'), blank=True, null=True)
+    place = models.TextField(_('Местоположение'), blank=True)
+    lat = models.FloatField(_('Широта точки остановки'), null=True, blank=True)
+    lng = models.FloatField(_('Долгота точки остановки'), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Остановка по маршруту ПЛ')
+        verbose_name_plural = _('Остановки по маршруту ПЛ')
+
+    def __str__(self):
+        return '%s: %s' % (self.job_point, self.place)
 
 
 class StandardJobTemplate(BasicModel, LastModMixin):

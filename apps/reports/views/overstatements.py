@@ -13,7 +13,7 @@ from reports.jinjaglobals import date
 from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
     REPORT_ROW_HEIGHT
-from ura.models import Job, StandardJobTemplate, StandardPoint
+from ura.models import Job, StandardJobTemplate, StandardPoint, JobPoint
 from users.models import User
 from wialon.api import get_routes, get_units
 
@@ -108,12 +108,19 @@ class OverstatementsView(BaseReportView):
                 }
 
                 ura_user = user.ura_user if user.ura_user_id else user
-                jobs = Job.objects.filter(
-                    user=ura_user,
-                    date_begin__gte=dt_from,
-                    date_end__lte=dt_to,
-                    route_id__in=list(routes.keys())
-                ).prefetch_related('points').order_by('date_begin', 'date_end')
+                jobs = Job.objects \
+                    .filter(
+                        user=ura_user,
+                        date_begin__gte=dt_from,
+                        date_end__lte=dt_to,
+                        route_id__in=list(routes.keys())
+                    )\
+                    .prefetch_related(
+                        Prefetch(
+                            'points', JobPoint.objects.order_by('id'), to_attr='cached_points'
+                        )
+                    )\
+                    .order_by('date_begin', 'date_end')
 
                 def get_car_number(unit_id, _units_dict):
                     return _units_dict.get(int(unit_id), {}).get('number', '')
@@ -128,7 +135,7 @@ class OverstatementsView(BaseReportView):
                         print('No standards (job id=%s)' % job.pk)
                         continue
 
-                    for point in job.points.order_by('id'):
+                    for point in job.cached_points:
 
                         if point.title.lower() == 'space':
                             spaces.append(point)

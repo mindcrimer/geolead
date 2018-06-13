@@ -1,14 +1,14 @@
 import datetime
-from collections import OrderedDict
+
+from django.db.models import Prefetch, Q
 
 from base.exceptions import ReportException
 from base.utils import get_point_type
-from django.db.models import Prefetch, Q
 from reports import forms
 from reports.jinjaglobals import date
 from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from ura.models import StandardJobTemplate, StandardPoint, Job
+from ura.models import StandardJobTemplate, StandardPoint, Job, JobPoint
 from users.models import User
 from wialon.api import get_units, get_routes
 from wialon.exceptions import WialonException
@@ -112,12 +112,19 @@ class VchmIdleTimesView(BaseVchmReportView):
                 }
 
                 ura_user = user.ura_user if user.ura_user_id else user
-                jobs = Job.objects.filter(
-                    user=ura_user,
-                    date_begin__gte=dt_from,
-                    date_end__lte=dt_to,
-                    route_id__in=list(routes.keys())
-                ).prefetch_related('points').order_by('date_begin', 'date_end')
+                jobs = Job.objects\
+                    .filter(
+                        user=ura_user,
+                        date_begin__gte=dt_from,
+                        date_end__lte=dt_to,
+                        route_id__in=list(routes.keys())
+                    )\
+                    .prefetch_related(
+                        Prefetch(
+                            'points', JobPoint.objects.order_by('id'), to_attr='cached_points'
+                        )
+                    )\
+                    .order_by('date_begin', 'date_end')
 
                 def get_car_number(unit_id, _units_dict):
                     return _units_dict.get(int(unit_id), {}).get('number', '')
@@ -132,7 +139,7 @@ class VchmIdleTimesView(BaseVchmReportView):
                         print('No standards (job id=%s)' % job.pk)
                         continue
 
-                    for point in job.points.order_by('id'):
+                    for point in job.cached_points:
 
                         if point.title.lower() == 'space':
                             spaces.append(point)

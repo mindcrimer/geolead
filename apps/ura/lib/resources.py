@@ -27,7 +27,7 @@ class URAResource(TemplateView):
     authenticate_as_supervisor = False
     template_engine = 'jinja2'
     content_type = 'application/json'
-    http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def __init__(self, *args, **kwargs):
         super(URAResource, self).__init__(*args, **kwargs)
@@ -129,7 +129,9 @@ class URAResource(TemplateView):
             except WialonException as e:
                 last_error = str(e)
                 attempts += 1
-                print('Инициирую новую попытку доступа к Wialon')
+                print(
+                    'Инициирую новую попытку доступа к Wialon. Последняя ошибка: %s' % last_error
+                )
                 # после каждого падения Виалона ждет 5 секунд и повторяем попытку
                 sleep(5)
 

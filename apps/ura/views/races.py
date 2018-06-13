@@ -31,10 +31,11 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
     def get_report_data_tables(self):
         self.report_data = {
-            'unit_trips': [],
             'unit_chronology': [],
+            'unit_digital_sensors': [],
+            'unit_engine_hours': [],
+            'unit_trips': [],
             'unit_zones_visit': [],
-            'unit_sensors_tracing': []
         }
 
     def get_job(self):
@@ -216,7 +217,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
             row_data = row['c']
 
             try:
-                if row_data[0].lower() == 'parking':
+                if row_data[0].lower() != 'поездка':
                     continue
 
             except AttributeError as e:

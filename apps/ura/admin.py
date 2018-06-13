@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+from django.utils.html import format_html
+
 from django.contrib import admin
 from django.contrib.admin import TabularInline
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import ugettext_lazy as _
 
 from import_export.admin import ImportExportMixin, ExportMixin
+from reports.jinjaglobals import date
 
 from ura import models, import_export
 from ura.enums import JobLogResolution
@@ -67,7 +70,8 @@ class ParkingTimeStandardFilterSpec(NullFilterSpec):
 class JobPointInline(admin.TabularInline):
     """Геозоны путевого листа"""
     extra = 0
-    fields = models.JobPoint().collect_fields()
+    fields = models.JobPoint().collect_fields() + ['get_stops']
+    fields.remove('created')
     readonly_fields = list(fields)
     readonly_fields.remove('job')
     model = models.JobPoint
@@ -78,6 +82,21 @@ class JobPointInline(admin.TabularInline):
 
     def has_add_permission(self, request):
         return False
+
+    def get_stops(self, obj):
+        stops = obj.stops.all()
+        if stops:
+            return format_html('<ul>%s</ul>' % ''.join([
+                '<li><b>%s</b><i>%s - %s</i></li>' % (
+                    '%s<br>' % x.place if x.place else '',
+                    date(x.start_date_time, 'H:i:s'),
+                    date(x.finish_date_time, 'H:i:s')
+                )
+                for x in stops
+            ]))
+        return '-'
+
+    get_stops.short_description = _('Остановки')
 
 
 class JobLogInline(admin.TabularInline):

@@ -11,7 +11,7 @@ from snippets.views import BaseTemplateView
 from users.models import User
 from wialon.exceptions import WialonException
 
-WIALON_INTERNAL_EXCEPTION = 'Ошибка при получении данных: %s'
+WIALON_INTERNAL_EXCEPTION = '%s'
 
 WIALON_SESSION_EXPIRED = 'Ваша сессия устарела. Зайдите через APPS еще раз.'
 

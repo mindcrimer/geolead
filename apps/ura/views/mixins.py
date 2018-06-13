@@ -5,11 +5,12 @@ from collections import OrderedDict
 
 from base.exceptions import ReportException, APIProcessError
 from base.utils import get_distance, get_point_type, parse_float
+from django.db import transaction
 from reports.utils import get_period, cleanup_and_request_report, exec_report, get_report_rows, \
     get_wialon_report_template_id, parse_wialon_report_datetime, local_to_utc_time
 from snippets.utils.email import send_trigger_email
 from ura.lib.resources import URAResource
-from ura.models import JobPoint
+from ura.models import JobPoint, JobPointStop
 from ura.utils import parse_datetime, parse_xml_input_data
 from wialon.api import get_routes, get_messages
 from wialon.auth import get_wialon_session_key
@@ -348,27 +349,6 @@ class BaseUraRidesView(URAResource):
 
         self.print_time_needed('Points build')
 
-    def update_job_points_cache(self):
-        """Обновляем кэш пройденных точек"""
-        self.job.points.all().delete()
-        for point in self.ride_points:
-            time_in = point['time_in']
-            time_out = point['time_out']
-
-            jp = JobPoint(
-                job=self.job,
-                title=point['name'],
-                point_type=get_point_type(point['name']),
-                enter_date_time=time_in,
-                leave_date_time=time_out,
-                total_time=(time_out - time_in).total_seconds(),
-                parking_time=point['params']['stopMinutes'],
-                lat=point['coords']['lat'],
-                lng=point['coords']['lng']
-            )
-
-            jp.save()
-
     def add_new_point(self, message, prev_message, geozone):
         fuel_level = round(self.get_fuel_level(message), 2)
 
@@ -395,12 +375,14 @@ class BaseUraRidesView(URAResource):
                 ('stopMinutes', .0),
                 ('moveMinutes', .0),
                 ('motoHours', .0),
+                ('GPMTime', .0),  # время работы ГПН
                 ('odoMeter', .0)
             )),
             'coords': {
                 'lat': message.get('pos', {}).get('y', None),
                 'lng': message.get('pos', {}).get('x', None)
-            }
+            },
+            'stops': []
         }
 
         # закрываем пробег и топливо на конец участка для предыдущей точки
@@ -421,6 +403,52 @@ class BaseUraRidesView(URAResource):
         self.current_distance = .0
 
         self.ride_points.append(new_point)
+
+    def update_job_points_cache(self):
+        """Обновляем кэш пройденных точек"""
+        with transaction.atomic():
+            self.job.points.all().delete()
+
+            for point in self.ride_points:
+                time_in = point['time_in']
+                time_out = point['time_out']
+                total_time = (time_out - time_in).total_seconds()
+                move_time = point['params']['moveMinutes']
+
+                job_point = JobPoint.objects.create(
+                    job=self.job,
+                    title=point['name'],
+                    point_type=get_point_type(point['name']),
+                    enter_date_time=time_in,
+                    leave_date_time=time_out,
+                    total_time=total_time,
+                    parking_time=total_time - move_time,
+                    move_time=move_time,
+                    motohours_time=point['params']['motoHours'],
+                    gpm_time=point['params']['GPMTime'],
+                    lat=point['coords']['lat'],
+                    lng=point['coords']['lng']
+                )
+
+                # точки остановки на маршруте ПЛ
+                for stop in point['stops']:
+                    JobPointStop.objects.create(job_point=job_point, **stop)
+
+    @staticmethod
+    def add_stop(point, time_from, time_until, place_data):
+        params = {
+            'start_date_time': time_from,
+            'finish_date_time': time_until,
+            'place': '',
+            'lat': None,
+            'lng': None
+        }
+
+        if place_data and isinstance(place_data, dict):
+            params['place'] = place_data.get('t', '')
+            params['lat'] = place_data.get('y', None)
+            params['lng'] = place_data.get('x', None)
+        point['stops'].append(params)
 
     def print_time_needed(self, message=''):
         # print(

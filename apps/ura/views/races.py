@@ -217,7 +217,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
             row_data = row['c']
 
             try:
-                if row_data[0].lower() != 'поездка':
+                if row_data[0].lower() not in ('поездка', 'trip'):
                     continue
 
             except AttributeError as e:

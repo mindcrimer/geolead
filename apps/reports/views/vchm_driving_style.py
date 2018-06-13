@@ -41,7 +41,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
     form_class = forms.VchmDrivingStyleForm
     template_name = 'reports/vchm_driving_style.html'
     report_name = 'Отчет по БДД'
-    xls_heading_merge = 20
+    xls_heading_merge = 19
 
     def __init__(self, *args, **kwargs):
         super(VchmDrivingStyleView, self).__init__(*args, **kwargs)
@@ -116,11 +116,6 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     'time_sec': .0
                 },
                 'lights': {
-                    'count': 0,
-                    'total_time_percentage': .0,
-                    'time_sec': .0
-                },
-                'KOM': {
                     'count': 0,
                     'total_time_percentage': .0,
                     'time_sec': .0
@@ -331,9 +326,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                             violation_name = 'belt'
                         elif 'фар' in verbose:
                             violation_name = 'lights'
-                        elif 'кму' in verbose:
-                            violation_name = 'KOM'
-                        elif 'стрел' in verbose:
+                        elif 'кму' in verbose or 'стрел' in verbose:
                             violation_name = 'jib'
                         elif 'разгон' in verbose or 'ускорение' in verbose:
                             violation_scope = 'per_100km_count'
@@ -364,8 +357,6 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         rating_violation_name = violation_name
                         if 'overspeed' in violation_name:
                             rating_violation_name = 'overspeed'
-                        elif violation_name == 'KOM':
-                            rating_violation_name = 'jib'
 
                         # так как все равно все параметры относительны по пробегу,
                         # то сразу усредним по пробегу, а потом уже просуммируем.
@@ -466,8 +457,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
             'Превышение\nкритической\nскорости',
             'Движение\nбез ремня\nбезопасности',
             'Движение\nбез фар',
-            'Движение\nс включенной\nКОМ',
-            'Движение\nс поднятой\nстрелой',
+            'Движение\nс поднятой КМУ\n(кузовом)',
             'Резкие\nтормож.,\nшт. на\n100 км',
             'Резкие\nускор-я,\nшт. на\n100 км',
             'Резкие\nповороты,\nшт. на\n100 км',
@@ -521,59 +511,55 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 7, self.render_measure(row, 'KOM'),
+                x, 7, self.render_measure(row, 'jib'),
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 8, self.render_measure(row, 'jib'),
-                style=self.styles['border_left_style']
-            )
-            worksheet.write(
-                x, 9, floatcomma(row['per_100km_count']['brakings']['count'], -2),
+                x, 8, floatcomma(row['per_100km_count']['brakings']['count'], -2),
                 style=self.styles['border_right_style']
             )
             worksheet.write(
-                x, 10, floatcomma(row['per_100km_count']['accelerations']['count'], -2),
+                x, 9, floatcomma(row['per_100km_count']['accelerations']['count'], -2),
                 style=self.styles['border_right_style']
             )
             worksheet.write(
-                x, 11, floatcomma(row['per_100km_count']['turns']['count'], -2),
+                x, 10, floatcomma(row['per_100km_count']['turns']['count'], -2),
                 style=self.styles['border_right_style']
             )
             worksheet.write(
-                x, 12, self.render_rating(row['rating']['overspeed']),
+                x, 11, self.render_rating(row['rating']['overspeed']),
                 style=self.render_background(row['rating']['overspeed'])
             )
             worksheet.write(
-                x, 13, self.render_rating(row['rating']['belt']),
+                x, 12, self.render_rating(row['rating']['belt']),
                 style=self.render_background(row['rating']['belt'])
             )
             worksheet.write(
-                x, 14, self.render_rating(row['rating']['lights']),
+                x, 13, self.render_rating(row['rating']['lights']),
                 style=self.render_background(row['rating']['lights'])
             )
             worksheet.write(
-                x, 15, self.render_rating(row['rating']['brakings']),
+                x, 14, self.render_rating(row['rating']['brakings']),
                 style=self.render_background(row['rating']['brakings'])
             )
             worksheet.write(
-                x, 16, self.render_rating(row['rating']['accelerations']),
+                x, 15, self.render_rating(row['rating']['accelerations']),
                 style=self.render_background(row['rating']['accelerations'])
             )
             worksheet.write(
-                x, 17, self.render_rating(row['rating']['turns']),
+                x, 16, self.render_rating(row['rating']['turns']),
                 style=self.render_background(row['rating']['turns'])
             )
             worksheet.write(
-                x, 18, self.render_rating(row['rating']['jib']),
+                x, 17, self.render_rating(row['rating']['jib']),
                 style=self.render_background(row['rating']['jib'])
             )
             worksheet.write(
-                x, 19, self.render_rating(row['rating_total']['avg']),
+                x, 18, self.render_rating(row['rating_total']['avg']),
                 style=self.render_background(row['rating_total']['avg'])
             )
             worksheet.write(
-                x, 20, self.render_rating(row['rating_total']['critical_avg']),
+                x, 19, self.render_rating(row['rating_total']['critical_avg']),
                 style=self.render_background(row['rating_total']['critical_avg'])
             )
         return worksheet

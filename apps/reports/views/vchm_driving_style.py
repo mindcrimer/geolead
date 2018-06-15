@@ -14,7 +14,7 @@ from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_US
 from snippets.jinjaglobals import floatcomma
 from ura.models import Job
 from users.models import User
-from wialon.api import get_units
+from wialon.api import get_units, get_drive_rank_settings
 from wialon.exceptions import WialonException
 
 
@@ -309,6 +309,8 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         continue
 
                     print('%s) Processing %s' % (i, row.unit_name))
+                    ecodriving = get_drive_rank_settings(unit['id'], sess_id=sess_id)
+                    ecodriving = {k.lower(): v for k, v in ecodriving.items()}
                     report_row = self.new_grouping(row, unit)
 
                     # собственно расчеты метрик
@@ -358,10 +360,13 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         if 'overspeed' in violation_name:
                             rating_violation_name = 'overspeed'
 
-                        # так как все равно все параметры относительны по пробегу,
-                        # то сразу усредним по пробегу, а потом уже просуммируем.
-                        # Берем минимум 1 километр пробега
-                        fine = violation.fine / max(1.0, row.mileage)
+                        # извлечем настройки объектов и узнаем, нужно ли рассчитывать
+                        # относительно пробега
+                        settings = ecodriving.get(verbose)
+                        devider = 1
+                        if settings and settings.get('flags', 0) in (2, 3, 7):
+                            devider = max(1.0, row.mileage)
+                        fine = violation.fine / devider
                         report_row['rating'][rating_violation_name]['fine'] += fine
                         report_row['rating_total']['avg']['fine'] += fine
 

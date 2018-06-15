@@ -36,14 +36,25 @@
         </div>
 
         <div class="uk-margin">
-          <label class="uk-form-label" for="default_overstatements_standard">
-            Норматив нахождения в геозоне, если не задано в таблице нормативов
+          <label class="uk-form-label" for="default_total_time_standard">
+            Норматив суммарного нахождения в геозоне, если не задано в таблице нормативов
           </label>
-          <input class="uk-input" name="default_overstatements_standard"
-                 id="default_overstatements_standard"
-                 type="number" step="1" min="0" max="10000"
-                 value="{{ form.cleaned_data.get('default_overstatements_standard', 3) }}">
-          <div class="errors">{{ form.errors.get('default_overstatements_standard', '') }}</div>
+          <input class="uk-input" name="default_total_time_standard"
+                 id="default_total_time_standard"
+                 type="number" step="0.1" min="0" max="10000"
+                 value="{{ form.cleaned_data.get('default_total_time_standard', 3) }}">
+          <div class="errors">{{ form.errors.get('default_total_time_standard', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
+          <label class="uk-form-label" for="default_parking_time_standard">
+            Норматив простоя в геозоне, если не задано в таблице нормативов
+          </label>
+          <input class="uk-input" name="default_parking_time_standard"
+                 id="default_parking_time_standard"
+                 type="number" step="0.1" min="0" max="10000"
+                 value="{{ form.cleaned_data.get('default_parking_time_standard', 3) }}">
+          <div class="errors">{{ form.errors.get('default_parking_time_standard', '') }}</div>
         </div>
 
         <div class="uk-margin">

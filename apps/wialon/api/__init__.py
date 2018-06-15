@@ -393,7 +393,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
     return routes
 
 
-def get_units(user=None, sess_id=None, extra_fields=False):
+def get_units(user=None, sess_id=None, extra_fields=False, ecodriving=False):
     """Получает список элементов"""
     assert user or sess_id
 
@@ -406,6 +406,10 @@ def get_units(user=None, sess_id=None, extra_fields=False):
     if units_list:
         return json.loads(units_list)
 
+    flags = 1 + 8388608
+    if extra_fields:
+        flags += 8
+
     request_params = json.dumps({
         'spec': {
             'itemsType': 'avl_unit',
@@ -415,7 +419,7 @@ def get_units(user=None, sess_id=None, extra_fields=False):
             'propType': 'property'
         },
         'force': 1,
-        'flags': 1 + 8388608 + (8 if extra_fields else 0),
+        'flags': flags,
         'from': 0,
         'to': 0
     })
@@ -463,6 +467,36 @@ def get_units(user=None, sess_id=None, extra_fields=False):
         cache.set(cache_key, json.dumps(units), DEFAULT_CACHE_TIMEOUT)
 
     return units
+
+
+def get_drive_rank_settings(item_id, user=None, sess_id=None):
+    """Получает настройки качества вождения"""
+    assert user or sess_id
+
+    if sess_id is None:
+        sess_id = get_wialon_session_key(user)
+
+    request_params = json.dumps({
+        'itemId': item_id,
+        'sid': sess_id
+    })
+    r = requests.get(
+        settings.WIALON_BASE_URL + (
+                '?svc=unit/get_drive_rank_settings&params=%s&sid=%s' % (request_params, sess_id)
+        )
+    )
+    res = r.json()
+    if 'error' in res:
+        return {}
+    result = {}
+
+    for v in res.values():
+        if isinstance(v, (list, tuple)):
+            for row in v:
+                result[row['name']] = row
+        elif isinstance(v, dict):
+            result.update(v)
+    return result
 
 
 def get_unit_settings(item_id, user=None, sess_id=None, get_sensors=True, get_features=False):

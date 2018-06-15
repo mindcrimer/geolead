@@ -47,6 +47,6 @@ class ReportsVchmHomeView(BaseReportsHomeView):
 class ExitView(BaseView):
     def get(self, request, **kwargs):
         request.session.flush()
-        scope = bool(request.session.get('scope', 'nlmk'))
+        scope = request.session.get('scope', 'nlmk')
         view_name = 'reports_%s_home' % scope
         return HttpResponseRedirect(reverse('core:%s' % view_name))

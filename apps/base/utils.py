@@ -38,7 +38,7 @@ def get_point_type(geozone_name):
     if 'разгрузка' in name:
         point_type = 2
 
-    if 'заправка' in name:
+    if 'заправка' in name or 'азс' in name:
         point_type = 3
 
     if 'маршрут' in name:

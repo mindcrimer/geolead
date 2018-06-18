@@ -364,7 +364,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         # относительно пробега
                         settings = ecodriving.get(verbose)
                         devider = 1
-                        if settings and settings.get('flags', 0) in (2, 3, 7):
+                        if settings and settings.get('flags', 0) in (2, 3, 7, 10):
                             devider = max(1.0, row.mileage)
                         fine = violation.fine / devider
                         report_row['rating'][rating_violation_name]['fine'] += fine

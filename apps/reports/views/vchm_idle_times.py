@@ -10,7 +10,7 @@ from reports.utils import local_to_utc_time, cleanup_and_request_report, \
     get_wialon_report_template_id, exec_report, get_report_rows
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from snippets.utils.email import send_trigger_email
-from ura.models import StandardJobTemplate, StandardPoint, Job, JobPoint
+from ura.models import StandardJobTemplate, StandardPoint, Job
 from users.models import User
 from wialon.api import get_units, get_routes
 from wialon.exceptions import WialonException

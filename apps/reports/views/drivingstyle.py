@@ -265,17 +265,24 @@ class DrivingStyleView(BaseReportView):
                             if row_dt_to is None:
                                 row_dt_to = period['dt_to']
 
-                            if period['dt_from'] < row_dt_from and period['dt_to'] > row_dt_to:
-                                delta = (
-                                    min(row_dt_to, period['dt_to']) -
-                                    max(row_dt_from, period['dt_from'])
-                                ).total_seconds()
+                            # дальнейшие строки точно не совпадут (виалон все сортирует по дате):
+                            if row_dt_from > period['dt_to']:
+                                break
 
-                                if not delta:
-                                    print('empty trips period')
-                                    continue
+                            # если конец поездки меньше даты начала периода, значит еще не дошли
+                            if row_dt_to < period['dt_from']:
+                                continue
 
-                                period['total_time'] += delta
+                            delta = (
+                                min(row_dt_to, period['dt_to'])
+                                - max(row_dt_from, period['dt_from'])
+                            ).total_seconds()
+
+                            if delta <= 0:
+                                print('empty trips period')
+                                continue
+
+                            period['total_time'] += delta
 
                         if period['total_time']:
                             for row in wialon_report_rows.get('unit_ecodriving', []):

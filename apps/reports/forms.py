@@ -100,13 +100,6 @@ class VchmIdleTimesForm(forms.Form):
     dt_from = forms.DateField(label=_('С'))
     dt_to = forms.DateField(label=_('По'))
     unit = forms.IntegerField(required=False, label=_('Объект'))
-
-
-class VchmTixiingForm(forms.Form):
-    """Форма cуточного отчета для таксировки ПЛ"""
-    dt_from = forms.DateField(label=_('С'))
-    dt_to = forms.DateField(label=_('По'))
-    unit = forms.IntegerField(required=False, label=_('Объект'))
     default_total_time_standard = forms.FloatField(
         label=_('Норматив суммарного нахождения в геозонах, если не указано в таблице нормативов'),
         min_value=0, max_value=10000, initial=3, required=True
@@ -115,3 +108,10 @@ class VchmTixiingForm(forms.Form):
         label=_('Норматив простоя в геозонах, если не указано в таблице нормативов'),
         min_value=0, max_value=10000, initial=3, required=True
     )
+
+
+class VchmTaxiingForm(forms.Form):
+    """Форма cуточного отчета для таксировки ПЛ"""
+    dt_from = forms.DateField(label=_('С'))
+    dt_to = forms.DateField(label=_('По'))
+    unit = forms.IntegerField(required=False, label=_('Объект'))

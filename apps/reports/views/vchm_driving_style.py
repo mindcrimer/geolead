@@ -11,7 +11,7 @@ from reports.utils import local_to_utc_time, get_wialon_report_template_id, exec
     cleanup_and_request_report, get_report_rows, parse_timedelta, parse_wialon_report_datetime, \
     format_timedelta
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
-from snippets.jinjaglobals import floatcomma
+from snippets.jinjaglobals import date as date_format, floatcomma
 from ura.models import Job
 from users.models import User
 from wialon.api import get_units, get_drive_rank_settings
@@ -53,6 +53,15 @@ class VchmDrivingStyleView(BaseVchmReportView):
             'dt_to': datetime.date.today()
         }
         return self.form_class(data)
+
+    def get_report_name(self):
+        user = User.objects.filter(
+            is_active=True,
+            wialon_username=self.request.session.get('user')
+        ).first()
+        company_name = (' (%s)' % user.wialon_resource_name) \
+            if user and user.wialon_resource_name else ''
+        return '%s%s' % (self.report_name, company_name)
 
     def render_background(self, scope, style=True):
         value = scope['rating']
@@ -477,13 +486,21 @@ class VchmDrivingStyleView(BaseVchmReportView):
             'Оценка\nкритических\nпараметров'
         )
 
-        x = 1
+        # header
+        worksheet.write_merge(
+            1, 1, 0, 16, 'За период: %s - %s' % (
+                date_format(context['cleaned_data']['dt_from'], 'd.m.Y'),
+                date_format(context['cleaned_data']['dt_to'], 'd.m.Y')
+            )
+        )
+
+        x = 2
         for y, heading in enumerate(headings):
             worksheet.write(
                 x, y, heading, style=self.styles['border_center_style']
             )
 
-        worksheet.row(1).height = 900
+        worksheet.row(2).height = 900
 
         for row in context['report_data']:
             x += 1

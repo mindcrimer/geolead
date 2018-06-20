@@ -10,9 +10,9 @@ from wialon.api import get_units
 from wialon.exceptions import WialonException
 
 
-class VchmTixiingView(BaseVchmReportView):
+class VchmTaxiingView(BaseVchmReportView):
     """Суточный отчет для таксировки ПЛ"""
-    form_class = forms.VchmTixiingForm
+    form_class = forms.VchmTaxiingForm
     template_name = 'reports/vchm_taxiing.html'
     report_name = 'Суточный отчет для таксировки ПЛ'
     xls_heading_merge = 7
@@ -25,7 +25,7 @@ class VchmTixiingView(BaseVchmReportView):
         return self.form_class(data)
 
     def get_context_data(self, **kwargs):
-        kwargs = super(VchmTixiingView, self).get_context_data(**kwargs)
+        kwargs = super(VchmTaxiingView, self).get_context_data(**kwargs)
         report_data = None
         form = kwargs['form']
 
@@ -66,7 +66,7 @@ class VchmTixiingView(BaseVchmReportView):
         return kwargs
 
     def write_xls_data(self, worksheet, context):
-        worksheet = super(VchmTixiingView, self).write_xls_data(worksheet, context)
+        worksheet = super(VchmTaxiingView, self).write_xls_data(worksheet, context)
 
         for col in range(8):
             worksheet.col(col).width = 5000

@@ -9,7 +9,7 @@ from reports.views.faults import FaultsView
 from reports.views.overstatements import OverstatementsView
 from reports.views.vchm_driving_style import VchmDrivingStyleView
 from reports.views.vchm_idle_times import VchmIdleTimesView
-from reports.views.vchm_taxiing import VchmTixiingView
+from reports.views.vchm_taxiing import VchmTaxiingView
 
 urlpatterns = (
     url(
@@ -46,6 +46,6 @@ urlpatterns = (
     ),
     url(
         r'^vchm/taxiing/$',
-        VchmTixiingView.as_view(), name='vchm_taxiing'
+        VchmTaxiingView.as_view(), name='vchm_taxiing'
     )
 )

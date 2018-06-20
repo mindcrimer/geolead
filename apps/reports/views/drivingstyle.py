@@ -3,8 +3,9 @@ from collections import OrderedDict, defaultdict
 import datetime
 import time
 
-import xlwt
 from django.utils.timezone import utc
+
+import xlwt
 
 from base.exceptions import ReportException
 from reports import forms

@@ -38,11 +38,14 @@ class BaseReportView(BaseTemplateView):
         data = self.request.POST if self.request.method == 'POST' else {}
         return self.form_class(data)
 
+    def get_report_name(self):
+        return self.report_name
+
     def get_default_context_data(self, **kwargs):
         context = {
             'None': None,
             'report_data': None,
-            'report_name': self.report_name,
+            'report_name': self.get_report_name(),
             'messages': get_messages(self.request) or [],
             'sid': self.request.session.get('sid', ''),
             'scope': 'nlmk',
@@ -143,7 +146,9 @@ class BaseReportView(BaseTemplateView):
         }
 
         worksheet.write_merge(
-            0, 0, 0, self.xls_heading_merge, self.report_name, style=self.styles['heading_style']
+            0, 0, 0, self.xls_heading_merge,
+            self.get_report_name(),
+            style=self.styles['heading_style']
         )
         worksheet.row(0).height_mismatch = True
         worksheet.row(0).height = 500

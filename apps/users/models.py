@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -40,15 +39,10 @@ class User(AbstractUser, LastModMixin, BasicModel):
         _('Наименование ресурса'), max_length=255, blank=True, null=True
     )
 
-    wialon_discharge_report_template_name = models.CharField(
-        _('Наименование отчета "Перерасход топлива"'), max_length=255,
-        blank=True, null=True
-    )
     wialon_discharge_individual_report_template_name = models.CharField(
         _('Наименование отчета "Перерасход топлива индивидуальный"'), max_length=255, blank=True,
         null=True
     )
-
     wialon_driving_style_report_template_name = models.CharField(
         _('Наименование отчета "Качество вождения (БДД)"'), max_length=255, blank=True, null=True
     )
@@ -56,20 +50,17 @@ class User(AbstractUser, LastModMixin, BasicModel):
         _('Наименование отчета "Качество вождения индивидуальный (БДД)"'), max_length=255,
         blank=True, null=True
     )
-
     wialon_geozones_report_template_name = models.CharField(
         _('Наименование отчета "Геозоны"'), max_length=255, blank=True, null=True
     )
-
-    wialon_kmu_report_template_name = models.CharField(
-        _('Наименование отчета "Работа крановой установки"'), max_length=255, blank=True, null=True
+    wialon_last_data_report_template_name = models.CharField(
+        _('Наименование отчета "Последние данные"'), max_length=255, blank=True, null=True
     )
-
     wialon_sensors_report_template_name = models.CharField(
         _('Наименование отчета "Неисправности"'), max_length=255, blank=True, null=True
     )
-    wialon_last_data_report_template_name = models.CharField(
-        _('Наименование отчета "Последние данные"'), max_length=255, blank=True, null=True
+    wialon_taxiing_report_template_name = models.CharField(
+        _('Наименование отчета "Таксировка"'), max_length=255, blank=True, null=True
     )
 
     wialon_mobile_vehicle_types = models.CharField(

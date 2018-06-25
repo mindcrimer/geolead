@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 
 from django.conf import settings
@@ -393,7 +392,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
     return routes
 
 
-def get_units(user=None, sess_id=None, extra_fields=False, ecodriving=False):
+def get_units(user=None, sess_id=None, extra_fields=False):
     """Получает список элементов"""
     assert user or sess_id
 

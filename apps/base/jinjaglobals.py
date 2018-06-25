@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from snippets.template_backends.jinja2 import jinjafilter
 
 

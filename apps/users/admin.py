@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import ugettext_lazy as _
@@ -28,15 +27,17 @@ class UserAdmin(UserAdmin):
             'classes': ('suit-tab', 'suit-tab-wialon'),
             'fields': (
                 'wialon_token', 'wialon_username', 'wialon_password', 'wialon_tz',
-                'wialon_group_object_name', 'wialon_resource_name',
-                'wialon_discharge_report_template_name',
+                'wialon_group_object_name',
+                'wialon_resource_name',
+
                 'wialon_discharge_individual_report_template_name',
                 'wialon_driving_style_report_template_name',
                 'wialon_driving_style_individual_report_template_name',
                 'wialon_geozones_report_template_name',
-                'wialon_kmu_report_template_name',
-                'wialon_sensors_report_template_name',
                 'wialon_last_data_report_template_name',
+                'wialon_sensors_report_template_name',
+                'wialon_taxiing_report_template_name',
+
                 'wialon_mobile_vehicle_types'
             )
         }),

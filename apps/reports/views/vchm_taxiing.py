@@ -2,8 +2,8 @@ import datetime
 from collections import OrderedDict
 
 from base.exceptions import ReportException
+from moving.service import MovingService
 from reports import forms
-from reports.utils import local_to_utc_time
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from users.models import User
 from wialon.api import get_units
@@ -16,6 +16,10 @@ class VchmTaxiingView(BaseVchmReportView):
     template_name = 'reports/vchm_taxiing.html'
     report_name = 'Суточный отчет для таксировки ПЛ'
     xls_heading_merge = 7
+
+    def __init__(self, *args, **kwargs):
+        super(VchmTaxiingView).__init__(*args, **kwargs)
+        self.units_dict = {}
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -43,21 +47,38 @@ class VchmTaxiingView(BaseVchmReportView):
         if self.request.POST:
 
             if form.is_valid():
-                report_data = OrderedDict()
+                report_data = []
 
                 user = User.objects.filter(is_active=True) \
                     .filter(wialon_username=self.request.session.get('user')).first()
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                dt_from = local_to_utc_time(datetime.datetime.combine(
+                local_dt_from = datetime.datetime.combine(
                     form.cleaned_data['dt_from'],
                     datetime.time(0, 0, 0)
-                ), user.wialon_tz)
-                dt_to = local_to_utc_time(datetime.datetime.combine(
+                )
+                local_dt_to = datetime.datetime.combine(
                     form.cleaned_data['dt_to'],
                     datetime.time(23, 59, 59)
-                ), user.wialon_tz)
+                )
+
+                selected_unit = form.cleaned_data.get('unit')
+                self.units_dict = OrderedDict(
+                    (x['name'], x) for x in units_list
+                    if not selected_unit or (selected_unit and x['id'] == selected_unit)
+                )
+
+                service = MovingService(
+                    user,
+                    local_dt_from,
+                    local_dt_to,
+                    object_id=selected_unit if selected_unit else None,
+                    sess_id=sess_id,
+                    units_dict=self.units_dict
+                )
+                service.exec_report()
+                service.analyze()
 
             kwargs.update(
                 report_data=report_data,

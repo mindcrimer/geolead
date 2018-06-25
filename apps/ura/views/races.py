@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import traceback
 from collections import OrderedDict
 import datetime
@@ -294,7 +293,6 @@ class URARacesResource(BaseUraRidesView, URAResource):
 
             self.get_report_data()
             self.get_object_messages()
-            self.start_timer()
             self.prepare_geozones_visits()
 
             self.ride_points = []
@@ -311,6 +309,5 @@ class URARacesResource(BaseUraRidesView, URAResource):
             self.report_post_processing(job_info)
             self.prepare_output_data(job_info)
             jobs.append(job_info)
-            self.print_time_needed('Total calc')
 
         return XMLResponse('ura/races.xml', context)

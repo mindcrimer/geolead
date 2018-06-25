@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import json
 import math
@@ -46,8 +45,20 @@ def get_wialon_report_template_id(template_name, user):
 
 
 def parse_timedelta(delta_string):
-    parts = delta_string.split(':')
     delta = datetime.timedelta(seconds=0)
+
+    if '-' in delta_string or not delta_string:
+        return delta
+
+    day_parts = delta_string.strip().split(' ')
+    if len(day_parts) == 2:
+        try:
+            delta += datetime.timedelta(days=int(day_parts[0]))
+        except ValueError:
+            pass
+        delta_string = day_parts[1]
+
+    parts = delta_string.strip().split(':')
 
     for i, part in enumerate(parts):
         try:
@@ -84,9 +95,30 @@ def format_timedelta(seconds):
 DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 
 
+def parse_address(row):
+    if isinstance(row, dict):
+        address = row.get('t', '---')
+    else:
+        address = str(row)
+
+    return address if '---' not in address else None
+
+
+def parse_coords(row):
+    if isinstance(row, dict) and row.get('x') and row.get('y'):
+        return {
+            'lat': row.get('y'),
+            'lng': row.get('x')
+        }
+    return None
+
+
 def parse_wialon_report_datetime(str_date):
     if not str_date:
         return None
+
+    if isinstance(str_date, dict):
+        str_date = str_date['t']
 
     str_date = str_date.lower().strip()
     if any([(str_date in x) for x in ('-----', 'неизвестно', 'unknown')]):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse

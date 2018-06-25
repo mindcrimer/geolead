@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from base.exceptions import APIProcessError
 from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource

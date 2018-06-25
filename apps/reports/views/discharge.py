@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections import OrderedDict, defaultdict
 import datetime
 import time
@@ -7,7 +6,7 @@ from django.utils.timezone import utc
 
 from base.exceptions import ReportException
 from base.utils import parse_float
-from reports import forms
+from reports import forms, DEFAULT_OVERSPANDING_NORMAL_PERCENTAGE
 from reports.jinjaglobals import date, render_timedelta
 from reports.utils import parse_timedelta, parse_wialon_report_datetime, \
     get_wialon_report_template_id, cleanup_and_request_report, exec_report, \
@@ -40,9 +39,16 @@ class DischargeView(BaseReportView):
         data = self.request.POST if self.request.method == 'POST' else {
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
-            'overspanding_percentage': 5
+            'overspanding_percentage': DEFAULT_OVERSPANDING_NORMAL_PERCENTAGE
         }
         return self.form_class(data)
+
+    def get_default_context_data(self, **kwargs):
+        context = super(DischargeView, self).get_default_context_data(**kwargs)
+        context.update({
+            'overspanding_percentage': DEFAULT_OVERSPANDING_NORMAL_PERCENTAGE
+        })
+        return context
 
     @staticmethod
     def get_new_grouping():
@@ -705,7 +711,9 @@ class DischargeView(BaseReportView):
 *** исходя из нормативов л/час при заведенном двигателе на холостых оборотах,
 с добавочным коэффициентом на работу оборудования
 ''' %
-            context['cleaned_data'].get('overspanding_percentage', 5),
+            context['cleaned_data'].get(
+                'overspanding_percentage', DEFAULT_OVERSPANDING_NORMAL_PERCENTAGE
+            ),
             style=self.styles['left_center_style']
         )
         worksheet.row(i + 1).height = 520 * 4

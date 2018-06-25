@@ -215,7 +215,7 @@
           <input class="uk-input" name="overspanding_percentage"
                  id="report_overspanding_percentage"
                  type="number" step="1" min="0" max="1000"
-                 value="{{ form.cleaned_data.get('overspanding_percentage', 5) }}">
+                 value="{{ form.cleaned_data.get('overspanding_percentage', overspanding_percentage) }}">
           <div class="errors">{{ form.errors.get('overspanding_percentage', '') }}</div>
         </div>
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 
 
@@ -140,6 +139,7 @@ INSTALLED_APPS = (
     'base',
     # приложения проекта
     'core',
+    'moving',
     'notifications',
     'reports',
     'ura',
@@ -270,9 +270,9 @@ WIALON_DEFAULT_TEMPLATE_NAMES = {
     'driving_style': 'Ресурс БВ',
     'driving_style_individual': 'Ресурс БВ индивидуальный',
     'geozones': 'Ресурс Геозоны',
-    'kmu': 'Работа крановой установки',
+    'last_data': 'Последние данные',
     'sensors': 'Ресурс неисправности',
-    'last_data': 'Последние данные'
+    'taxiing': 'Ресурс Таксировка'
 }
 
 WIALON_CACHE_TIMEOUT = 45  # время жизни кэша данных из Wialon, сек

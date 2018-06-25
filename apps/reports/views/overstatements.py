@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 
 from django.utils.formats import date_format
@@ -8,7 +7,7 @@ from django.utils.timezone import utc
 
 from base.exceptions import ReportException
 from base.utils import get_point_type
-from reports import forms
+from reports import forms, DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
 from reports.jinjaglobals import date
 from reports.utils import local_to_utc_time, utc_to_local_time
 from reports.views.base import BaseReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND, \
@@ -29,9 +28,16 @@ class OverstatementsView(BaseReportView):
         data = self.request.POST if self.request.method == 'POST' else {
             'dt_from': datetime.datetime.now().replace(hour=0, minute=0, second=0, tzinfo=utc),
             'dt_to': datetime.datetime.now().replace(hour=23, minute=59, second=59, tzinfo=utc),
-            'overstatement_param': 5
+            'overstatement_param': DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
         }
         return self.form_class(data)
+
+    def get_default_context_data(self, **kwargs):
+        context = super(OverstatementsView, self).get_default_context_data(**kwargs)
+        context.update({
+            'overstatement_param': DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
+        })
+        return context
 
     @staticmethod
     def get_new_grouping():

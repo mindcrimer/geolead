@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.http import HttpResponse
@@ -38,14 +37,14 @@ class BaseReportView(BaseTemplateView):
         data = self.request.POST if self.request.method == 'POST' else {}
         return self.form_class(data)
 
-    def get_report_name(self):
+    def get_report_name(self, **kwargs):
         return self.report_name
 
     def get_default_context_data(self, **kwargs):
         context = {
             'None': None,
             'report_data': None,
-            'report_name': self.get_report_name(),
+            'report_name': self.get_report_name(**kwargs),
             'messages': get_messages(self.request) or [],
             'sid': self.request.session.get('sid', ''),
             'scope': 'nlmk',
@@ -147,7 +146,7 @@ class BaseReportView(BaseTemplateView):
 
         worksheet.write_merge(
             0, 0, 0, self.xls_heading_merge,
-            self.get_report_name(),
+            self.get_report_name(**context),
             style=self.styles['heading_style']
         )
         worksheet.row(0).height_mismatch = True
@@ -201,6 +200,16 @@ class BaseVchmReportView(BaseReportView):
             return self.render_to_response(context)
 
         return self.render_to_response(context)
+
+    def get_report_name(self, **kwargs):
+        report_name = super(BaseVchmReportView, self).get_report_name(**kwargs)
+        user = User.objects.filter(
+            is_active=True,
+            wialon_username=self.request.session.get('user')
+        ).first()
+        company_name = (' (%s)' % user.wialon_resource_name) \
+            if user and user.wialon_resource_name else ''
+        return '%s%s' % (report_name, company_name)
 
     def get_default_context_data(self, **kwargs):
         context = super(BaseVchmReportView, self).get_default_context_data(**kwargs)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 from collections import OrderedDict
 
@@ -57,8 +56,6 @@ class URAMovingResource(BaseUraRidesView):
             if point['time_in'] >= job_date_begin and point['time_out'] <= job_date_end:
                 point['job_id'] = self.job.pk
 
-        self.print_time_needed('points utc_to_local')
-
         for row in self.report_data['unit_thefts']:
             volume = parse_float(row['c'][2])
 
@@ -77,8 +74,6 @@ class URAMovingResource(BaseUraRidesView):
                         point['params']['fuelDrain'] += volume
                         break
 
-        self.print_time_needed('fuelDrain')
-
         for row in self.report_data['unit_fillings']:
             volume = parse_float(row['c'][1])
 
@@ -96,8 +91,6 @@ class URAMovingResource(BaseUraRidesView):
                     if point['time_in'] <= dt <= point['time_out']:
                         point['params']['fuelRefill'] += volume
                         break
-
-        self.print_time_needed('fuelRefill')
 
         # рассчитываем моточасы пропорционально интервалам
         for row in self.report_data['unit_engine_hours']:
@@ -138,8 +131,6 @@ class URAMovingResource(BaseUraRidesView):
                     continue
 
                 point['params']['motoHours'] += delta.total_seconds()
-
-        self.print_time_needed('motoHours')
 
         for row in self.report_data['unit_chronology']:
             row_data = row['c']
@@ -192,8 +183,6 @@ class URAMovingResource(BaseUraRidesView):
                 elif row_data[0].lower() in ('стоянка', 'parking'):
                     self.add_stop(point, time_from, time_until, row_data[3])
 
-        self.print_time_needed('moveMinutes')
-
         # рассчитываем время работы крановой установки пропорционально интервалам
         # (только лишь ради кэша, необходимости в расчетах нет)
         for row in self.report_data['unit_digital_sensors']:
@@ -235,9 +224,6 @@ class URAMovingResource(BaseUraRidesView):
 
                 point['params']['GPMTime'] += delta.total_seconds()
 
-        self.print_time_needed('GPMTime')
-
-        #
         for point in self.ride_points:
             point['params']['stopMinutes'] = (
                 point['time_out'] - point['time_in']
@@ -305,7 +291,6 @@ class URAMovingResource(BaseUraRidesView):
                 'points': self.ride_points
             }
 
-            self.start_timer()
             self.prepare_geozones_visits()
             self.process_messages()
             self.report_post_processing(unit_info)
@@ -313,6 +298,5 @@ class URAMovingResource(BaseUraRidesView):
             self.prepare_output_data()
 
             units.append(unit_info)
-            self.print_time_needed('Total calc')
 
         return XMLResponse('ura/moving.xml', context)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import traceback
 from collections import OrderedDict
@@ -37,7 +36,6 @@ class BaseUraRidesView(URAResource):
         self.fuel_data = OrderedDict()
         self.route = None
         self.route_point_names = []
-        self.script_time_from = None
         self.sess_id = None
         self.unit_id = None
         self.unit_zones_visit = []
@@ -272,15 +270,10 @@ class BaseUraRidesView(URAResource):
 
         return .0
 
-    def start_timer(self):
-        self.script_time_from = datetime.datetime.now()
-
     def process_messages(self):
         prev_message = None
         current_geozone = None
         messages_length0 = len(self.messages) - 1
-
-        self.print_time_needed('Prepare')
 
         for i, message in enumerate(self.messages):
             message['distance'] = .0
@@ -346,8 +339,6 @@ class BaseUraRidesView(URAResource):
                 self.ride_points[-1]['params']['odoMeter'] = \
                     self.current_distance
             prev_message = message
-
-        self.print_time_needed('Points build')
 
     def add_new_point(self, message, prev_message, geozone):
         fuel_level = round(self.get_fuel_level(message), 2)
@@ -449,12 +440,3 @@ class BaseUraRidesView(URAResource):
             params['lat'] = place_data.get('y', None)
             params['lng'] = place_data.get('x', None)
         point['stops'].append(params)
-
-    def print_time_needed(self, message=''):
-        # print(
-        #     '%s: %s' % (
-        #         message,
-        #         ((datetime.datetime.now() - self.script_time_from).microseconds / 1000)
-        #     )
-        # )
-        pass

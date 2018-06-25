@@ -66,7 +66,7 @@
     <table border="0" cellpadding="5" cellspacing="0" style="font-style:italic">
       <tr>
         <td style="vertical-align:top">
-          *В случае превышения фактического простоя / нахождения над нормативным более чем на 5%
+          *В случае превышения фактического простоя / нахождения над нормативным более чем на {{ overstatement_param }}%
         </td>
       </tr>
     </table>
@@ -103,7 +103,7 @@
           <input class="uk-input" name="overstatement_param"
                  id="report_overstatement_param"
                  type="number" step="1" min="0" max="99"
-                 value="{{ form.cleaned_data.get('overstatement_param') }}">
+                 value="{{ form.cleaned_data.get('overstatement_param', overstatement_param) }}">
           <div class="errors">{{ form.errors.get('overstatement_param', '') }}</div>
         </div>
 

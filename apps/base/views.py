@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.template.response import TemplateResponse
 
 from snippets.views import BaseTemplateView, BaseView

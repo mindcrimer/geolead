@@ -1,7 +1,9 @@
-# -*- coding: utf-8 -*-
 from django import forms
-
 from django.utils.translation import ugettext_lazy as _
+
+from reports import DEFAULT_TOTAL_TIME_STANDARD_MINUTES, \
+    DEFAULT_PARKING_TIME_STANDARD_MINUTES, DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE, \
+    DEFAULT_OVERSPANDING_NORMAL_PERCENTAGE
 
 
 class DrivingStyleForm(forms.Form):
@@ -59,7 +61,7 @@ class FuelDischargeForm(forms.Form):
     unit = forms.IntegerField(required=False, label=_('Объект'))
     overspanding_percentage = forms.IntegerField(
         label=_('Показатель превышения фактического расхода топлива на нормативы, %'),
-        min_value=0, max_value=1000, initial=5, required=True
+        min_value=0, max_value=1000, initial=DEFAULT_OVERSPANDING_NORMAL_PERCENTAGE, required=True
     )
 
 
@@ -84,7 +86,7 @@ class OverstatementsForm(forms.Form):
     dt_to = forms.DateTimeField(label=_('По'))
     overstatement_param = forms.IntegerField(
         label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),
-        min_value=0, max_value=99, initial=5, required=True
+        min_value=0, max_value=99, initial=DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE, required=True
     )
 
 
@@ -105,11 +107,15 @@ class VchmIdleTimesForm(forms.Form):
             'Норматив суммарного нахождения в геозонах (минут), '
             'если не указано в таблице нормативов'
         ),
-        min_value=0, max_value=10000, initial=3, required=True
+        min_value=0, max_value=10000, initial=DEFAULT_TOTAL_TIME_STANDARD_MINUTES, required=True
     )
     default_parking_time_standard = forms.FloatField(
         label=_('Норматив простоя в геозонах (минут), если не указано в таблице нормативов'),
-        min_value=0, max_value=10000, initial=3, required=True
+        min_value=0, max_value=10000, initial=DEFAULT_PARKING_TIME_STANDARD_MINUTES, required=True
+    )
+    overstatement_param = forms.IntegerField(
+        label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),
+        min_value=0, max_value=99, initial=DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE, required=True
     )
 
 

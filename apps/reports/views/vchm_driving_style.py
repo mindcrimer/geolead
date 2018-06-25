@@ -54,15 +54,6 @@ class VchmDrivingStyleView(BaseVchmReportView):
         }
         return self.form_class(data)
 
-    def get_report_name(self):
-        user = User.objects.filter(
-            is_active=True,
-            wialon_username=self.request.session.get('user')
-        ).first()
-        company_name = (' (%s)' % user.wialon_resource_name) \
-            if user and user.wialon_resource_name else ''
-        return '%s%s' % (self.report_name, company_name)
-
     def render_background(self, scope, style=True):
         value = scope['rating']
         if value is None:

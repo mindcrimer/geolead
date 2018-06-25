@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 import datetime
 
 from django.core.management.base import BaseCommand
-from snippets.utils.datetime import utcnow
 
+from snippets.utils.datetime import utcnow
 from ura.models import JobLog
 
 

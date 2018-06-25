@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
 from django.conf import settings
+
+
+default_app_config = 'wialon.apps.AppConfig'
 
 
 WIALON_SESSION_ERROR = 'Возможно, сессия устарела. Попробуйте заново войти в Wialon'

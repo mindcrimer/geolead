@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from ura.views.break_job import URABreakJobsResource  # NOQA
 from ura.views.drivers import URADriversResource  # NOQA
 from ura.views.echo import URAEchoResource  # NOQA

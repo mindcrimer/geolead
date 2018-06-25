@@ -36,13 +36,24 @@
         </div>
 
         <div class="uk-margin">
+          <label class="uk-form-label" for="report_overstatement_param">
+            Учитывать процент превышения простоя / нахождения над нормативным более чем, на
+          </label>
+          <input class="uk-input" name="overstatement_param"
+                 id="report_overstatement_param"
+                 type="number" step="1" min="0" max="99"
+                 value="{{ form.cleaned_data.get('overstatement_param', overstatement_param) }}">
+          <div class="errors">{{ form.errors.get('overstatement_param', '') }}</div>
+        </div>
+
+        <div class="uk-margin">
           <label class="uk-form-label" for="default_total_time_standard">
             Норматив суммарного нахождения в геозоне (минут), если не задано в таблице нормативов
           </label>
           <input class="uk-input" name="default_total_time_standard"
                  id="default_total_time_standard"
                  type="text"
-                 value="{{ form.cleaned_data.get('default_total_time_standard', 3)|floatformat(-2) }}">
+                 value="{{ form.cleaned_data.get('default_total_time_standard', default_total_time_standard)|floatformat(-2) }}">
           <div class="errors">{{ form.errors.get('default_total_time_standard', '') }}</div>
         </div>
 
@@ -53,7 +64,7 @@
           <input class="uk-input" name="default_parking_time_standard"
                  id="default_parking_time_standard"
                  type="text"
-                 value="{{ form.cleaned_data.get('default_parking_time_standard', 3)|floatformat(-2) }}">
+                 value="{{ form.cleaned_data.get('default_parking_time_standard', default_parking_time_standard)|floatformat(-2) }}">
           <div class="errors">{{ form.errors.get('default_parking_time_standard', '') }}</div>
         </div>
 

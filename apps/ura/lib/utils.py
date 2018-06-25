@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
-from base.exceptions import AuthenticationFailed
 from django.utils.translation import ugettext_lazy as _
+
+from base.exceptions import AuthenticationFailed
 from users.models import User
 
 

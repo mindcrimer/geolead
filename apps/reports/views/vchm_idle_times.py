@@ -1,21 +1,17 @@
 from collections import OrderedDict
 import datetime
 import re
-import time
-import traceback
 
+import xlwt
 from django.db.models import Prefetch, Q
 
-from base.exceptions import ReportException, APIProcessError
-from base.utils import parse_float
+from base.exceptions import ReportException
+from moving.service import MovingService
 from reports import forms, DEFAULT_TOTAL_TIME_STANDARD_MINUTES, \
     DEFAULT_PARKING_TIME_STANDARD_MINUTES, DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
-from reports.utils import local_to_utc_time, cleanup_and_request_report, \
-    get_wialon_report_template_id, exec_report, get_report_rows, format_timedelta, \
-    utc_to_local_time, parse_wialon_report_datetime
+from reports.utils import local_to_utc_time, format_timedelta
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from snippets.jinjaglobals import date as date_format
-from snippets.utils.email import send_trigger_email
 from ura.models import StandardJobTemplate, StandardPoint, Job
 from users.models import User
 from wialon.api import get_units, get_routes
@@ -52,207 +48,39 @@ class VchmIdleTimesView(BaseVchmReportView):
         }
         return self.form_class(data)
 
-    def get_car_number(self, unit_id):
-        return self.units_dict.get(int(unit_id), {}).get('number', '')
+    def get_car_number(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return unit.get('number', unit.get('name', ''))
 
-    def get_car_vin(self, unit_id):
-        return self.units_dict.get(int(unit_id), {}).get('vin', '')
+    def get_car_vin(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return unit.get('vin', '')
 
-    def get_car_type(self, unit_id):
-        return self.units_dict.get(int(unit_id), {}).get('vehicle_type', '')
-
-    @staticmethod
-    def get_geozones_report_template_id(user):
-        report_template_id = get_wialon_report_template_id('geozones', user)
-        if report_template_id is None:
-            raise APIProcessError(
-                'Не указан ID шаблона отчета по геозонам у текущего пользователя',
-                code='geozones_report_not_found'
-            )
-        return report_template_id
-
-    @staticmethod
-    def prepare_geozones_visits(user, geozones_report_data, route_point_names, dt_from, dt_to):
-        # удаляем лишнее
-        geozones_report_data['unit_zones_visit'] = tuple(map(
-            lambda x: x['c'], geozones_report_data['unit_zones_visit']
-        ))
-
-        # удаляем геозоны, которые нас не интересуют
-        try:
-            geozones_report_data['unit_zones_visit'] = tuple(filter(
-                lambda pr: pr[0].strip() in route_point_names,
-                geozones_report_data['unit_zones_visit']
-            ))
-        except AttributeError as e:
-            send_trigger_email(
-                'Ошибка в работе интеграции Wialon', extra_data={
-                    'Exception': str(e),
-                    'Traceback': traceback.format_exc(),
-                    'data': geozones_report_data['unit_zones_visit'],
-                    'user': user
-                }
-            )
-
-        # пробегаемся по интервалам геозон и сглаживаем их
-        unit_zones_visit = []
-        prev_odometer = .0
-        for i, row in enumerate(geozones_report_data['unit_zones_visit']):
-            if isinstance(row[2], str):
-                # если конец участка неизвестен, считаем, что конец участка - конец периода запроса
-                row[2] = {'v': dt_to}
-
-            try:
-                odometer = parse_float(row[4])
-            except IndexError:
-                odometer = prev_odometer
-
-            geozone_name = row[0]['t'] if isinstance(row[0], dict) else row[0]
-            try:
-                row = {
-                    'name': geozone_name.strip(),
-                    'time_in': row[1]['v'],
-                    'time_out': row[2]['v'],
-                    'odometer_from': prev_odometer,
-                    'odometer_to': odometer
-                }
-            except (IndexError, KeyError, ValueError, AttributeError) as e:
-                send_trigger_email(
-                    'Нет необходимого атрибута v в результате', extra_data={
-                        'Exception': str(e),
-                        'Traceback': traceback.format_exc(),
-                        'row': row,
-                        'user': user
-                    }
-                )
-
-            # проверим интервалы между отрезками
-            try:
-                previous_geozone = unit_zones_visit[-1]
-                # если время входа в текущую не превышает 1 минуту выхода из предыдущей
-                delta = row['time_in'] - previous_geozone['time_out']
-                if 0 < delta < 60:
-                    # если имена совпадают
-                    if row['name'] == previous_geozone['name']:
-                        # тогда прибавим к предыдущей геозоне
-                        previous_geozone['time_out'] = row['time_out']
-                        continue
-                    else:
-                        # или же просто предыдущей точке удлиняем время выхода (или усреднять?)
-                        previous_geozone['time_out'] = row['time_in']
-
-                    # если же объект вылетел из геозоны в другую менее чем на 1 минуту
-                    # (то есть проехал в текущей геозоне менее 1 минуты) - списываем на помехи
-                    if row['time_out'] - row['time_in'] < 60:
-                        # и при этом в дальнейшем вернется в предыдущую:
-                        try:
-                            next_geozone = geozones_report_data['unit_zones_visit'][i + 1]
-                            if next_geozone[0].strip() == previous_geozone['name']:
-                                # то игнорируем текущую геозону, будто ее и не было,
-                                # расширив по диапазону времени предыдущую
-                                previous_geozone['time_out'] = row['time_out']
-                                continue
-                        except IndexError:
-                            pass
-                elif delta > 0:
-                    # добавим SPACE перед текущей точкой
-                    unit_zones_visit.append({
-                        'name': 'SPACE',
-                        'time_in': previous_geozone['time_out'],
-                        'time_out': row['time_in'],
-                        'odometer_from': previous_geozone['odometer_to'],
-                        'odometer_to': row['odometer_from']
-                    })
-            except IndexError:
-                pass
-
-            prev_odometer = odometer
-            unit_zones_visit.append(row)
-
-        if unit_zones_visit:
-            # обработаем концевые участки: сигнал с объекта мог не успеть прийти в начале
-            # и конце диапазона запроса, поэтому если сигнал не приходил в приемлимое время
-            # (3 минуты), считаем, что объект там и находился
-            delta = 60 * 3
-            if unit_zones_visit[0]['time_in'] - dt_from < delta:
-                unit_zones_visit[0]['time_in'] = dt_from
-
-            elif unit_zones_visit[0]['time_in'] - dt_from > 0:
-
-                # если первая точка уже SPACE, просто расширяем ее период до начала смены
-                if unit_zones_visit[0]['name'].lower() == 'space':
-                    unit_zones_visit[0]['time_in'] = dt_from
-
-                # иначе добавляем SPACE
-                else:
-                    unit_zones_visit.insert(0, {
-                        'name': 'SPACE',
-                        'time_in': dt_from,
-                        'time_out': unit_zones_visit[0]['time_in'],
-                        'odometer_from': 0,
-                        'odometer_to': unit_zones_visit[0]['odometer_from']
-                    })
-
-            if dt_to - unit_zones_visit[-1]['time_out'] < delta:
-                unit_zones_visit[-1]['time_out'] = dt_to
-
-        for row in geozones_report_data['unit_chronology']:
-            row_data = row['c']
-            if not isinstance(row_data[0], str):
-                send_trigger_email(
-                    'В хронологии первое поле отчета не строка!', extra_data={
-                        'row_data': row_data,
-                        'user': user
-                    }
-                )
-                continue
-
-            time_from = utc_to_local_time(
-                parse_wialon_report_datetime(
-                    row_data[1]['t']
-                    if isinstance(row_data[1], dict)
-                    else row_data[1]
-                ),
-                user.ura_tz
-            )
-
-            time_until_value = row_data[2]['t'] \
-                if isinstance(row_data[2], dict) else row_data[2]
-
-            if 'unknown' in time_until_value.lower():
-                time_until = dt_to
-            else:
-                time_until = utc_to_local_time(
-                    parse_wialon_report_datetime(time_until_value),
-                    user.ura_tz
-                )
-
-            for point in self.ride_points:
-                if point['time_in'] > time_until:
-                    # дальнейшие строки точно не совпадут (виалон все сортирует по дате)
-                    break
-
-                # если интервал точки меньше даты начала хронологии, значит еще не дошли
-                if point['time_out'] < time_from:
-                    continue
-
-                delta = min(time_until, point['time_out']) - max(time_from, point['time_in'])
-                # не пересекаются:
-                if delta.total_seconds() < 0:
-                    continue
-
-                if row_data[0].lower() in ('поездка', 'trip'):
-                    point['params']['moveMinutes'] += delta.total_seconds()
-                elif row_data[0].lower() in ('стоянка', 'parking'):
-                    self.add_stop(point, time_from, time_until, row_data[3])
-
-        return unit_zones_visit
+    def get_car_type(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return unit.get('vehicle_type', '')
 
     @staticmethod
     def get_point_name(point_name):
         if point_name and point_name.lower() != 'space':
             return re.sub(r'[(\[].*?[)\]]', '', point_name)
         return 'Неизвестная'
+
+    @staticmethod
+    def render_parking(parkings):
+        if parkings:
+            parking = parkings[0]
+            url = None
+
+            if parking.row.coords:
+                url = 'https://maps.yandex.ru/?text={lat},{lng}'.format(**parking.row.coords)
+            if url:
+                return xlwt.Formula(
+                    'HYPERLINK("%s";"%s")' % (url, parking.row.address or 'Неизвестно')
+                )
+            else:
+                return parking.row.address or 'Неизвестно'
+        return ''
 
     def get_context_data(self, **kwargs):
         kwargs = super(VchmIdleTimesView, self).get_context_data(**kwargs)
@@ -274,38 +102,30 @@ class VchmIdleTimesView(BaseVchmReportView):
 
             if form.is_valid():
                 report_data = []
-                geozones_report_data = {
-                    'unit_chronology': [],
-                    'unit_digital_sensors': [],
-                    'unit_engine_hours': [],
-                    'unit_zones_visit': []
-                }
 
                 user = User.objects.filter(is_active=True) \
                     .filter(wialon_username=self.request.session.get('user')).first()
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                dt_from = local_to_utc_time(datetime.datetime.combine(
+                local_dt_from = datetime.datetime.combine(
                     form.cleaned_data['dt_from'],
                     datetime.time(0, 0, 0)
-                ), user.wialon_tz)
-                dt_to = local_to_utc_time(datetime.datetime.combine(
+                )
+                local_dt_to = datetime.datetime.combine(
                     form.cleaned_data['dt_to'],
                     datetime.time(23, 59, 59)
-                ), user.wialon_tz)
+                )
+
+                selected_unit = form.cleaned_data.get('unit')
+                self.units_dict = OrderedDict(
+                    (x['name'], x) for x in units_list
+                    if not selected_unit or (selected_unit and x['id'] == selected_unit)
+                )
 
                 routes = {
                     x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
                 }
-                self.units_dict = OrderedDict((x['id'], x) for x in units_list)
-                selected_unit = form.cleaned_data.get('unit')
-
-                if selected_unit and selected_unit in self.units_dict:
-                    self.units_dict = {
-                        selected_unit: self.units_dict[selected_unit]
-                    }
-
                 standard_job_templates = StandardJobTemplate.objects \
                     .filter(wialon_id__in=[str(x) for x in routes.keys()]) \
                     .prefetch_related(
@@ -336,10 +156,24 @@ class VchmIdleTimesView(BaseVchmReportView):
                 }
 
                 ura_user = user.ura_user if user.ura_user_id else user
-                jobs = Job.objects\
-                    .filter(user=ura_user, date_begin__gte=dt_from, date_end__lte=dt_to)\
-                    .order_by('date_begin', 'date_end')
+                jobs = Job.objects.filter(
+                    user=ura_user,
+                    date_begin__gte=local_to_utc_time(local_dt_from, ura_user.wialon_tz),
+                    date_end__lte=local_to_utc_time(local_dt_to, ura_user.wialon_tz)
+                )
                 jobs_cache = {int(j.unit_id): j for j in jobs}
+
+                service = MovingService(
+                    user,
+                    local_dt_from,
+                    local_dt_to,
+                    object_id=selected_unit if selected_unit else None,
+                    sess_id=sess_id,
+                    units_dict=self.units_dict,
+                    calc_odometer=False
+                )
+                service.exec_report()
+                service.analyze()
 
                 normal_ratio = 1 + (
                     form.cleaned_data.get(
@@ -357,66 +191,11 @@ class VchmIdleTimesView(BaseVchmReportView):
                     if job:
                         standard = standards.get(int(job.route_id))
 
-                    report_template_id = self.get_geozones_report_template_id(user)
-                    cleanup_and_request_report(
-                        user, report_template_id, item_id=unit['id'], sess_id=sess_id
-                    )
-
-                    request_dt_from = int(time.mktime(dt_from.timetuple()))
-                    request_dt_to = int(time.mktime(dt_to.timetuple()))
-
-                    try:
-                        r = exec_report(
-                            user,
-                            report_template_id,
-                            request_dt_from,
-                            request_dt_to,
-                            object_id=unit['id'],
-                            sess_id=sess_id
-                        )
-                    except ReportException as e:
-                        raise WialonException(
-                            'Не удалось получить в Wialon отчет о поездках: %s' % e
-                        )
-
-                    for table_index, table_info in enumerate(r['reportResult']['tables']):
-                        if table_info['name'] not in geozones_report_data:
-                            continue
-
-                        try:
-                            geozones_report_data[table_info['name']] = get_report_rows(
-                                user,
-                                table_index,
-                                table_info['rows'],
-                                level=1,
-                                sess_id=sess_id
-                            )
-
-                        except ReportException as e:
-                            raise WialonException(
-                                'Не удалось получить в Wialon отчет о поездках.'
-                                'Исходная ошибка: %s' % e
-                            )
-
-                    try:
-                        route = routes[int(job.route_id) if job else -1]
-                    except KeyError:
-                        fixed_routes = [
-                            x for x in routes.values() if 'фиксир' in x['name'].lower()
-                        ]
-                        route = fixed_routes[0] if fixed_routes else {'points': []}
-
-                    route_point_names = [x['name'] for x in route['points']] if route else []
-
-                    unit_zones_visits = self.prepare_geozones_visits(
-                        user, geozones_report_data, route_point_names,
-                        request_dt_from, request_dt_to
-                    )
-
-                    for point in unit_zones_visits:
+                    unit_report_data = service.report_data.get(unit['name'], {})
+                    for visit in unit_report_data.geozones.target:
                         point_standard = {}
                         if standard:
-                            point_standard = standard.get('points', {}).get(point['name'], {})
+                            point_standard = standard.get('points', {}).get(visit.geozone, {})
 
                         if not point_standard.get('total_time_standard'):
                             point_standard['total_time_standard'] = form.cleaned_data.get(
@@ -433,8 +212,8 @@ class VchmIdleTimesView(BaseVchmReportView):
                         parking_standard = point_standard['parking_time_standard'] * 60
 
                         overstatement = .0
-                        total_time = point['time_out'] - point['time_in']
-                        parking_time = point.get('parking_time', .0)
+                        total_time = (visit.dt_to - visit.dt_from).total_seconds()
+                        parking_time = getattr(visit, 'parkings_delta', .0)
                         if total_standart is not None \
                                 and total_time / total_standart > normal_ratio:
                             overstatement += total_time - total_standart
@@ -447,19 +226,26 @@ class VchmIdleTimesView(BaseVchmReportView):
                             row = dict()
                             row['driver_fio'] = job.driver_fio \
                                 if job and job.driver_fio else 'Неизвестный'
-                            row['car_number'] = self.get_car_number(unit['id'])
-                            row['car_vin'] = self.get_car_vin(unit['id'])
-                            row['car_type'] = self.get_car_type(unit['id'])
+                            row['car_number'] = self.get_car_number(unit['name'])
+                            row['car_vin'] = self.get_car_vin(unit['name'])
+                            row['car_type'] = self.get_car_type(unit['name'])
                             row['route_name'] = job.route_title \
                                 if job and job.route_title else 'Неизвестный маршрут'
-                            row['point_name'] = self.get_point_name(point['name'])
+                            row['point_name'] = self.get_point_name(visit.geozone)
 
                             row['total_time'] = total_time
-                            row['parking_time'] = .0
-                            row['off_motor_time'] = .0
-                            row['idle_time'] = .0
-                            row['gpm_time'] = .0
-                            row['stops'] = ''
+                            row['parking_time'] = parking_time
+                            row['off_motor_time'] = max(total_time - getattr(
+                                visit, 'motohours_delta', .0
+                            ), .0)
+                            row['idle_time'] = sum([
+                                (x.dt_to - x.dt_from).total_seconds() for x in
+                                getattr(visit, 'idle_times', [])
+                            ])
+                            row['gpm_time'] = getattr(
+                                visit, 'angle_sensor_delta', .0
+                            )
+                            row['parkings'] = getattr(visit, 'parkings', [])
 
                             row['overstatement'] = round(overstatement)
                             report_data.append(row)
@@ -566,14 +352,14 @@ class VchmIdleTimesView(BaseVchmReportView):
                 style=self.styles['border_right_style']
             )
             worksheet.write(
-                x, 11, row['stops'] or '',
+                x, 11, self.render_parking(row['parkings']),
                 style=self.styles['border_left_style']
             )
             worksheet.write(
                 x, 12, format_timedelta(row['overstatement']),
                 style=self.styles['border_right_style']
             )
-            worksheet.row(x).height = 520
+            worksheet.row(x).height = 720
 
         x += 1
         worksheet.write_merge(

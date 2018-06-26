@@ -1,16 +1,16 @@
 from collections import OrderedDict
 import datetime
-import time
-
 import re
+import time
 
 from pytz import utc
 
 from base.utils import get_distance
 from moving.casting import IntersectionPeriod, IntersectionMoment
+from moving.casting.motohours import Motohours
 from moving.casting.odometer import OdometerRow
 from moving.report_mapping import MOVING_SERVICE_MAPPING, ReportUnit
-from moving.visit import Visit
+from moving.casting.visits import Visit
 from reports.utils import get_wialon_report_template_id, local_to_utc_time, \
     cleanup_and_request_report, exec_report, get_report_rows
 from ura.models import Job
@@ -172,48 +172,54 @@ class MovingService(object):
 
         # пробегаемся по интервалам геозон и сглаживаем их
         for i, row in enumerate(geozones):
-            row = Visit(self.prepare_geozone_name(row.geozone), row.dt_from, row.dt_to)
+            visit = Visit(self.prepare_geozone_name(row.geozone), row.dt_from, row.dt_to)
 
             # проверим интервалы между отрезками
             try:
                 previous_visit = visits[-1]
+
                 # если время входа в текущую не превышает 1 минуту выхода из предыдущей
-                delta = (row.dt_from - previous_visit.dt_to).total_seconds()
-                if 0 < delta < 60:
+                delta = (visit.dt_from - previous_visit.dt_to).total_seconds()
+                if 0 < delta <= 60:
                     # если имена совпадают
-                    if row.geozone == previous_visit.geozone:
+                    if visit.geozone == previous_visit.geozone:
                         # тогда прибавим к предыдущей геозоне
-                        previous_visit.dt_to = row.dt_to
+                        previous_visit.dt_to = visit.dt_to
                         continue
                     else:
                         # или же просто предыдущей точке удлиняем время выхода (или усреднять?)
-                        previous_visit.dt_to = row.dt_from
+                        previous_visit.dt_to = visit.dt_from
 
                     # если же объект вылетел из геозоны в другую менее чем на 1 минуту
                     # (то есть проехал в текущей геозоне менее 1 минуты) - списываем на помехи
-                    if (row.dt_to - row.dt_from).total_seconds() < 60:
+                    if (visit.dt_to - visit.dt_from).total_seconds() < 60:
                         # и при этом в дальнейшем вернется в предыдущую:
                         try:
                             next_geozone = geozones[i + 1]
                             if next_geozone.geozone == previous_visit.geozone:
                                 # то игнорируем текущую геозону, будто ее и не было,
                                 # расширив по диапазону времени предыдущую
-                                previous_visit.dt_to = row.dt_to
+                                previous_visit.dt_to = visit.dt_to
                                 continue
                         except IndexError:
                             pass
 
-                elif delta > 0:
+                elif delta > 60:
                     # добавим SPACE перед текущей точкой
                     visits.append(Visit(
                         'SPACE',
                         previous_visit.dt_to,
-                        row.dt_from
+                        visit.dt_from
                     ))
+                elif previous_visit.geozone == visit.geozone:
+                    # если промежутка нет, и геозоны одинаковые, то сливаем в одну
+                    previous_visit.dt_to = visit.dt_to
+                    continue
+
             except IndexError:
                 pass
 
-            visits.append(row)
+            visits.append(visit)
 
         if visits:
             first_visit = visits[0]
@@ -374,9 +380,58 @@ class MovingService(object):
         if self.calc_idle:
             # XX - это включенный двигатель на стоянках за вычетом работы ГПН
             # то есть нужно вычесть из моточасов визитов поездки и работу ГПН
-            # сначала объединяем периоды поездок и работы ГПН
-            # затем вычитаем эти периоды из периодов моточасов
-            pass
+            for visit in visits:
+                visit.idle_times = []
+                # сначала объединяем периоды поездок и работы ГПН
+                work_times = getattr(visit, 'trips', []) + getattr(visit, 'angle_sensor', [])
+                motohours = getattr(visit, 'motohours', [])
+
+                # затем вычитаем эти периоды из периодов моточасов
+                for motohour in motohours:
+                    motohour_periods = [Motohours(motohour.dt_from, motohour.dt_to)]
+
+                    for work in work_times:
+                        to_delete, to_append = [], []
+                        for i, mh in enumerate(motohour_periods):
+                            delta = (
+                                min(work.dt_to, mh.dt_to) - max(work.dt_from, mh.dt_from)
+                            ).total_seconds()
+
+                            if delta > 0:
+                                if work.dt_from <= mh.dt_from and work.dt_to >= mh.dt_to:
+                                    # если исключаемый период равен или накрывает целиком моточасы
+                                    to_delete.append(i)
+                                    # если равен, то можно не продолжать
+                                    if work.dt_from == mh.dt_from and work.dt_to == mh.dt_to:
+                                        break
+
+                                elif work.dt_from >= mh.dt_from and work.dt_to <= mh.dt_to:
+                                    # если исключаемый объект полностью внутри моточасов
+                                    # если концы пересекаются:
+                                    if work.dt_from == mh.dt_from:
+                                        mh.dt_from = work.dt_to
+                                    elif work.dt_to == mh.dt_to:
+                                        mh.dt_to = work.dt_from
+                                    else:
+                                        # если полностью внутри, то разрезаем период на два
+                                        to_delete.append(i)
+                                        to_append.extend([
+                                            Motohours(mh.dt_from, work.dt_from),
+                                            Motohours(work.dt_to, mh.dt_to)
+                                        ])
+                                else:
+                                    if work.dt_to < mh.dt_to:
+                                        mh.dt_from = work.dt_to
+                                    if work.dt_from > mh.dt_from:
+                                        mh.dt_to = work.dt_from
+
+                        if to_delete:
+                            motohour_periods = list(map(lambda x: x[1], filter(
+                                lambda x: x[0] not in to_delete,
+                                enumerate(motohour_periods)
+                            )))
+                        motohour_periods.extend(to_append)
+                    visit.idle_times.extend(motohour_periods)
 
     def get_object_messages(self, unit):
         return list(filter(
@@ -426,16 +481,16 @@ class MovingService(object):
                 visit.odometers = []
 
     def analyze(self):
-        print('Total units %s' % len(self.units_dict))
-        for i, unit in enumerate(self.units_dict.values()):
+        total = len(self.units_dict)
+        for i, unit in enumerate(self.units_dict.values(), start=1):
             unit_name = unit['name']
             if not self.report_data.get(unit_name):
                 continue
 
-            print('%s) Unit %s started' % (i, unit['name']))
+            print('%s/%s) Unit %s started' % (i, total, unit['name']))
             self.get_visits(unit)
             self.get_periods(unit)
             if self.calc_odometer:
                 self.get_odometer(unit)
 
-            self.print_time_needed('%s) Unit %s processed' % (i, unit['name']))
+            self.print_time_needed('%s/%s) Unit %s processed' % (i, total, unit['name']))

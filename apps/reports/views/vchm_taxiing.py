@@ -81,7 +81,7 @@ class VchmTaxiingView(BaseVchmReportView):
                 service.analyze()
 
             kwargs.update(
-                report_data=report_data,
+                report_data=report_data
             )
 
         return kwargs

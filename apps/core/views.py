@@ -19,8 +19,8 @@ class BaseReportsHomeView(BaseTemplateView):
         if user or sid:
             request.session.set_expiry(60 * 60)
 
-        kwargs['sid'] = request.session.get('sid')
-        kwargs['user'] = request.session.get('user')
+        kwargs['sid'] = sid
+        kwargs['user'] = user
 
         return super(BaseReportsHomeView, self).get(request, **kwargs)
 

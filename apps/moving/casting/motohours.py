@@ -12,6 +12,15 @@ class MotohoursRow(BaseCastingObject):
         return '%s - %s' % (self.dt_from, self.dt_to)
 
 
+class Motohours(BaseCastingObject):
+    def __init__(self, dt_from, dt_to, *args, **kwargs):
+        self.dt_from = dt_from
+        self.dt_to = dt_to
+
+    def __repr__(self):
+        return '%s - %s' % (self.dt_from, self.dt_to)
+
+
 def motohours_renderer(rows, **kwargs):
     return [
         MotohoursRow(*row[1:], **kwargs) for row in rows

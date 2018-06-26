@@ -174,15 +174,18 @@ class MovingService(object):
 
         # пробегаемся по интервалам геозон и сглаживаем их
         for i, row in enumerate(geozones):
-            visit = Visit(self.prepare_geozone_name(row.geozone), row.dt_from, row.dt_to)
-
             if not is_fixed_route and job:
                 delta = (
-                    min(visit.dt_to, job.date_end) - max(visit.dt_from, job.date_begin)
+                    min(row.dt_to, job.date_end) - max(row.dt_from, job.date_begin)
                 ).total_seconds()
 
                 if delta <= 0:
                     continue
+
+            visit = Visit(
+                self.prepare_geozone_name(row.geozone), row.dt_from, row.dt_to,
+                geozone_full=row.geozone.strip()
+            )
 
             # проверим интервалы между отрезками
             try:
@@ -377,7 +380,9 @@ class MovingService(object):
 
         if 'fuel_level' in self.tables:
             source = getattr(self.report_data[unit_name], 'fuel_level').source
-            self.set_intersection_moments(source, visits, target_field='fuel_levels')
+            self.set_intersection_moments(
+                source, visits, target_field='fuel_levels', volume_source_field='volume'
+            )
 
             for visit in visits:
                 visit.start_fuel_level, visit.end_fuel_level = None, None
@@ -442,6 +447,9 @@ class MovingService(object):
                             )))
                         motohour_periods.extend(to_append)
                     visit.idle_times.extend(motohour_periods)
+                visit.idle_delta = sum([
+                    (x.dt_to - x.dt_from).total_seconds() for x in visit.idle_times
+                ])
 
     def get_object_messages(self, unit):
         return list(filter(

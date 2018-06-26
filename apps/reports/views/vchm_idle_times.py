@@ -195,7 +195,9 @@ class VchmIdleTimesView(BaseVchmReportView):
                     for visit in unit_report_data.geozones.target:
                         point_standard = {}
                         if standard:
-                            point_standard = standard.get('points', {}).get(visit.geozone, {})
+                            point_standard = standard.get('points', {}).get(visit.geozone_full, {})
+                            if not point_standard:
+                                point_standard = standard.get('points', {}).get(visit.geozone, {})
 
                         if not point_standard.get('total_time_standard'):
                             point_standard['total_time_standard'] = form.cleaned_data.get(
@@ -291,7 +293,7 @@ class VchmIdleTimesView(BaseVchmReportView):
 
         # header
         worksheet.write_merge(
-            1, 1, 0, 16, 'За период: %s - %s' % (
+            1, 1, 0, self.xls_heading_merge, 'За период: %s - %s' % (
                 date_format(context['cleaned_data']['dt_from'], 'd.m.Y'),
                 date_format(context['cleaned_data']['dt_to'], 'd.m.Y')
             )

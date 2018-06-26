@@ -121,6 +121,9 @@ class VchmIdleTimesForm(forms.Form):
 
 class VchmTaxiingForm(forms.Form):
     """Форма cуточного отчета для таксировки ПЛ"""
-    dt_from = forms.DateField(label=_('С'))
-    dt_to = forms.DateField(label=_('По'))
+    dt = forms.DateField(label=_('По'))
     unit = forms.IntegerField(required=False, label=_('Объект'))
+    overstatement_param = forms.IntegerField(
+        label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),
+        min_value=0, max_value=99, initial=DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE, required=True
+    )

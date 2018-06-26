@@ -150,6 +150,7 @@ class MovingService(object):
         visits = self.report_data[unit_name].geozones.target
         job = self.jobs_cache.get(unit['id'])
 
+        is_fixed_route = False
         try:
             route = self.routes_cache[int(job.route_id) if job else -1]
         except KeyError:
@@ -157,6 +158,7 @@ class MovingService(object):
                 x for x in self.routes_cache.values() if 'фиксир' in x['name'].lower()
             ]
             route = fixed_routes[0] if fixed_routes else {'points': []}
+            is_fixed_route = True
 
         route_point_names = {
             self.prepare_geozone_name(x['name']) for x in route['points']
@@ -173,6 +175,14 @@ class MovingService(object):
         # пробегаемся по интервалам геозон и сглаживаем их
         for i, row in enumerate(geozones):
             visit = Visit(self.prepare_geozone_name(row.geozone), row.dt_from, row.dt_to)
+
+            if not is_fixed_route and job:
+                delta = (
+                    min(visit.dt_to, job.date_end) - max(visit.dt_from, job.date_begin)
+                ).total_seconds()
+
+                if delta <= 0:
+                    continue
 
             # проверим интервалы между отрезками
             try:

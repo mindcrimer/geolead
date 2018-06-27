@@ -189,7 +189,7 @@ class BaseVchmReportView(BaseReportView):
             if 'report_data' in context:
                 dump_context = self.get_dump_context(context)
                 dump_context['cleaned_data'] = context['form'].cleaned_data
-                dump_context['stats'] = context.get('stats', {})
+                dump_context['heading_data'] = context.get('heading_data', {})
                 request.session[self.get_session_key()] = dump_context
                 return self.download_xls(request, *args, **kwargs)
 

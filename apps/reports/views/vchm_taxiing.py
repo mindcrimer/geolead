@@ -1,9 +1,9 @@
 import datetime
 from collections import OrderedDict
-
 import re
 
-from django.db.models import Prefetch, Q
+from django.db.models import Q
+from django.db.models.query import Prefetch
 from django.utils.formats import date_format
 
 from base.exceptions import ReportException
@@ -47,6 +47,26 @@ class VchmTaxiingView(BaseVchmReportView):
         unit = self.units_dict.get(unit_name, {})
         return unit.get('number', unit.get('name', ''))
 
+    def get_car_vin(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return unit.get('vin', '')
+
+    def get_car_type(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return unit.get('vehicle_type', '')
+
+    @staticmethod
+    def get_car_model(unit_name):
+        return ' '.join(unit_name.split(' ')[:-1])
+
+    def get_car_company(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return ''
+
+    def get_car_branch(self, unit_name):
+        unit = self.units_dict.get(unit_name, {})
+        return ''
+
     @staticmethod
     def get_point_name(point_name):
         if point_name and point_name.lower() != 'space':
@@ -73,7 +93,6 @@ class VchmTaxiingView(BaseVchmReportView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(VchmTaxiingView, self).get_context_data(**kwargs)
-        report_data = None
         form = kwargs['form']
 
         sess_id = self.request.session.get('sid')
@@ -91,6 +110,7 @@ class VchmTaxiingView(BaseVchmReportView):
 
             if form.is_valid():
                 report_data = []
+                kwargs.update(report_data=report_data)
 
                 user = User.objects.filter(is_active=True) \
                     .filter(wialon_username=self.request.session.get('user')).first()
@@ -106,11 +126,11 @@ class VchmTaxiingView(BaseVchmReportView):
                     datetime.time(23, 59, 59)
                 )
 
-                selected_unit = form.cleaned_data.get('unit')
+                unit_id = form.cleaned_data.get('unit')
                 self.units_dict = OrderedDict(
-                    (x['name'], x) for x in units_list
-                    if not selected_unit or (selected_unit and x['id'] == selected_unit)
+                    (x['name'], x) for x in units_list if x['id'] == unit_id
                 )
+                unit = list(self.units_dict.values())[0]
 
                 routes = {
                     x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
@@ -148,7 +168,7 @@ class VchmTaxiingView(BaseVchmReportView):
                     user,
                     local_dt_from,
                     local_dt_to,
-                    object_id=selected_unit if selected_unit else None,
+                    object_id=unit_id,
                     sess_id=sess_id,
                     units_dict=self.units_dict
                 )
@@ -170,16 +190,26 @@ class VchmTaxiingView(BaseVchmReportView):
                     ) / 100.0
                 )
 
-                for unit in self.units_dict.values():
-                    unit_report_data = service.report_data.get(unit['name'])
-                    if not unit_report_data:
-                        continue
+                unit_report_data = service.report_data.get(unit['name'])
+                if not unit_report_data:
+                    return kwargs
 
-                    job = jobs_cache.get(unit['id'])
-                    standard = None
-                    if job:
-                        standard = standards.get(int(job.route_id))
+                kwargs.update(heading_data=OrderedDict((
+                    ('ОК', self.get_car_company(unit['name'])),
+                    ('ПЗУ', self.get_car_branch(unit['name'])),
+                    ('Марка, модель', self.get_car_model(unit['name'])),
+                    ('Гос.номер', self.get_car_number(unit['name'])),
+                    ('VIN', self.get_car_vin(unit['name'])),
+                    ('Тип ТС', self.get_car_type(unit['name'])),
+                    ('Дата', date_format(form.cleaned_data['dt'], 'd.m.Y'))
+                )))
 
+                job = jobs_cache.get(unit['id'])
+                standard = None
+                if job:
+                    standard = standards.get(int(job.route_id))
+
+                for visit in unit_report_data.geozones.target:
                     point_standard = None
                     if standard:
                         point_standard = standard.get('points', {}).get(visit.geozone_full, {})
@@ -191,67 +221,62 @@ class VchmTaxiingView(BaseVchmReportView):
                         total_standart = point_standard['total_time_standard'] * 60
                         parking_standard = point_standard['parking_time_standard'] * 60
 
-                    for visit in unit_report_data.geozones.target:
-                        total_delta = (visit.dt_to - visit.dt_from).total_seconds()
-                        parking_delta = getattr(visit, 'parkings_delta', .0)
-                        moving_delta = getattr(visit, 'trips_delta', .0)
-                        motohours_delta = getattr(visit, 'motohours_delta', .0)
-                        idle_delta = getattr(visit, 'idle_delta', .0)
-                        off_delta = min(.0, total_delta - motohours_delta)
-                        angle_sensor_delta = getattr(visit, 'angle_sensor_delta', .0)
-                        refillings_volume = getattr(visit, 'refillings_volume', .0)
-                        discharges_volume = getattr(visit, 'discharges_volume', .0)
+                    total_delta = (visit.dt_to - visit.dt_from).total_seconds()
+                    parking_delta = getattr(visit, 'parkings_delta', .0)
+                    moving_delta = getattr(visit, 'trips_delta', .0)
+                    motohours_delta = getattr(visit, 'motohours_delta', .0)
+                    idle_delta = getattr(visit, 'idle_delta', .0)
+                    off_delta = min(.0, total_delta - motohours_delta)
+                    angle_sensor_delta = getattr(visit, 'angle_sensor_delta', .0)
+                    refillings_volume = getattr(visit, 'refillings_volume', .0)
+                    discharges_volume = getattr(visit, 'discharges_volume', .0)
 
-                        over_3min_parkings_count = len([
-                            True for x in getattr(visit, 'parkings', [])
-                            if (x.dt_to - x.dt_from).total_seconds() > 3 * 60
-                        ])
+                    over_3min_parkings_count = len([
+                        True for x in getattr(visit, 'parkings', [])
+                        if (x.dt_to - x.dt_from).total_seconds() > 3 * 60
+                    ])
 
-                        overstatement_time = .0
-                        if total_standart is not None \
-                                and total_delta / total_standart > normal_ratio:
-                            overstatement_time += total_delta - total_standart
+                    overstatement_time = .0
+                    if total_standart is not None \
+                            and total_delta / total_standart > normal_ratio:
+                        overstatement_time += total_delta - total_standart
 
-                        elif parking_standard is not None \
-                                and parking_delta / parking_standard > normal_ratio:
-                            overstatement_time += parking_delta - parking_standard
+                    elif parking_standard is not None \
+                            and parking_delta / parking_standard > normal_ratio:
+                        overstatement_time += parking_delta - parking_standard
 
-                        report_row = {
-                            'car_number': self.get_car_number(unit['name']),
-                            'driver_fio': job.driver_fio
-                            if job and job.driver_fio else 'Неизвестный',
-                            'route_name': job.route_title
-                            if job and job.route_title else 'Неизвестный маршрут',
-                            'point_name': self.get_point_name(visit.geozone),
-                            'dt_from': visit.dt_from,
-                            'dt_to': visit.dt_to,
-                            'total_time': total_delta,
-                            'moving_time': moving_delta,
-                            'parking_time': parking_delta,
-                            'idle_time': idle_delta,
-                            'idle_off_time': off_delta,
-                            'angle_sensor_time': angle_sensor_delta,
-                            'over_3min_parkings_count': over_3min_parkings_count,
-                            'odometer': self.render_odometer(unit, visit),
-                            'fuel_level_delta': self.render_fuel_delta(unit, visit),
-                            'refills_delta': refillings_volume,
-                            'discharge_delta': discharges_volume,
-                            'overstatement_mileage': .0,
-                            'overstatement_time': overstatement_time,
-                            'faults': self.render_faults(unit, visit)
-                        }
-                        report_data.append(report_row)
-
-            kwargs.update(
-                report_data=report_data
-            )
+                    report_row = {
+                        'car_number': self.get_car_number(unit['name']),
+                        'driver_fio': job.driver_fio
+                        if job and job.driver_fio else 'Неизвестный',
+                        'route_name': job.route_title
+                        if job and job.route_title else 'Неизвестный маршрут',
+                        'point_name': self.get_point_name(visit.geozone),
+                        'dt_from': visit.dt_from,
+                        'dt_to': visit.dt_to,
+                        'total_time': total_delta,
+                        'moving_time': moving_delta,
+                        'parking_time': parking_delta,
+                        'idle_time': idle_delta,
+                        'idle_off_time': off_delta,
+                        'angle_sensor_time': angle_sensor_delta,
+                        'over_3min_parkings_count': over_3min_parkings_count,
+                        'odometer': self.render_odometer(unit, visit),
+                        'fuel_level_delta': self.render_fuel_delta(unit, visit),
+                        'refills_delta': refillings_volume,
+                        'discharge_delta': discharges_volume,
+                        'overstatement_mileage': .0,
+                        'overstatement_time': overstatement_time,
+                        'faults': self.render_faults(unit, visit)
+                    }
+                    report_data.append(report_row)
 
         return kwargs
 
     def write_xls_data(self, worksheet, context):
         worksheet = super(VchmTaxiingView, self).write_xls_data(worksheet, context)
 
-        worksheet.col(0).width = 3000
+        worksheet.col(0).width = 3600
         worksheet.col(1).width = 5500
         worksheet.col(2).width = 5500
         worksheet.col(3).width = 5500
@@ -273,11 +298,17 @@ class VchmTaxiingView(BaseVchmReportView):
         worksheet.col(19).width = 7000
 
         # header
-        worksheet.write_merge(
-            1, 1, 0, self.xls_heading_merge, 'За сутки: %s' % (
-                date_format(context['cleaned_data']['dt'], 'd.m.Y')
-            )
-        )
+        x = 0
+        if context.get('heading_data'):
+            for key, value in context['heading_data'].items():
+                x += 1
+                worksheet.write(x, 0, key + ' ', style=self.styles['right_center_style'])
+                worksheet.write_merge(
+                    x, x, 1, self.xls_heading_merge - 1, value,
+                    style=self.styles['left_center_style']
+                )
+            x += 1
+            worksheet.write_merge(x, x, 0, self.xls_heading_merge, '')
 
         headings = (
             'Гос № ТС',
@@ -302,8 +333,9 @@ class VchmTaxiingView(BaseVchmReportView):
             'Исправность оборудования'
         )
 
-        x = 2
+        x += 1
         for y, heading in enumerate(headings):
+
             worksheet.write(
                 x, y, heading, style=self.styles['border_center_style']
             )

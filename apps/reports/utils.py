@@ -137,8 +137,8 @@ def utc_to_local_time(dt, timezone):
         dt = dt.replace(tzinfo=None)
 
     local_dt = dt + timezone.utcoffset(dt)
-    if local_dt.tzinfo is None:
-        local_dt = timezone.localize(local_dt)
+    # if local_dt.tzinfo is None:
+    #     local_dt = timezone.localize(local_dt)
     return local_dt
 
 

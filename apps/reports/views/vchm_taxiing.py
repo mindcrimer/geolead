@@ -2,6 +2,7 @@ import datetime
 from collections import OrderedDict
 import re
 
+import xlwt
 from django.db.models import Q
 from django.db.models.query import Prefetch
 from django.utils.formats import date_format
@@ -10,7 +11,7 @@ from base.exceptions import ReportException
 from moving.service import MovingService
 from reports import forms, DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
 from snippets.jinjaglobals import date as date_format, floatcomma
-from reports.utils import local_to_utc_time, format_timedelta
+from reports.utils import local_to_utc_time, format_timedelta, utc_to_local_time
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from ura.models import Job, StandardJobTemplate, StandardPoint
 from users.models import User
@@ -28,6 +29,7 @@ class VchmTaxiingView(BaseVchmReportView):
     def __init__(self, *args, **kwargs):
         super(VchmTaxiingView).__init__(*args, **kwargs)
         self.units_dict = {}
+        self.user = None
 
     def get_default_context_data(self, **kwargs):
         context = super(VchmTaxiingView, self).get_default_context_data(**kwargs)
@@ -74,11 +76,11 @@ class VchmTaxiingView(BaseVchmReportView):
         return 'Неизвестная'
 
     @staticmethod
-    def render_odometer(unit, visit):
+    def get_odometer(unit, visit):
         return getattr(visit, 'total_distance', .0)
 
     @staticmethod
-    def render_fuel_delta(unit, visit):
+    def get_fuel_delta(unit, visit):
         start, end = getattr(visit, 'end_fuel_level'), getattr(visit, 'start_fuel_level')
         if start is None or end is None:
             return .0
@@ -110,11 +112,31 @@ class VchmTaxiingView(BaseVchmReportView):
 
             if form.is_valid():
                 report_data = []
-                kwargs.update(report_data=report_data)
+                stats = {
+                    'dt_from_min': None,
+                    'dt_to_max': None,
+                    'total_time': .0,
+                    'moving_time': .0,
+                    'parking_time': .0,
+                    'idle_time': .0,
+                    'idle_off_time': .0,
+                    'angle_sensor_time': .0,
+                    'over_3min_parkings_count': 0,
+                    'odometer': .0,
+                    'fuel_level_delta': .0,
+                    'refills_delta': .0,
+                    'discharge_delta': .0,
+                    'overstatement_mileage': .0,
+                    'overstatement_time': .0
+                }
+                kwargs.update(
+                    report_data=report_data,
+                    stats=stats
+                )
 
-                user = User.objects.filter(is_active=True) \
+                self.user = User.objects.filter(is_active=True) \
                     .filter(wialon_username=self.request.session.get('user')).first()
-                if not user:
+                if not self.user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
                 local_dt_from = datetime.datetime.combine(
@@ -133,7 +155,9 @@ class VchmTaxiingView(BaseVchmReportView):
                 unit = list(self.units_dict.values())[0]
 
                 routes = {
-                    x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
+                    x['id']: x for x in get_routes(
+                        sess_id=sess_id, user=self.user, with_points=True
+                    )
                 }
                 standard_job_templates = StandardJobTemplate.objects \
                     .filter(wialon_id__in=[str(x) for x in routes.keys()]) \
@@ -165,7 +189,7 @@ class VchmTaxiingView(BaseVchmReportView):
                 }
 
                 service = MovingService(
-                    user,
+                    self.user,
                     local_dt_from,
                     local_dt_to,
                     object_id=unit_id,
@@ -175,7 +199,7 @@ class VchmTaxiingView(BaseVchmReportView):
                 service.exec_report()
                 service.analyze()
 
-                ura_user = user.ura_user if user.ura_user_id else user
+                ura_user = self.user.ura_user if self.user.ura_user_id else self.user
                 jobs = Job.objects.filter(
                     user=ura_user,
                     date_begin__gte=local_to_utc_time(local_dt_from, ura_user.wialon_tz),
@@ -261,8 +285,8 @@ class VchmTaxiingView(BaseVchmReportView):
                         'idle_off_time': off_delta,
                         'angle_sensor_time': angle_sensor_delta,
                         'over_3min_parkings_count': over_3min_parkings_count,
-                        'odometer': self.render_odometer(unit, visit),
-                        'fuel_level_delta': self.render_fuel_delta(unit, visit),
+                        'odometer': self.get_odometer(unit, visit),
+                        'fuel_level_delta': self.get_fuel_delta(unit, visit),
                         'refills_delta': refillings_volume,
                         'discharge_delta': discharges_volume,
                         'overstatement_mileage': .0,
@@ -271,10 +295,47 @@ class VchmTaxiingView(BaseVchmReportView):
                     }
                     report_data.append(report_row)
 
+                    if stats['dt_from_min'] is None:
+                        stats['dt_from_min'] = visit.dt_from
+                    else:
+                        stats['dt_from_min'] = min(stats['dt_from_min'], visit.dt_from)
+
+                    if stats['dt_to_max'] is None:
+                        stats['dt_to_max'] = visit.dt_to
+                    else:
+                        stats['dt_to_max'] = max(stats['dt_to_max'], visit.dt_to)
+
+                    stats['total_time'] += total_delta
+                    stats['moving_time'] += moving_delta
+                    stats['parking_time'] += parking_delta
+                    stats['idle_time'] += idle_delta
+                    stats['idle_off_time'] += off_delta
+                    stats['angle_sensor_time'] += angle_sensor_delta
+                    stats['over_3min_parkings_count'] += over_3min_parkings_count
+                    stats['odometer'] += self.get_odometer(unit, visit)
+                    stats['fuel_level_delta'] += self.get_fuel_delta(unit, visit)
+                    stats['refills_delta'] += refillings_volume
+                    stats['discharge_delta'] += discharges_volume
+                    stats['overstatement_mileage'] += .0
+                    stats['overstatement_time'] += overstatement_time
+
         return kwargs
 
     def write_xls_data(self, worksheet, context):
         worksheet = super(VchmTaxiingView, self).write_xls_data(worksheet, context)
+
+        self.styles.update({
+            'border_bold_left_style': xlwt.easyxf(
+                'font: bold 1, height 200;'
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz left'
+            ),
+            'border_bold_right_style': xlwt.easyxf(
+                'font: bold 1, height 200;'
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz right'
+            )
+        })
 
         worksheet.col(0).width = 3600
         worksheet.col(1).width = 5500
@@ -342,6 +403,81 @@ class VchmTaxiingView(BaseVchmReportView):
 
         worksheet.row(x).height = 1200
 
+        stats = context.get('stats')
+        if stats:
+            x += 1
+            worksheet.write_merge(
+                x, x, 0, 3, 'ИТОГО за смену', style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 4, date_format(
+                    utc_to_local_time(stats['dt_from_min'], self.user.wialon_tz),
+                    'H:i'
+                ),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 5, date_format(
+                    utc_to_local_time(stats['dt_to_max'], self.user.wialon_tz),
+                    'H:i'
+                ),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 6, format_timedelta(stats['total_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 7, format_timedelta(stats['moving_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 8, format_timedelta(stats['parking_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 9, format_timedelta(stats['idle_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 10, format_timedelta(stats['idle_off_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 11, format_timedelta(stats['angle_sensor_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(
+                x, 12, stats['over_3min_parkings_count'],
+                style=self.styles['border_bold_right_style']
+            )
+            worksheet.write(
+                x, 13, floatcomma(stats['odometer'], -2),
+                style=self.styles['border_bold_right_style']
+            )
+            worksheet.write(
+                x, 14, floatcomma(stats['fuel_level_delta'], -2),
+                style=self.styles['border_bold_right_style']
+            )
+            worksheet.write(
+                x, 15, floatcomma(stats['refills_delta'], -2),
+                style=self.styles['border_bold_right_style']
+            )
+            worksheet.write(
+                x, 16, floatcomma(stats['discharge_delta'], -2),
+                style=self.styles['border_bold_right_style']
+            )
+            worksheet.write(
+                x, 17, floatcomma(stats['overstatement_mileage'], -2),
+                style=self.styles['border_bold_right_style']
+            )
+            worksheet.write(
+                x, 18, format_timedelta(stats['overstatement_time']),
+                style=self.styles['border_bold_left_style']
+            )
+            worksheet.write(x, 19, '', style=self.styles['border_left_style'])
+            worksheet.row(x).height = 360
+
         for row in context['report_data']:
             x += 1
             worksheet.write(
@@ -361,11 +497,11 @@ class VchmTaxiingView(BaseVchmReportView):
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 4, date_format(row['dt_from'], 'H:i'),
+                x, 4, date_format(utc_to_local_time(row['dt_from'], self.user.wialon_tz), 'H:i'),
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 5, date_format(row['dt_to'], 'H:i'),
+                x, 5, date_format(utc_to_local_time(row['dt_to'], self.user.wialon_tz), 'H:i'),
                 style=self.styles['border_left_style']
             )
             worksheet.write(

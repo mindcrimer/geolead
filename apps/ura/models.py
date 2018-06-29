@@ -152,6 +152,7 @@ class StandardPoint(BasicModel, LastModMixin):
     parking_time_standard = models.FloatField(
         _('Норматив времени стоянок, мин.'), null=True, blank=True
     )
+    mileage_standard = models.FloatField(_('Норматив пробега, км'), null=True, blank=True)
 
     class Meta:
         unique_together = ('job_template', 'wialon_id')

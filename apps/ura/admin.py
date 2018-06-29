@@ -1,14 +1,12 @@
-from django.utils.html import format_html
-
 from django.contrib import admin
 from django.contrib.admin import TabularInline
-from django.contrib.admin.filters import SimpleListFilter
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 
 from import_export.admin import ImportExportMixin, ExportMixin
 from reports.jinjaglobals import date
 
-from ura import models, import_export
+from ura import models, import_export, admin_filters
 from ura.enums import JobLogResolution
 
 
@@ -17,53 +15,6 @@ def approve_logs(modeladmin, request, queryset):
 
 
 approve_logs.short_description = 'Подтвердить исправление'
-
-
-class NullFilterSpec(SimpleListFilter):
-    title = ''
-
-    parameter_name = ''
-
-    def lookups(self, request, model_admin):
-        return (
-            ('1', _('Есть значение'), ),
-            ('0', _('Нет значения'), ),
-        )
-
-    def queryset(self, request, queryset):
-
-        if self.value() == '0':
-            return queryset.filter(**{'%s__isnull' % self.parameter_name: True})
-
-        if self.value() == '1':
-            return queryset.filter(**{'%s__isnull' % self.parameter_name: False})
-
-        return queryset
-
-
-class SpaceOverstatementsStandardNullFilterSpec(NullFilterSpec):
-    title = 'Норматив перенахождения вне плановых геозон, мин.'
-    parameter_name = 'space_overstatements_standard'
-
-
-class PointsTotalTimeStandardFilterSpec(NullFilterSpec):
-    title = 'Норматив времени нахождения, мин.'
-    parameter_name = 'points__total_time_standard'
-
-
-class PointsParkingTimeStandardFilterSpec(NullFilterSpec):
-    title = 'Норматив времени стоянок, мин.'
-    parameter_name = 'points__parking_time_standard'
-
-
-class TotalTimeStandardFilterSpec(NullFilterSpec):
-    title = 'Норматив времени нахождения, мин.'
-    parameter_name = 'total_time_standard'
-
-
-class ParkingTimeStandardFilterSpec(NullFilterSpec):
-    title = 'Норматив времени стоянок, мин.'
-    parameter_name = 'parking_time_standard'
 
 
 class JobPointInline(admin.TabularInline):
@@ -198,12 +149,16 @@ class StandardPointAdmin(ImportExportMixin, admin.ModelAdmin):
     """Геозоны"""
     fields = models.StandardPoint().collect_fields()
     list_display = (
-        'id', 'title', 'wialon_id', 'job_template', 'total_time_standard', 'parking_time_standard'
+        'id', 'title', 'wialon_id', 'job_template', 'total_time_standard', 'parking_time_standard',
+        'mileage_standard'
     )
     list_display_links = ('id', 'title')
-    list_editable = ('total_time_standard', 'parking_time_standard')
+    list_editable = ('total_time_standard', 'parking_time_standard', 'mileage_standard')
     list_filter = (
-        TotalTimeStandardFilterSpec, ParkingTimeStandardFilterSpec, 'job_template__user'
+        admin_filters.TotalTimeStandardFilterSpec,
+        admin_filters.ParkingTimeStandardFilterSpec,
+        admin_filters.MileageStandardFilterSpec,
+        'job_template__user'
     )
     list_select_related = True
     ordering = ('-created',)
@@ -234,8 +189,11 @@ class StandardJobTemplateAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'title')
     list_editable = ('space_overstatements_standard',)
     list_filter = (
-        SpaceOverstatementsStandardNullFilterSpec, PointsTotalTimeStandardFilterSpec,
-        PointsParkingTimeStandardFilterSpec, 'user'
+        admin_filters.SpaceOverstatementsStandardNullFilterSpec,
+        admin_filters.PointsTotalTimeStandardFilterSpec,
+        admin_filters.PointsParkingTimeStandardFilterSpec,
+        admin_filters.PointsMileageStandardFilterSpec,
+        'user'
     )
     ordering = ('-created',)
     readonly_fields = ('created', 'updated')

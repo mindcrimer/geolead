@@ -12,9 +12,13 @@ from base.exceptions import APIProcessError
 from snippets.utils.email import send_trigger_email
 
 
+def get_session_cache_key(user):
+    return 'sessid:%s' % user.id
+
+
 def get_wialon_session_key(user, invalidate=False):
     """Возвращает идентификатор сессии пользователя Wialon"""
-    cache_key = 'sessid:%s' % user.id
+    cache_key = get_session_cache_key(user)
     sess_id = cache.get(cache_key)
 
     if not sess_id or invalidate:
@@ -106,3 +110,21 @@ def get_user_wialon_token(user):
             user.save()
 
     return token
+
+
+def logout_session(user, sess_id):
+    params = urllib.request.quote('{}')
+    r = requests.get(
+        settings.WIALON_BASE_URL + ('?svc=core/logout&params=%s&sid=%s' % (params, sess_id))
+    )
+    res = r.json()
+
+    succeeded = res.get('error', 0) == 0
+    if succeeded:
+        # удаляем из кэша
+        cache_key = get_session_cache_key(user)
+        cached_sess_id = cache.get(cache_key)
+        if cached_sess_id and cached_sess_id == sess_id:
+            cache.delete(cache_key)
+
+    return succeeded

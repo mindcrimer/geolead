@@ -124,10 +124,10 @@ class DischargeView(BaseReportView):
                 jobs_count = len(units_dict)
                 print('Всего ТС: %s' % jobs_count)
 
-                dt_from_utc = local_to_utc_time(form.cleaned_data['dt_from'], self.user.wialon_tz)
+                dt_from_utc = local_to_utc_time(form.cleaned_data['dt_from'], self.user.timezone)
                 dt_to_utc = local_to_utc_time(
                     form.cleaned_data['dt_to'].replace(hour=23, minute=59, second=59),
-                    self.user.wialon_tz
+                    self.user.timezone
                 )
 
                 ura_user = self.user.ura_user if self.user.ura_user_id else self.user
@@ -273,7 +273,7 @@ class DischargeView(BaseReportView):
                             dt = parse_wialon_report_datetime(
                                 row[1]['t'] if isinstance(row[1], dict) else row[1]
                             )
-                            utc_dt = local_to_utc_time(dt, self.user.wialon_tz)
+                            utc_dt = local_to_utc_time(dt, self.user.timezone)
                             if period['dt_from'] <= utc_dt <= period['dt_to']:
 
                                 place = row[0]['t'] if isinstance(row[0], dict) else (row[0] or '')
@@ -374,9 +374,9 @@ class DischargeView(BaseReportView):
                                 self.stats['overspanding_total'] += overspanding
 
                         period['dt_from'] = utc_to_local_time(
-                            period['dt_from'], self.user.wialon_tz
+                            period['dt_from'], self.user.timezone
                         )
-                        period['dt_to'] = utc_to_local_time(period['dt_to'], self.user.wialon_tz)
+                        period['dt_to'] = utc_to_local_time(period['dt_to'], self.user.timezone)
 
                 if report_data:
                     for k, v in report_data.items():
@@ -402,12 +402,12 @@ class DischargeView(BaseReportView):
         row_dt_from = local_to_utc_time(
             parse_wialon_report_datetime(
                 row[0]['t'] if isinstance(row[0], dict) else row[0]
-            ), self.user.wialon_tz
+            ), self.user.timezone
         )
         row_dt_to = local_to_utc_time(
             parse_wialon_report_datetime(
                 row[1]['t'] if isinstance(row[1], dict) else row[1]
-            ), self.user.wialon_tz
+            ), self.user.timezone
         )
 
         return row_dt_from, row_dt_to

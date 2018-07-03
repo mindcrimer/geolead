@@ -109,8 +109,8 @@ class BaseReportView(BaseTemplateView):
                 wialon_username=self.request.session.get('user')
             ).first()
 
-            if user and user.wialon_tz:
-                dt = utc_to_local_time(dt, user.wialon_tz)
+            if user and user.timezone:
+                dt = utc_to_local_time(dt, user.timezone)
 
         filename = 'report_%s.xls' % dt.strftime('%Y%m%d_%H%M%S')
 

@@ -158,8 +158,8 @@ class VchmIdleTimesView(BaseVchmReportView):
                 ura_user = user.ura_user if user.ura_user_id else user
                 jobs = Job.objects.filter(
                     user=ura_user,
-                    date_begin__gte=local_to_utc_time(local_dt_from, ura_user.wialon_tz),
-                    date_end__lte=local_to_utc_time(local_dt_to, ura_user.wialon_tz)
+                    date_begin__gte=local_to_utc_time(local_dt_from, ura_user.timezone),
+                    date_end__lte=local_to_utc_time(local_dt_to, ura_user.timezone)
                 )
                 jobs_cache = {int(j.unit_id): j for j in jobs}
 

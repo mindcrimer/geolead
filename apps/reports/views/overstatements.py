@@ -74,9 +74,9 @@ class OverstatementsView(BaseReportView):
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
+                dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.timezone)
                 dt_to = local_to_utc_time(
-                    form.cleaned_data['dt_to'].replace(second=59), user.wialon_tz
+                    form.cleaned_data['dt_to'].replace(second=59), user.timezone
                 )
 
                 routes = {
@@ -172,22 +172,22 @@ class OverstatementsView(BaseReportView):
                                 row['fact_period'] = '%s - %s' % (
                                     date(utc_to_local_time(
                                         point.enter_date_time.replace(tzinfo=None),
-                                        user.wialon_tz
+                                        user.timezone
                                     ), 'd.m.Y H:i:s'),
                                     date(utc_to_local_time(
                                         point.leave_date_time.replace(tzinfo=None),
-                                        user.wialon_tz
+                                        user.timezone
                                     ), 'd.m.Y H:i:s')
                                 )
 
                                 row['plan_period'] = '%s - %s' % (
                                     date(utc_to_local_time(
                                         job.date_begin.replace(tzinfo=None),
-                                        user.wialon_tz
+                                        user.timezone
                                     ), 'd.m.Y H:i:s'),
                                     date(utc_to_local_time(
                                         job.date_end.replace(tzinfo=None),
-                                        user.wialon_tz
+                                        user.timezone
                                     ), 'd.m.Y H:i:s')
                                 )
                                 row['route_id'] = job.route_id
@@ -211,21 +211,21 @@ class OverstatementsView(BaseReportView):
                         row['fact_period'] = '%s - %s' % (
                             date(utc_to_local_time(
                                 spaces[0].enter_date_time.replace(tzinfo=None),
-                                user.wialon_tz
+                                user.timezone
                             ), 'd.m.Y H:i:s'),
                             date(utc_to_local_time(
                                 spaces[-1].leave_date_time.replace(tzinfo=None),
-                                user.wialon_tz
+                                user.timezone
                             ), 'd.m.Y H:i:s')
                         )
                         row['plan_period'] = '%s - %s' % (
                             date(utc_to_local_time(
                                 job.date_begin.replace(tzinfo=None),
-                                user.wialon_tz
+                                user.timezone
                             ), 'd.m.Y H:i:s'),
                             date(utc_to_local_time(
                                 job.date_end.replace(tzinfo=None),
-                                user.wialon_tz
+                                user.timezone
                             ), 'd.m.Y H:i:s')
                         )
                         row['route_id'] = job.route_id

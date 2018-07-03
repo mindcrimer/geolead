@@ -203,12 +203,12 @@ class VchmDrivingStyleView(BaseVchmReportView):
             local_to_utc_time(
                 parse_wialon_report_datetime(
                     row[6]['t'] if isinstance(row[6], dict) else row[6]
-                ), user.wialon_tz
+                ), user.timezone
             ),  # from_dt
             local_to_utc_time(
                 parse_wialon_report_datetime(
                     row[7]['t'] if isinstance(row[7], dict) else row[7]
-                ), user.wialon_tz
+                ), user.timezone
             ),  # to_dt
             parse_float(row[9], default=.0)  # mileage_corrected
         )
@@ -245,11 +245,11 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 dt_from = local_to_utc_time(datetime.datetime.combine(
                     form.cleaned_data['dt_from'],
                     datetime.time(0, 0, 0)
-                ), user.wialon_tz)
+                ), user.timezone)
                 dt_to = local_to_utc_time(datetime.datetime.combine(
                     form.cleaned_data['dt_to'],
                     datetime.time(23, 59, 59)
-                ), user.wialon_tz)
+                ), user.timezone)
 
                 ura_user = user.ura_user if user.ura_user_id else user
                 jobs = Job.objects.filter(

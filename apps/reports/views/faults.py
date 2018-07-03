@@ -102,8 +102,8 @@ class FaultsView(BaseReportView):
 
                 dt_from_local = datetime.datetime.combine(report_date, datetime.time(0, 0, 0))
                 dt_to_local = datetime.datetime.combine(report_date, datetime.time(23, 59, 59))
-                dt_from_utc = local_to_utc_time(dt_from_local, self.user.wialon_tz)
-                dt_to_utc = local_to_utc_time(dt_to_local, self.user.wialon_tz)
+                dt_from_utc = local_to_utc_time(dt_from_local, self.user.timezone)
+                dt_to_utc = local_to_utc_time(dt_to_local, self.user.timezone)
 
                 self.sensors_template_id = get_wialon_report_template_id('sensors', self.user)
                 last_data_template_id = get_wialon_report_template_id('last_data', self.user)
@@ -115,7 +115,7 @@ class FaultsView(BaseReportView):
 
                 if jobs:
                     dt_from, dt_to = get_period(
-                        dt_from_local, dt_to_local, self.user.wialon_tz
+                        dt_from_local, dt_to_local, self.user.timezone
                     )
                     cleanup_and_request_report(
                         self.user, last_data_template_id, sess_id=self.sess_id
@@ -156,13 +156,13 @@ class FaultsView(BaseReportView):
                     self.stats['total'].add(unit_name)
 
                     job_local_date_begin = utc_to_local_time(
-                        job.date_begin - job_extra_offset, self.user.wialon_tz
+                        job.date_begin - job_extra_offset, self.user.timezone
                     )
                     job_local_date_to = utc_to_local_time(
-                        job.date_end + job_extra_offset, self.user.wialon_tz
+                        job.date_end + job_extra_offset, self.user.timezone
                     )
                     dt_from, dt_to = get_period(
-                        job_local_date_begin, job_local_date_to, self.user.wialon_tz
+                        job_local_date_begin, job_local_date_to, self.user.timezone
                     )
                     cleanup_and_request_report(
                         self.user, self.sensors_template_id, sess_id=self.sess_id
@@ -326,13 +326,13 @@ class FaultsView(BaseReportView):
         if date_slice_to > LAST_SIGNAL_UNTIL:
             return report_row
 
-        now = local_date_to = utc_to_local_time(utcnow(), self.user.wialon_tz)
+        now = local_date_to = utc_to_local_time(utcnow(), self.user.timezone)
 
         if date_slice_from:
             local_date_to = now - datetime.timedelta(days=date_slice_from)
 
         local_date_from = now - datetime.timedelta(days=date_slice_to)
-        dt_from, dt_to = get_period(local_date_from, local_date_to, self.user.wialon_tz)
+        dt_from, dt_to = get_period(local_date_from, local_date_to, self.user.timezone)
 
         print(
             'Пробуем период поиска последнего сигнала %s - %s (попытка %s)' % (
@@ -373,7 +373,7 @@ class FaultsView(BaseReportView):
 
             if isinstance(dt, dict):
                 dt = datetime.datetime.utcfromtimestamp(dt['v'])
-                dt = utc_to_local_time(dt, self.user.wialon_tz)
+                dt = utc_to_local_time(dt, self.user.timezone)
             else:
                 dt = parse_wialon_report_datetime(dt)
 
@@ -387,7 +387,7 @@ class FaultsView(BaseReportView):
                 report_row['dt'] = dt
                 report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
                     report_row['unit_id'],
-                    local_to_utc_time(dt, self.user.wialon_tz),
+                    local_to_utc_time(dt, self.user.timezone),
                     report_row['job_date_end']
                 )
             return report_row
@@ -456,7 +456,7 @@ class FaultsView(BaseReportView):
         if dt:
             report_row['sum_broken_work_time'] = self.get_sum_broken_work_time(
                 job.unit_id,
-                local_to_utc_time(dt, self.user.wialon_tz),
+                local_to_utc_time(dt, self.user.timezone),
                 job.date_end
             )
 
@@ -469,7 +469,7 @@ class FaultsView(BaseReportView):
 
             if isinstance(dt, dict):
                 dt = datetime.datetime.utcfromtimestamp(dt['v'])
-                dt = utc_to_local_time(dt, self.user.wialon_tz)
+                dt = utc_to_local_time(dt, self.user.timezone)
             else:
                 dt = parse_wialon_report_datetime(dt)
 

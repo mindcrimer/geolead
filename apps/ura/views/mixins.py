@@ -126,7 +126,7 @@ class BaseUraRidesView(URAResource):
                         else:
                             key = parse_wialon_report_datetime(row['c'][0])
                             key = int(
-                                local_to_utc_time(key, self.request.user.wialon_tz).timestamp()
+                                local_to_utc_time(key, self.request.user.timezone).timestamp()
                             )
                         if key and row['c'][1]:
                             self.fuel_data[key] = parse_float(row['c'][1]) or .0

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ackBreakJobs scriptVersion="0.1.9" dateCreate="{{ now|date('d.m.Y H:i:s') }}">
 	{%- for job in acceptedJobs %}
-    <job idJob="{{ job.id }}" jobName="{{ job.name|e }}" idUnit="{{ job.unit_id }}" idRoute="{{ job.route_id }}" dateBegin="{{ job.date_begin|utc_to_local(request.user.ura_tz)|date('d.m.Y H:i:s') }}" dateEnd="{{ job.date_end|utc_to_local(request.user.ura_tz)|date('d.m.Y H:i:s') }}"/>
+    <job idJob="{{ job.id }}" jobName="{{ job.name|e }}" idUnit="{{ job.unit_id }}" idRoute="{{ job.route_id }}" dateBegin="{{ job.date_begin|utc_to_local(request.user.timezone)|date('d.m.Y H:i:s') }}" dateEnd="{{ job.date_end|utc_to_local(request.user.timezone)|date('d.m.Y H:i:s') }}"/>
 	{%- endfor %}
 </ackBreakJobs>

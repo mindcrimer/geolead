@@ -28,8 +28,8 @@ class MovingService(object):
         self.sess_id = sess_id if sess_id else get_wialon_session_key(user)
         self.local_dt_from = local_dt_from
         self.local_dt_to = local_dt_to
-        self.utc_dt_from = local_to_utc_time(local_dt_from, self.user.wialon_tz)
-        self.utc_dt_to = local_to_utc_time(local_dt_to, self.user.wialon_tz)
+        self.utc_dt_from = local_to_utc_time(local_dt_from, self.user.timezone)
+        self.utc_dt_to = local_to_utc_time(local_dt_to, self.user.timezone)
         self.utc_timestamp_from = int(time.mktime(self.utc_dt_from.timetuple()))
         self.utc_timestamp_to = int(time.mktime(self.utc_dt_to.timetuple()))
         self.mobile_vehicle_types = set()
@@ -131,7 +131,7 @@ class MovingService(object):
                 unit_obj = self.report_data[unit_key]
 
                 params = {
-                    'tz': self.user.wialon_tz
+                    'tz': self.user.timezone
                 }
                 data = renderer([row['c']] if level < 2 else [x['c'] for x in row['r']], **params)
                 getattr(unit_obj, name).extend_source(data)

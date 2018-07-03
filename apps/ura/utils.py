@@ -43,7 +43,7 @@ def parse_xml_input_data(request, mapping, element, preserve_tzinfo=False):
     for k, v in mapping.items():
         try:
             if v[1] == parse_datetime:
-                data[k] = v[1](element.get(v[0]), request.user.ura_tz)
+                data[k] = v[1](element.get(v[0]), request.user.timezone)
                 if not preserve_tzinfo:
                     data[k] = data[k].replace(tzinfo=None)
             else:

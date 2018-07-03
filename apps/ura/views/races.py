@@ -195,21 +195,21 @@ class URARacesResource(BaseUraRidesView, URAResource):
         for race in job_info['races']:
             race['date_start'] = utc_to_local_time(
                 datetime.datetime.utcfromtimestamp(race['date_start']),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
             race['date_end'] = utc_to_local_time(
                 datetime.datetime.utcfromtimestamp(race['date_end']),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
 
             for point in race['points']:
                 point['time_in'] = utc_to_local_time(
                     datetime.datetime.utcfromtimestamp(point['time_in']),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
                 point['time_out'] = utc_to_local_time(
                     datetime.datetime.utcfromtimestamp(point['time_out']),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
         for row in self.report_data['unit_chronology']:
@@ -236,7 +236,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
                     if isinstance(row_data[1], dict)
                     else row_data[1]
                 ),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
 
             time_until_value = row_data[2]['t'] \
@@ -247,7 +247,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
             else:
                 time_until = utc_to_local_time(
                     parse_wialon_report_datetime(time_until_value),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
             for race in job_info['races']:

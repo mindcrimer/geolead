@@ -202,8 +202,8 @@ class VchmTaxiingView(BaseVchmReportView):
                 ura_user = self.user.ura_user if self.user.ura_user_id else self.user
                 jobs = Job.objects.filter(
                     user=ura_user,
-                    date_begin__gte=local_to_utc_time(local_dt_from, ura_user.wialon_tz),
-                    date_end__lte=local_to_utc_time(local_dt_to, ura_user.wialon_tz)
+                    date_begin__gte=local_to_utc_time(local_dt_from, ura_user.timezone),
+                    date_end__lte=local_to_utc_time(local_dt_to, ura_user.timezone)
                 )
                 jobs_cache = {int(j.unit_id): j for j in jobs}
 
@@ -411,14 +411,14 @@ class VchmTaxiingView(BaseVchmReportView):
             )
             worksheet.write(
                 x, 4, date_format(
-                    utc_to_local_time(stats['dt_from_min'], self.user.wialon_tz),
+                    utc_to_local_time(stats['dt_from_min'], self.user.timezone),
                     'H:i'
                 ),
                 style=self.styles['border_bold_left_style']
             )
             worksheet.write(
                 x, 5, date_format(
-                    utc_to_local_time(stats['dt_to_max'], self.user.wialon_tz),
+                    utc_to_local_time(stats['dt_to_max'], self.user.timezone),
                     'H:i'
                 ),
                 style=self.styles['border_bold_left_style']
@@ -497,11 +497,11 @@ class VchmTaxiingView(BaseVchmReportView):
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 4, date_format(utc_to_local_time(row['dt_from'], self.user.wialon_tz), 'H:i'),
+                x, 4, date_format(utc_to_local_time(row['dt_from'], self.user.timezone), 'H:i'),
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 5, date_format(utc_to_local_time(row['dt_to'], self.user.wialon_tz), 'H:i'),
+                x, 5, date_format(utc_to_local_time(row['dt_to'], self.user.timezone), 'H:i'),
                 style=self.styles['border_left_style']
             )
             worksheet.write(

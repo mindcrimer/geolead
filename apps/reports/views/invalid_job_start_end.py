@@ -78,9 +78,9 @@ class InvalidJobStartEndView(BaseReportView):
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.wialon_tz)
+                dt_from = local_to_utc_time(form.cleaned_data['dt_from'], user.timezone)
                 dt_to = local_to_utc_time(
-                    form.cleaned_data['dt_to'].replace(second=59), user.wialon_tz
+                    form.cleaned_data['dt_to'].replace(second=59), user.timezone
                 )
 
                 routes_dict = {
@@ -147,7 +147,7 @@ class InvalidJobStartEndView(BaseReportView):
                         row['car_number'] = get_car_number(job.unit_id, units_dict)
                         row['driver_fio'] = job.driver_fio.strip()
                         row['job_date_start'] = utc_to_local_time(
-                            job.date_begin.replace(tzinfo=None), user.wialon_tz
+                            job.date_begin.replace(tzinfo=None), user.timezone
                         )
                         row['point_type'] = get_point_type(start_point.title)
                         row['route_id'] = str(job.route_id)
@@ -174,14 +174,14 @@ class InvalidJobStartEndView(BaseReportView):
                     row['car_number'] = get_car_number(job.unit_id, units_dict)
                     row['driver_fio'] = job.driver_fio.strip()
                     row['job_date_end'] = utc_to_local_time(
-                        job.date_end.replace(tzinfo=None), user.wialon_tz
+                        job.date_end.replace(tzinfo=None), user.timezone
                     )
                     row['point_type'] = get_point_type(end_point.title)
                     row['point_title'] = end_point.title
                     row['route_id'] = str(job.route_id)
                     row['route_title'] = routes_dict.get(int(job.route_id), {}).get('name', '')
                     row['fact_end'] = utc_to_local_time(
-                        end_point.enter_date_time.replace(tzinfo=None), user.wialon_tz
+                        end_point.enter_date_time.replace(tzinfo=None), user.timezone
                     )
                     row['delta'] = round(delta / 60.0, 2)
 

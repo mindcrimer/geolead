@@ -73,9 +73,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
         )
     )
 
-    wialon_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс Wialon'))
-
-    ura_tz = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс УРА'))
+    timezone = TimeZoneField(default='UTC', verbose_name=_('Часовой пояс'))
     organization_name = models.CharField(
         _('Название организации в УРА'), blank=True, null=False, max_length=255
     )

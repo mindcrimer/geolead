@@ -154,10 +154,10 @@ class DrivingStyleView(BaseReportView):
                     }
 
                 dt_from_utc = local_to_utc_time(
-                    self.form.cleaned_data['dt_from'], self.user.wialon_tz
+                    self.form.cleaned_data['dt_from'], self.user.timezone
                 )
                 dt_to_utc = local_to_utc_time(
-                    self.form.cleaned_data['dt_to'].replace(second=59), self.user.wialon_tz
+                    self.form.cleaned_data['dt_to'].replace(second=59), self.user.timezone
                 )
 
                 ura_user = self.user.ura_user if self.user.ura_user_id else self.user
@@ -348,10 +348,10 @@ class DrivingStyleView(BaseReportView):
                                 period['rating'] -= percentage
 
                         period['dt_from'] = utc_to_local_time(
-                            period['dt_from'], self.user.wialon_tz
+                            period['dt_from'], self.user.timezone
                         )
                         period['dt_to'] = utc_to_local_time(
-                            period['dt_to'], self.user.wialon_tz
+                            period['dt_to'], self.user.timezone
                         )
                         period['rating'] = max(period['rating'], .0)
 
@@ -400,13 +400,13 @@ class DrivingStyleView(BaseReportView):
         row_dt_from = local_to_utc_time(
             parse_wialon_report_datetime(
                 row[0]['t'] if isinstance(row[0], dict) else row[0]
-            ), self.user.wialon_tz
+            ), self.user.timezone
         )
 
         row_dt_to = local_to_utc_time(
             parse_wialon_report_datetime(
                 row[1]['t'] if isinstance(row[1], dict) else row[1]
-            ), self.user.wialon_tz
+            ), self.user.timezone
         )
 
         return row_dt_from, row_dt_to

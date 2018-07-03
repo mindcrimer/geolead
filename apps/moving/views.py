@@ -10,7 +10,7 @@ class MovingTestView(BaseView):
     service_class = service.MovingService
 
     def get(self, request, **kwargs):
-        now = utc_to_local_time(utcnow(), request.user.wialon_tz)
+        now = utc_to_local_time(utcnow(), request.user.timezone)
         local_dt_from = now.replace(hour=0, minute=0, second=0)
         local_dt_to = now.replace(hour=23, minute=59, second=59)
         user = User.objects.get(pk=1)

@@ -37,20 +37,20 @@ class URAMovingResource(BaseUraRidesView):
 
     def report_post_processing(self, unit_info):
         job_date_begin = utc_to_local_time(
-            self.job.date_begin.replace(tzinfo=None), self.request.user.ura_tz
+            self.job.date_begin.replace(tzinfo=None), self.request.user.timezone
         )
         job_date_end = utc_to_local_time(
-            self.job.date_end.replace(tzinfo=None), self.request.user.ura_tz
+            self.job.date_end.replace(tzinfo=None), self.request.user.timezone
         )
 
         for point in self.ride_points:
             point['time_in'] = utc_to_local_time(
                 datetime.datetime.utcfromtimestamp(point['time_in']),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
             point['time_out'] = utc_to_local_time(
                 datetime.datetime.utcfromtimestamp(point['time_out']),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
 
             if point['time_in'] >= job_date_begin and point['time_out'] <= job_date_end:
@@ -66,7 +66,7 @@ class URAMovingResource(BaseUraRidesView):
                         if isinstance(row['c'][1], dict)
                         else row['c'][1]
                     ),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
                 for point in self.ride_points:
@@ -84,7 +84,7 @@ class URAMovingResource(BaseUraRidesView):
                         if isinstance(row['c'][0], dict)
                         else row['c'][0]
                     ),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
                 for point in self.ride_points:
@@ -100,7 +100,7 @@ class URAMovingResource(BaseUraRidesView):
                     if isinstance(row['c'][0], dict)
                     else row['c'][0]
                 ),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
 
             time_until_value = row['c'][1]['t'] \
@@ -108,12 +108,12 @@ class URAMovingResource(BaseUraRidesView):
 
             if 'unknown' in time_until_value.lower():
                 time_until = utc_to_local_time(
-                    self.input_data['date_end'], self.request.user.ura_tz
+                    self.input_data['date_end'], self.request.user.timezone
                 )
             else:
                 time_until = utc_to_local_time(
                     parse_wialon_report_datetime(time_until_value),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
             for point in self.ride_points:
@@ -150,7 +150,7 @@ class URAMovingResource(BaseUraRidesView):
                     if isinstance(row_data[1], dict)
                     else row_data[1]
                 ),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
 
             time_until_value = row_data[2]['t'] \
@@ -161,7 +161,7 @@ class URAMovingResource(BaseUraRidesView):
             else:
                 time_until = utc_to_local_time(
                     parse_wialon_report_datetime(time_until_value),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
             for point in self.ride_points:
@@ -192,7 +192,7 @@ class URAMovingResource(BaseUraRidesView):
                     if isinstance(row['c'][0], dict)
                     else row['c'][0]
                 ),
-                self.request.user.ura_tz
+                self.request.user.timezone
             )
 
             time_until_value = row['c'][1]['t'] \
@@ -200,12 +200,12 @@ class URAMovingResource(BaseUraRidesView):
 
             if 'unknown' in time_until_value.lower():
                 time_until = utc_to_local_time(
-                    self.input_data['date_end'], self.request.user.ura_tz
+                    self.input_data['date_end'], self.request.user.timezone
                 )
             else:
                 time_until = utc_to_local_time(
                     parse_wialon_report_datetime(time_until_value),
-                    self.request.user.ura_tz
+                    self.request.user.timezone
                 )
 
             for point in self.ride_points:
@@ -285,9 +285,9 @@ class URAMovingResource(BaseUraRidesView):
             unit_info = {
                 'id': self.unit_id,
                 'date_begin': utc_to_local_time(
-                    self.input_data['date_begin'], request.user.ura_tz
+                    self.input_data['date_begin'], request.user.timezone
                 ),
-                'date_end': utc_to_local_time(self.input_data['date_end'], request.user.ura_tz),
+                'date_end': utc_to_local_time(self.input_data['date_end'], request.user.timezone),
                 'points': self.ride_points
             }
 

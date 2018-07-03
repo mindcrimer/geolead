@@ -8,7 +8,7 @@ from wialon.api import get_routes
 from notifications.exceptions import NotificationError
 from wialon.api.notifications import update_notification
 from wialon.auth import get_wialon_session_key
-from wialon.utils import get_wialon_tz_integer
+from wialon.utils import get_wialon_timezone_integer
 
 
 def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=None, **kwargs):
@@ -58,7 +58,7 @@ def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=Non
         # флаги
         'fl': 0,
         # часовой пояс
-        'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+        'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
         # язык пользователя (двухбуквенный код)
         'la': 'ru',
         # массив ID объектов/групп объектов
@@ -165,7 +165,7 @@ def space_overstatements_notification(job, user=None, sess_id=None, routes_cache
         # флаги
         'fl': 0,
         # часовой пояс
-        'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+        'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
         # язык пользователя (двухбуквенный код)
         'la': 'ru',
         # массив ID объектов/групп объектов
@@ -289,7 +289,7 @@ def route_overparking_notification(job, user=None, sess_id=None, routes_cache=No
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -420,7 +420,7 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -545,7 +545,7 @@ def unload_overtime_notification(job, user=None, sess_id=None, routes_cache=None
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -657,7 +657,7 @@ def space_notification(job, user=None, sess_id=None, routes_cache=None, job_temp
         # флаги
         'fl': 0,
         # часовой пояс
-        'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+        'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
         # язык пользователя (двухбуквенный код)
         'la': 'ru',
         # массив ID объектов/групп объектов
@@ -779,7 +779,7 @@ def route_overstatement_notification(job, user=None, sess_id=None, routes_cache=
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_tz_integer(user.wialon_tz or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов

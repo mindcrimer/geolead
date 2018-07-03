@@ -275,7 +275,7 @@ WIALON_DEFAULT_TEMPLATE_NAMES = {
     'taxiing': 'Ресурс Таксировка'
 }
 
-SESSION_TIMEOUT = 60 * 1  # таймаут кэширование ключа сессии
+SESSION_TIMEOUT = 60 * 3  # таймаут кэширование ключа сессии
 WIALON_CACHE_TIMEOUT = 45  # время жизни кэша данных из Wialon, сек
 WIALON_REPORTS_LIMIT_PERIOD = 60 * 5 + 5  # время оценки лимита
 WIALON_REPORTS_PER_PERIOD_LIMIT = 192  # лимит запросов отчетов в минуту в Wialon (200 в докум-ции)

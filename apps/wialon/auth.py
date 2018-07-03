@@ -11,8 +11,6 @@ import requests
 from base.exceptions import APIProcessError
 from snippets.utils.email import send_trigger_email
 
-SESSION_TIMEOUT = 60 * 4.5
-
 
 def get_wialon_session_key(user, invalidate=False):
     """Возвращает идентификатор сессии пользователя Wialon"""
@@ -24,7 +22,7 @@ def get_wialon_session_key(user, invalidate=False):
         sess_id = login_wialon_via_token(user, token)
 
         if sess_id:
-            cache.set(cache_key, sess_id, SESSION_TIMEOUT)
+            cache.set(cache_key, sess_id, settings.WIALON_SESSION_TIMEOUT)
 
     return sess_id
 

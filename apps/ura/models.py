@@ -27,8 +27,8 @@ class Job(BasicModel, LastModMixin):
     return_time = models.DateTimeField(_('Время заезда'), blank=True, null=True)
 
     user = models.ForeignKey(
-        'users.User', verbose_name=_('Организация'), blank=True, null=True, related_name='jobs',
-        on_delete=models.SET_NULL
+        'users.User', verbose_name=_('Организация'), related_name='jobs',
+        on_delete=models.CASCADE
     )
 
     class Meta:

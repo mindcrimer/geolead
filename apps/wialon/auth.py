@@ -4,7 +4,7 @@ import subprocess
 import urllib.request
 
 from django.conf import settings
-from django.core.cache import cache
+# from django.core.cache import cache
 
 import requests
 
@@ -16,15 +16,15 @@ SESSION_TIMEOUT = 60 * 4.5
 
 def get_wialon_session_key(user, invalidate=False):
     """Возвращает идентификатор сессии пользователя Wialon"""
-    cache_key = 'sessid:%s' % user.id
-    sess_id = cache.get(cache_key)
+    # cache_key = 'sessid:%s' % user.id
+    # sess_id = cache.get(cache_key)
 
-    if not sess_id or invalidate:
-        token = get_user_wialon_token(user)
-        sess_id = login_wialon_via_token(user, token)
+    # if not sess_id or invalidate:
+    token = get_user_wialon_token(user)
+    sess_id = login_wialon_via_token(user, token)
 
-        if sess_id:
-            cache.set(cache_key, sess_id, SESSION_TIMEOUT)
+    # if sess_id:
+    #     cache.set(cache_key, sess_id, SESSION_TIMEOUT)
 
     return sess_id
 

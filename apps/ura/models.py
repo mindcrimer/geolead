@@ -98,26 +98,6 @@ class JobPoint(BasicModel, LastModMixin):
         return 'ПЛ ID=%s: %s' % (self.job_id, self.title)
 
 
-class JobPointStop(BasicModel, LastModMixin):
-    """Остановки по маршруту ПЛ"""
-    job_point = models.ForeignKey(
-        'JobPoint', verbose_name=_('Геозона путевого листа'), related_name='stops',
-        on_delete=models.CASCADE
-    )
-    start_date_time = models.DateTimeField(_('Время начала'), blank=True, null=True)
-    finish_date_time = models.DateTimeField(_('Время конца'), blank=True, null=True)
-    place = models.TextField(_('Местоположение'), blank=True)
-    lat = models.FloatField(_('Широта точки остановки'), null=True, blank=True)
-    lng = models.FloatField(_('Долгота точки остановки'), null=True, blank=True)
-
-    class Meta:
-        verbose_name = _('Остановка по маршруту ПЛ')
-        verbose_name_plural = _('Остановки по маршруту ПЛ')
-
-    def __str__(self):
-        return '%s: %s' % (self.job_point, self.place)
-
-
 class StandardJobTemplate(BasicModel, LastModMixin):
     """Маршруты (шаблоны заданий) Wialon"""
     user = models.ForeignKey(

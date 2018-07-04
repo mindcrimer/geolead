@@ -181,8 +181,6 @@ class URAMovingResource(BaseUraRidesView):
 
                 if row_data[0].lower() in ('поездка', 'trip'):
                     point['params']['moveMinutes'] += delta.total_seconds()
-                elif row_data[0].lower() in ('стоянка', 'parking'):
-                    self.add_stop(point, time_from, time_until, row_data[3])
 
         # рассчитываем время работы крановой установки пропорционально интервалам
         # (только лишь ради кэша, необходимости в расчетах нет)

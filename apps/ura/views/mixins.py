@@ -8,7 +8,7 @@ from reports.utils import get_period, cleanup_and_request_report, exec_report, g
     get_wialon_report_template_id, parse_wialon_report_datetime, local_to_utc_time
 from snippets.utils.email import send_trigger_email
 from ura.lib.resources import URAResource
-from ura.models import JobPoint, JobPointStop
+from ura.models import JobPoint
 from ura.utils import parse_datetime, parse_xml_input_data
 from wialon.api import get_routes, get_messages
 from wialon.auth import get_wialon_session_key
@@ -372,8 +372,7 @@ class BaseUraRidesView(URAResource):
             'coords': {
                 'lat': message.get('pos', {}).get('y', None),
                 'lng': message.get('pos', {}).get('x', None)
-            },
-            'stops': []
+            }
         }
 
         # закрываем пробег и топливо на конец участка для предыдущей точки
@@ -406,7 +405,7 @@ class BaseUraRidesView(URAResource):
                 total_time = (time_out - time_in).total_seconds()
                 move_time = point['params']['moveMinutes']
 
-                job_point = JobPoint.objects.create(
+                JobPoint.objects.create(
                     job=self.job,
                     title=point['name'],
                     point_type=get_point_type(point['name']),
@@ -420,23 +419,3 @@ class BaseUraRidesView(URAResource):
                     lat=point['coords']['lat'],
                     lng=point['coords']['lng']
                 )
-
-                # точки остановки на маршруте ПЛ
-                for stop in point['stops']:
-                    JobPointStop.objects.create(job_point=job_point, **stop)
-
-    @staticmethod
-    def add_stop(point, time_from, time_until, place_data):
-        params = {
-            'start_date_time': time_from,
-            'finish_date_time': time_until,
-            'place': '',
-            'lat': None,
-            'lng': None
-        }
-
-        if place_data and isinstance(place_data, dict):
-            params['place'] = place_data.get('t', '')
-            params['lat'] = place_data.get('y', None)
-            params['lng'] = place_data.get('x', None)
-        point['stops'].append(params)

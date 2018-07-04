@@ -52,7 +52,9 @@ def parse_timedelta(delta_string):
         return delta
 
     day_parts = delta_string.strip().split(' ')
-    if len(day_parts) == 2:
+    if len(day_parts) >= 2:
+        if len(day_parts) > 2:
+            del day_parts[1]
         try:
             delta += datetime.timedelta(days=int(day_parts[0]))
         except ValueError:

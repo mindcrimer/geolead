@@ -255,7 +255,11 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 jobs = Job.objects.filter(
                     user=ura_user, date_begin__lt=dt_to, date_end__gt=dt_from
                 )
-                self.driver_cache = {int(j.unit_id): j.driver_fio for j in jobs if j.unit_title}
+                self.driver_cache = {
+                    int(j.unit_id): j.driver_fio
+                    for j in jobs
+                    if j.unit_title and j.driver_fio.lower() != 'нет в.а.'
+                }
 
                 template_id = get_wialon_report_template_id('driving_style', user, sess_id)
 
@@ -385,7 +389,10 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
                     report_data.append(report_row)
 
-            kwargs['report_data'] = report_data
+            # сортируем нарушителей
+            kwargs['report_data'] = sorted(
+                report_data, key=lambda row: row['rating_total']['critical_avg']['rating']
+            )
         return kwargs
 
     def write_xls_data(self, worksheet, context):

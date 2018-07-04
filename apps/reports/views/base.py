@@ -210,6 +210,7 @@ class BaseVchmReportView(BaseReportView):
         ).first()
         company_name = (' (%s)' % user.wialon_resource_name) \
             if user and user.wialon_resource_name else ''
+        company_name = company_name.replace('НЛМК', 'ВЧМ')
         return '%s%s' % (report_name, company_name)
 
     def get_default_context_data(self, **kwargs):

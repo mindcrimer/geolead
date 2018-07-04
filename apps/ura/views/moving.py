@@ -9,6 +9,7 @@ from snippets.utils.email import send_trigger_email
 from ura import models
 from ura.lib.response import XMLResponse, error_response
 from ura.views.mixins import BaseUraRidesView
+from wialon.auth import logout_session
 
 
 class URAMovingResource(BaseUraRidesView):
@@ -267,6 +268,7 @@ class URAMovingResource(BaseUraRidesView):
 
         units_els = request.data.xpath('/getMoving/unit')
         if not units_els:
+            logout_session(request.user, self.sess_id)
             return error_response(
                 'Не указаны объекты типа unit', code='units_not_found'
             )
@@ -299,4 +301,5 @@ class URAMovingResource(BaseUraRidesView):
 
             units.append(unit_info)
 
+        logout_session(request.user, self.sess_id)
         return XMLResponse('ura/moving.xml', context)

@@ -14,7 +14,7 @@ from reports.views.base import WIALON_INTERNAL_EXCEPTION, WIALON_SESSION_EXPIRED
 from simplejson import JSONDecodeError
 from snippets.utils.datetime import utcnow
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
-from wialon.auth import get_wialon_session_key
+from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
 
@@ -288,12 +288,15 @@ def exec_report(user, template_id, sess_id, dt_from, dt_to, report_resource_id=N
             if attempts > 1:
                 # генерируем новую сессию
                 sess_id = get_wialon_session_key(user, invalidate=True)
-                return exec_report(
+                result = exec_report(
                     user, template_id, sess_id, dt_from, dt_to,
                     report_resource_id=report_resource_id,
                     object_id=object_id,
                     attempts=attempts - 1
                 )
+                logout_session(user, sess_id)
+                return result
+
             raise ReportException(WIALON_SESSION_EXPIRED)
         raise ReportException(WIALON_INTERNAL_EXCEPTION % result)
 

@@ -11,6 +11,7 @@ from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
 from ura.utils import parse_datetime, float_format
 from ura.views.mixins import BaseUraRidesView
+from wialon.auth import logout_session
 
 
 class URARacesResource(BaseUraRidesView, URAResource):
@@ -280,6 +281,7 @@ class URARacesResource(BaseUraRidesView, URAResource):
         jobs_els = request.data.xpath('/getRaces/job')
 
         if not jobs_els:
+            logout_session(request.user, self.sess_id)
             return error_response('Не указаны объекты типа job', code='jobs_not_found')
 
         self.get_geozones_report_template_id()
@@ -310,4 +312,5 @@ class URARacesResource(BaseUraRidesView, URAResource):
             self.prepare_output_data(job_info)
             jobs.append(job_info)
 
+        logout_session(request.user, self.sess_id)
         return XMLResponse('ura/races.xml', context)

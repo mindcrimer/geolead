@@ -15,23 +15,24 @@ from reports.utils import get_wialon_report_template_id, local_to_utc_time, \
     cleanup_and_request_report, exec_report, get_report_rows
 from ura.models import Job
 from wialon.api import get_units, get_routes, get_messages
-from wialon.auth import get_wialon_session_key
 
 
 class MovingService(object):
     """Сервис получения данных о движение объекта"""
 
-    def __init__(self, user, local_dt_from, local_dt_to, object_id=None, sess_id=None,
+    def __init__(self, user, local_dt_from, local_dt_to, sess_id, object_id=None,
                  units_dict=None, tables=None, calc_odometer=True, calc_idle=True):
         self.user = user
-        self.object_id = object_id
-        self.sess_id = sess_id if sess_id else get_wialon_session_key(user)
         self.local_dt_from = local_dt_from
         self.local_dt_to = local_dt_to
         self.utc_dt_from = local_to_utc_time(local_dt_from, self.user.timezone)
         self.utc_dt_to = local_to_utc_time(local_dt_to, self.user.timezone)
         self.utc_timestamp_from = int(time.mktime(self.utc_dt_from.timetuple()))
         self.utc_timestamp_to = int(time.mktime(self.utc_dt_to.timetuple()))
+
+        self.object_id = object_id
+        self.sess_id = sess_id
+
         self.mobile_vehicle_types = set()
         self.calc_odometer = calc_odometer
         self.calc_idle = calc_idle
@@ -45,7 +46,7 @@ class MovingService(object):
             self.tables = all_tables
 
         if units_dict is None:
-            units_list = get_units(user=user, sess_id=sess_id)
+            units_list = get_units(sess_id)
             self.units_dict = {u['name']: u for u in units_list}
         else:
             self.units_dict = units_dict
@@ -78,7 +79,7 @@ class MovingService(object):
 
         self.jobs_cache = {int(j.unit_id): j for j in jobs}
         self.routes_cache = {
-            x['id']: x for x in get_routes(sess_id=self.sess_id, user=self.user, with_points=True)
+            x['id']: x for x in get_routes(self.sess_id, with_points=True)
         }
         self.print_time_needed('Init caches')
 
@@ -92,12 +93,12 @@ class MovingService(object):
         self.script_time_from = datetime.datetime.now()
 
     def exec_report(self):
-        template_id = get_wialon_report_template_id('taxiing', self.user)
+        template_id = get_wialon_report_template_id('taxiing', self.user, self.sess_id)
 
-        cleanup_and_request_report(self.user, template_id, sess_id=self.sess_id)
+        cleanup_and_request_report(self.user, template_id, self.sess_id)
         report = exec_report(
-            self.user, template_id, self.utc_timestamp_from, self.utc_timestamp_to,
-            sess_id=self.sess_id, object_id=self.object_id
+            self.user, template_id, self.sess_id, self.utc_timestamp_from, self.utc_timestamp_to,
+            object_id=self.object_id
         )
         self.print_time_needed('Exec report')
 
@@ -116,11 +117,10 @@ class MovingService(object):
             renderer = mapping['renderer']
 
             rows = get_report_rows(
-                self.user,
+                self.sess_id,
                 table_index,
                 table_info['rows'],
-                level=level,
-                sess_id=self.sess_id
+                level=level
             )
 
             for row in rows:
@@ -455,7 +455,7 @@ class MovingService(object):
         return list(filter(
             lambda x: x['pos'] is not None,
             get_messages(
-                unit['id'], self.utc_timestamp_from, self.utc_timestamp_to, sess_id=self.sess_id
+                unit['id'], self.utc_timestamp_from, self.utc_timestamp_to, self.sess_id
             )['messages']
         ))
 

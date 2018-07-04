@@ -84,9 +84,9 @@ class InvalidJobStartEndView(BaseReportView):
                 )
 
                 routes_dict = {
-                    x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
+                    x['id']: x for x in get_routes(sess_id, with_points=True)
                 }
-                units_dict = {x['id']: x for x in get_units(user=user, sess_id=sess_id)}
+                units_dict = {x['id']: x for x in get_units(sess_id)}
 
                 ura_user = user.ura_user if user.ura_user_id else user
                 jobs = Job.objects.filter(

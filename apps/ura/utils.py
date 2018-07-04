@@ -1,5 +1,4 @@
 import datetime
-import traceback
 
 from django.template.defaultfilters import floatformat
 
@@ -8,10 +7,8 @@ from notifications.exceptions import NotificationError
 from notifications.models import Notification
 from notifications import notifications
 from reports.utils import local_to_utc_time
-from snippets.utils.email import send_trigger_email
 from ura.models import StandardJobTemplate
 from users.models import User
-from wialon.exceptions import WialonException
 
 
 def float_format(value, arg=0):
@@ -64,7 +61,7 @@ def is_fixed_route(route_title):
     return route_title and 'фиксирован' in route_title.lower()
 
 
-def register_job_notifications(job, routes_cache=None):
+def register_job_notifications(job, sess_id, routes_cache=None):
     """Регистрация всех шаблонов уведомлений при создании путевого листа"""
     # Если название шаблона задания известно и он не фиксированный
     if not job.route_title or is_fixed_route(job.route_title):
@@ -93,28 +90,10 @@ def register_job_notifications(job, routes_cache=None):
 
     for backend in available_notification_backends:
         try:
-            result = backend(job, routes_cache=routes_cache, job_template=job_template)
+            result = backend(job, sess_id, routes_cache=routes_cache, job_template=job_template)
             results.extend(tuple(result))
         except NotificationError as e:
             print(str(e))
-        except WialonException as e:
-            # TODO: убрать исключение, когда все точно заработает
-            print(str(e))
-            send_trigger_email(
-                'Ошибка при регистрации уведомления в Wialon', extra_data={
-                    'Exception': str(e),
-                    'Traceback': traceback.format_exc()
-                }
-            )
-        except Exception as e:
-            # TODO: убрать исключение, когда все точно заработает
-            print(str(e))
-            send_trigger_email(
-                'Ошибка при регистрации уведомления в Wialon', extra_data={
-                    'Exception': str(e),
-                    'Traceback': traceback.format_exc()
-                }
-            )
 
     for wialon_id, received_data, sent_data in results:
         Notification.objects.create(

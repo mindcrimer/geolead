@@ -223,7 +223,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
             raise ReportException(WIALON_NOT_LOGINED)
 
         try:
-            units_list = get_units(sess_id=sess_id, extra_fields=True)
+            units_list = get_units(sess_id, extra_fields=True)
         except WialonException as e:
             raise ReportException(str(e))
 
@@ -257,7 +257,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 )
                 self.driver_cache = {int(j.unit_id): j.driver_fio for j in jobs if j.unit_title}
 
-                template_id = get_wialon_report_template_id('driving_style', user)
+                template_id = get_wialon_report_template_id('driving_style', user, sess_id)
 
                 mobile_vehicle_types = set()
                 if user.wialon_mobile_vehicle_types:
@@ -265,7 +265,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         x.strip() for x in user.wialon_mobile_vehicle_types.lower().split(',')
                     )
 
-                cleanup_and_request_report(user, template_id, sess_id=sess_id)
+                cleanup_and_request_report(user, template_id, sess_id)
                 report_kwargs = {}
                 if form.cleaned_data.get('unit'):
                     report_kwargs['object_id'] = form.cleaned_data['unit']
@@ -273,20 +273,19 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 r = exec_report(
                     user,
                     template_id,
+                    sess_id,
                     int(time.mktime(dt_from.timetuple())),
                     int(time.mktime(dt_to.timetuple())),
-                    sess_id=sess_id,
                     **report_kwargs
                 )
 
                 wialon_report_rows = {}
                 for table_index, table_info in enumerate(r['reportResult']['tables']):
                     wialon_report_rows[table_info['name']] = get_report_rows(
-                        user,
+                        sess_id,
                         table_index,
                         table_info['rows'],
-                        level=2 if table_info['name'] == 'unit_group_ecodriving' else 1,
-                        sess_id=sess_id
+                        level=2 if table_info['name'] == 'unit_group_ecodriving' else 1
                     )
 
                 i = 0
@@ -309,7 +308,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         continue
 
                     print('%s) Processing %s' % (i, row.unit_name))
-                    ecodriving = get_drive_rank_settings(unit['id'], sess_id=sess_id)
+                    ecodriving = get_drive_rank_settings(unit['id'], sess_id)
                     ecodriving = {k.lower(): v for k, v in ecodriving.items()}
                     report_row = self.new_grouping(row, unit)
 

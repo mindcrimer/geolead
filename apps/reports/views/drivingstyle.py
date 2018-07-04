@@ -127,7 +127,7 @@ class DrivingStyleView(BaseReportView):
             raise ReportException(WIALON_NOT_LOGINED)
 
         try:
-            units_list = get_units(sess_id=sess_id, extra_fields=True)
+            units_list = get_units(sess_id, extra_fields=True)
         except WialonException as e:
             raise ReportException(str(e))
 
@@ -172,7 +172,9 @@ class DrivingStyleView(BaseReportView):
                     except ValueError:
                         pass
 
-                template_id = get_wialon_report_template_id('driving_style_individual', self.user)
+                template_id = get_wialon_report_template_id(
+                    'driving_style_individual', self.user, sess_id
+                )
 
                 jobs_count = len(units_dict)
                 print('Всего ТС: %s' % jobs_count)
@@ -242,20 +244,18 @@ class DrivingStyleView(BaseReportView):
                     dt_from = int(time.mktime(report_row['periods'][0]['dt_from'].timetuple()))
                     dt_to = int(time.mktime(report_row['periods'][-1]['dt_to'].timetuple()))
 
-                    cleanup_and_request_report(self.user, template_id, sess_id=sess_id)
+                    cleanup_and_request_report(self.user, template_id, sess_id)
                     r = exec_report(
-                        self.user, template_id, dt_from, dt_to,
-                        sess_id=sess_id, object_id=unit_id
+                        self.user, template_id, sess_id, dt_from, dt_to, object_id=unit_id
                     )
 
                     wialon_report_rows = {}
                     for table_index, table_info in enumerate(r['reportResult']['tables']):
                         wialon_report_rows[table_info['name']] = get_report_rows(
-                            self.user,
+                            sess_id,
                             table_index,
                             table_info['rows'],
-                            level=1,
-                            sess_id=sess_id
+                            level=1
                         )
 
                     for period in report_row['periods']:

@@ -5,7 +5,6 @@ import re
 import xlwt
 from django.db.models import Q
 from django.db.models.query import Prefetch
-from django.utils.formats import date_format
 
 from base.exceptions import ReportException
 from moving.service import MovingService
@@ -61,14 +60,6 @@ class VchmTaxiingView(BaseVchmReportView):
     def get_car_model(unit_name):
         return ' '.join(unit_name.split(' ')[:-1])
 
-    def get_car_company(self, unit_name):
-        unit = self.units_dict.get(unit_name, {})
-        return ''
-
-    def get_car_branch(self, unit_name):
-        unit = self.units_dict.get(unit_name, {})
-        return ''
-
     @staticmethod
     def get_point_name(point_name):
         if point_name and point_name.lower() != 'space':
@@ -102,7 +93,7 @@ class VchmTaxiingView(BaseVchmReportView):
             raise ReportException(WIALON_NOT_LOGINED)
 
         try:
-            units_list = get_units(sess_id=sess_id, extra_fields=True)
+            units_list = get_units(sess_id, extra_fields=True)
         except WialonException as e:
             raise ReportException(str(e))
 
@@ -154,11 +145,7 @@ class VchmTaxiingView(BaseVchmReportView):
                 )
                 unit = list(self.units_dict.values())[0]
 
-                routes = {
-                    x['id']: x for x in get_routes(
-                        sess_id=sess_id, user=self.user, with_points=True
-                    )
-                }
+                routes = {x['id']: x for x in get_routes(sess_id, with_points=True)}
                 standard_job_templates = StandardJobTemplate.objects \
                     .filter(wialon_id__in=[str(x) for x in routes.keys()]) \
                     .prefetch_related(
@@ -192,8 +179,8 @@ class VchmTaxiingView(BaseVchmReportView):
                     self.user,
                     local_dt_from,
                     local_dt_to,
+                    sess_id,
                     object_id=unit_id,
-                    sess_id=sess_id,
                     units_dict=self.units_dict
                 )
                 service.exec_report()
@@ -219,8 +206,6 @@ class VchmTaxiingView(BaseVchmReportView):
                     return kwargs
 
                 kwargs.update(heading_data=OrderedDict((
-                    ('ОК', self.get_car_company(unit['name'])),
-                    ('ПЗУ', self.get_car_branch(unit['name'])),
                     ('Марка, модель', self.get_car_model(unit['name'])),
                     ('Гос.номер', self.get_car_number(unit['name'])),
                     ('VIN', self.get_car_vin(unit['name'])),

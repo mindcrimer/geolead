@@ -1,4 +1,3 @@
-import datetime
 import traceback
 from collections import OrderedDict
 
@@ -53,7 +52,9 @@ class BaseUraRidesView(URAResource):
         raise NotImplementedError
 
     def get_geozones_report_template_id(self):
-        self.report_template_id = get_wialon_report_template_id('geozones', self.request.user)
+        self.report_template_id = get_wialon_report_template_id(
+            'geozones', self.request.user, self.sess_id
+        )
         if self.report_template_id is None:
             raise APIProcessError(
                 'Не указан ID шаблона отчета по геозонам у текущего пользователя',
@@ -62,7 +63,7 @@ class BaseUraRidesView(URAResource):
         return self.report_template_id
 
     def get_route(self):
-        routes_list = get_routes(sess_id=self.sess_id, with_points=True)
+        routes_list = get_routes(self.sess_id, with_points=True)
         routes_dict = {x['id']: x for x in routes_list}
 
         try:
@@ -88,16 +89,16 @@ class BaseUraRidesView(URAResource):
         )
 
         cleanup_and_request_report(
-            self.request.user, self.report_template_id, item_id=self.unit_id, sess_id=self.sess_id)
+            self.request.user, self.report_template_id, self.sess_id, item_id=self.unit_id)
 
         try:
             r = exec_report(
                 self.request.user,
                 self.report_template_id,
+                self.sess_id,
                 self.request_dt_from,
                 self.request_dt_to,
-                object_id=self.unit_id,
-                sess_id=self.sess_id
+                object_id=self.unit_id
             )
         except ReportException as e:
             raise WialonException(
@@ -110,11 +111,10 @@ class BaseUraRidesView(URAResource):
 
             try:
                 rows = get_report_rows(
-                    self.request.user,
+                    self.sess_id,
                     table_index,
                     table_info['rows'],
-                    level=1,
-                    sess_id=self.sess_id
+                    level=1
                 )
 
                 if table_info['name'] != 'unit_sensors_tracing':
@@ -140,7 +140,7 @@ class BaseUraRidesView(URAResource):
         self.messages = list(filter(
             lambda x: x['pos'] is not None,
             get_messages(
-                self.unit_id, self.request_dt_from, self.request_dt_to, sess_id=self.sess_id
+                self.unit_id, self.request_dt_from, self.request_dt_to, self.sess_id
             )['messages']
         ))
 

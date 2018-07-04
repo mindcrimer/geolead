@@ -3,6 +3,7 @@ from snippets.utils.datetime import utcnow
 from ura.lib.resources import URAResource
 from ura.lib.response import error_response, XMLResponse
 from wialon.api import get_routes
+from wialon.auth import get_wialon_session_key, logout_session
 
 
 class URARoutesResource(URAResource):
@@ -23,10 +24,13 @@ class URARoutesResource(URAResource):
         except ValueError:
             org_id = 0
 
+        sess_id = get_wialon_session_key(request.user)
         try:
-            routes = get_routes(request.user)
+            routes = get_routes(sess_id)
         except APIProcessError as e:
             return error_response(str(e), code=e.code)
+        finally:
+            logout_session(request.user, sess_id)
 
         context = self.get_context_data(**kwargs)
         context.update({

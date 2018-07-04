@@ -6,6 +6,7 @@ from django.db import transaction
 from ura.models import StandardJobTemplate, StandardPoint
 from users.models import User
 from wialon.api import get_routes
+from wialon.auth import get_wialon_session_key, logout_session
 
 
 def cache_geozones():
@@ -20,9 +21,13 @@ def cache_geozones():
         print('%s users found' % len(users))
 
         for user in users:
+            sess_id = get_wialon_session_key(user)
             print('%s) User %s processing' % (i, user))
 
-            routes = get_routes(user=user, with_points=True)
+            routes = get_routes(sess_id, with_points=True)
+            logout_session(user, sess_id)
+            del sess_id
+
             print('%s routes found' % len(routes))
 
             for route in routes:

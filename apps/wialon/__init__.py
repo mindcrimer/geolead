@@ -3,7 +3,6 @@ from django.conf import settings
 
 default_app_config = 'wialon.apps.AppConfig'
 
-
 WIALON_SESSION_ERROR = 'Возможно, сессия устарела. Попробуйте заново войти в Wialon'
 WIALON_ENTIRE_ERROR = 'Произвошла ошибка в источнике данных. ' \
                       'Повторите запрос через некоторое время или заново выполните вход.'

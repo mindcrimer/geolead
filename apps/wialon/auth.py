@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import urllib.request
+from time import sleep
 
 from django.conf import settings
 from django.core.cache import cache
@@ -32,11 +33,23 @@ def get_wialon_session_key(user, invalidate=False):
 
 
 def login_wialon_via_token(user, token, attempt=0):
+    if attempt > 5:
+        raise APIProcessError(
+            'Невозможно открыть сессию в Wialon. Возможно, пароль пользователя недействителен. '
+            'Пользователь: %s' % user,
+            code='password_invalid'
+        )
+
     params = urllib.request.quote(json.dumps({'token': token if token else ''}))
     r = requests.get(
         settings.WIALON_BASE_URL + ('?svc=token/login&params=%s' % params)
     )
     res = r.json()
+
+    # какие-то проблемы с лимитами
+    if res.get('error', 0) == 1:
+        sleep(3)
+        login_wialon_via_token(user, token, attempt=attempt + 1)
 
     try:
         sess_id = res['eid']
@@ -45,14 +58,7 @@ def login_wialon_via_token(user, token, attempt=0):
         # неудачный вход. Сбиваем токен и пробуем получить новый токен, после чего повторяем вход
         user.wialon_token = None
         token = get_user_wialon_token(user)
-        if token and attempt < 2:
-            return login_wialon_via_token(user, token, attempt=attempt + 1)
-
-        raise APIProcessError(
-            'Невозможно открыть сессию в Wialon. Возможно, пароль пользователя недействителен. '
-            'Пользователь: %s' % user,
-            code='password_invalid'
-        )
+        return login_wialon_via_token(user, token, attempt=attempt + 1)
 
     return sess_id
 
@@ -113,18 +119,21 @@ def get_user_wialon_token(user):
 
 
 def logout_session(user, sess_id):
-    params = urllib.request.quote('{}')
-    r = requests.get(
-        settings.WIALON_BASE_URL + ('?svc=core/logout&params=%s&sid=%s' % (params, sess_id))
-    )
-    res = r.json()
+    # params = urllib.request.quote('{}')
+    # r = requests.get(
+    #     settings.WIALON_BASE_URL + ('?svc=core/logout&params=%s&sid=%s' % (params, sess_id))
+    # )
+    # res = r.json()
+    #
+    # succeeded = res.get('error', 0) == 0
+    # if succeeded:
+    #     # удаляем из кэша
+    #     cache_key = get_session_cache_key(user)
+    #     cached_sess_id = cache.get(cache_key)
+    #     if cached_sess_id and cached_sess_id == sess_id:
+    #         cache.delete(cache_key)
+    #
+    # return succeeded
 
-    succeeded = res.get('error', 0) == 0
-    if succeeded:
-        # удаляем из кэша
-        cache_key = get_session_cache_key(user)
-        cached_sess_id = cache.get(cache_key)
-        if cached_sess_id and cached_sess_id == sess_id:
-            cache.delete(cache_key)
-
-    return succeeded
+    # пока отключил, чтобы не убивало так необходимый кэш
+    return False

@@ -97,7 +97,7 @@ class FaultsView(BaseReportView):
                     seconds=form.cleaned_data['job_extra_offset'] * 60 * 60
                 )
 
-                units_list = get_units(sess_id=self.sess_id)
+                units_list = get_units(self.sess_id)
                 units_cache = {u['id']: u['name'] for u in units_list}
 
                 dt_from_local = datetime.datetime.combine(report_date, datetime.time(0, 0, 0))
@@ -105,8 +105,12 @@ class FaultsView(BaseReportView):
                 dt_from_utc = local_to_utc_time(dt_from_local, self.user.timezone)
                 dt_to_utc = local_to_utc_time(dt_to_local, self.user.timezone)
 
-                self.sensors_template_id = get_wialon_report_template_id('sensors', self.user)
-                last_data_template_id = get_wialon_report_template_id('last_data', self.user)
+                self.sensors_template_id = get_wialon_report_template_id(
+                    'sensors', self.user, self.sess_id
+                )
+                last_data_template_id = get_wialon_report_template_id(
+                    'last_data', self.user, self.sess_id
+                )
 
                 ura_user = self.user.ura_user if self.user.ura_user_id else self.user
                 jobs = Job.objects.filter(
@@ -117,23 +121,15 @@ class FaultsView(BaseReportView):
                     dt_from, dt_to = get_period(
                         dt_from_local, dt_to_local, self.user.timezone
                     )
-                    cleanup_and_request_report(
-                        self.user, last_data_template_id, sess_id=self.sess_id
-                    )
-                    r = exec_report(
-                        self.user,
-                        last_data_template_id,
-                        dt_from, dt_to,
-                        sess_id=self.sess_id
-                    )
+                    cleanup_and_request_report(self.user, last_data_template_id, self.sess_id)
+                    r = exec_report(self.user, last_data_template_id, self.sess_id, dt_from, dt_to)
 
                     for table_index, table_info in enumerate(r['reportResult']['tables']):
                         rows = get_report_rows(
-                            self.user,
+                            self.sess_id,
                             table_index,
                             table_info['rows'],
-                            level=1,
-                            sess_id=self.sess_id
+                            level=1
                         )
 
                         if table_info['name'] == 'unit_group_location':
@@ -164,12 +160,10 @@ class FaultsView(BaseReportView):
                     dt_from, dt_to = get_period(
                         job_local_date_begin, job_local_date_to, self.user.timezone
                     )
-                    cleanup_and_request_report(
-                        self.user, self.sensors_template_id, sess_id=self.sess_id
-                    )
+                    cleanup_and_request_report(self.user, self.sensors_template_id, self.sess_id)
                     r = exec_report(
-                        self.user, self.sensors_template_id, dt_from, dt_to,
-                        sess_id=self.sess_id, object_id=int(job.unit_id)
+                        self.user, self.sensors_template_id, self.sess_id, dt_from, dt_to,
+                        object_id=int(job.unit_id)
                     )
 
                     report_tables = {}
@@ -216,11 +210,10 @@ class FaultsView(BaseReportView):
                                 continue
 
                             rows = get_report_rows(
-                                self.user,
+                                self.sess_id,
                                 report_tables[field]['index'],
                                 rows_limit,
-                                level=1,
-                                sess_id=self.sess_id
+                                level=1
                             )
 
                             data = [r['c'] for r in rows]
@@ -339,13 +332,9 @@ class FaultsView(BaseReportView):
                 local_date_from, local_date_to, attempt + 1
             )
         )
-        cleanup_and_request_report(self.user, self.sensors_template_id, sess_id=self.sess_id)
+        cleanup_and_request_report(self.user, self.sensors_template_id, self.sess_id)
         r = exec_report(
-            self.user,
-            self.sensors_template_id,
-            dt_from,
-            dt_to,
-            sess_id=self.sess_id,
+            self.user, self.sensors_template_id, self.sess_id, dt_from, dt_to,
             object_id=report_row['unit_id']
         )
 
@@ -359,11 +348,10 @@ class FaultsView(BaseReportView):
                 return self.update_last_sensor_data(report_row, attempt=attempt + 1)
 
             rows = get_report_rows(
-                self.user,
+                self.sess_id,
                 table_index,
                 rows=1,
-                level=1,
-                sess_id=self.sess_id
+                level=1
             )
 
             if not rows:
@@ -396,7 +384,7 @@ class FaultsView(BaseReportView):
 
     def get_unit_sensors(self, unit_id):
         if unit_id not in self.unit_sensors_cache:
-            unit_settings = get_unit_settings(unit_id, user=self.user, sess_id=self.sess_id)
+            unit_settings = get_unit_settings(unit_id, self.sess_id)
             sensors = unit_settings['sens']
 
             for sensor in sensors.values():

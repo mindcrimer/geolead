@@ -80,9 +80,9 @@ class OverstatementsView(BaseReportView):
                 )
 
                 routes = {
-                    x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
+                    x['id']: x for x in get_routes(sess_id, with_points=True)
                 }
-                units_dict = {x['id']: x for x in get_units(user=user, sess_id=sess_id)}
+                units_dict = {x['id']: x for x in get_units(sess_id)}
 
                 standard_job_templates = StandardJobTemplate.objects\
                     .filter(wialon_id__in=[str(x) for x in routes.keys()])\

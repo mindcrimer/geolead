@@ -92,7 +92,7 @@ class VchmIdleTimesView(BaseVchmReportView):
             raise ReportException(WIALON_NOT_LOGINED)
 
         try:
-            units_list = get_units(sess_id=sess_id, extra_fields=True)
+            units_list = get_units(sess_id, extra_fields=True)
         except WialonException as e:
             raise ReportException(str(e))
 
@@ -124,7 +124,7 @@ class VchmIdleTimesView(BaseVchmReportView):
                 )
 
                 routes = {
-                    x['id']: x for x in get_routes(sess_id=sess_id, user=user, with_points=True)
+                    x['id']: x for x in get_routes(sess_id, with_points=True)
                 }
                 standard_job_templates = StandardJobTemplate.objects \
                     .filter(wialon_id__in=[str(x) for x in routes.keys()]) \
@@ -167,8 +167,8 @@ class VchmIdleTimesView(BaseVchmReportView):
                     user,
                     local_dt_from,
                     local_dt_to,
+                    sess_id,
                     object_id=selected_unit if selected_unit else None,
-                    sess_id=sess_id,
                     units_dict=self.units_dict,
                     calc_odometer=False
                 )

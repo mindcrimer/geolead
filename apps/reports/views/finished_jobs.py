@@ -70,7 +70,7 @@ class FinishedJobsView(BaseReportView):
                     form.cleaned_data['dt_to'].replace(second=59), user.timezone
                 )
 
-                routes_list = get_routes(sess_id=sess_id, user=user, with_points=True)
+                routes_list = get_routes(sess_id, with_points=True)
                 routes_dict = {
                     x['id']: x for x in routes_list if not is_fixed_route(x['name'])
                 }

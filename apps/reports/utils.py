@@ -18,22 +18,22 @@ from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
 
 
-def get_wialon_report_object_id(user):
+def get_wialon_report_object_id(user, sess_id):
     name = settings.WIALON_DEFAULT_GROUP_OBJECT_NAME
     users_name = user.wialon_group_object_name.strip() if user.wialon_group_object_name else None
 
     if users_name:
         name = users_name
 
-    return get_group_object_id(name, user=user)
+    return get_group_object_id(name, user, sess_id)
 
 
-def get_wialon_report_resource_id(user):
+def get_wialon_report_resource_id(user, sess_id):
     name = user.wialon_resource_name.strip() if user.wialon_resource_name else None
-    return get_resource_id(name, user=user)
+    return get_resource_id(name, user, sess_id)
 
 
-def get_wialon_report_template_id(template_name, user):
+def get_wialon_report_template_id(template_name, user, sess_id):
     name = settings.WIALON_DEFAULT_TEMPLATE_NAMES.get(template_name)
     users_name = getattr(user, 'wialon_%s_report_template_name' % template_name)
     users_name = users_name.strip() if users_name else None
@@ -41,7 +41,7 @@ def get_wialon_report_template_id(template_name, user):
     if users_name:
         name = users_name
 
-    return get_report_template_id(name, user)
+    return get_report_template_id(name, user, sess_id)
 
 
 def parse_timedelta(delta_string):
@@ -162,12 +162,9 @@ def get_period(dt_from, dt_to, timezone=utc):
     return dt_from, dt_to
 
 
-def cleanup_and_request_report(user, template_id, item_id=None, sess_id=None):
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
+def cleanup_and_request_report(user, template_id, sess_id, item_id=None):
     if item_id is None:
-        item_id = get_wialon_report_resource_id(user)
+        item_id = get_wialon_report_resource_id(user, sess_id)
 
     requests.post(
         settings.WIALON_BASE_URL + '?svc=core/batch&sid=' + sess_id, {
@@ -225,15 +222,13 @@ def throttle_report(user):
     return True
 
 
-def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, object_id=None,
-                sess_id=None, attempts=3):
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
+def exec_report(user, template_id, sess_id, dt_from, dt_to, report_resource_id=None,
+                object_id=None, attempts=3):
 
     if report_resource_id is None:
         error = 'не выявлено'
         try:
-            report_resource_id = get_wialon_report_resource_id(user)
+            report_resource_id = get_wialon_report_resource_id(user, sess_id)
         except WialonException as e:
             error = e
 
@@ -250,7 +245,7 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     if object_id is None:
         error = 'не выявлено'
         try:
-            object_id = get_wialon_report_object_id(user)
+            object_id = get_wialon_report_object_id(user, sess_id)
         except WialonException as e:
             error = e
 
@@ -294,10 +289,9 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
                 # генерируем новую сессию
                 sess_id = get_wialon_session_key(user, invalidate=True)
                 return exec_report(
-                    user, template_id, dt_from, dt_to,
+                    user, template_id, sess_id, dt_from, dt_to,
                     report_resource_id=report_resource_id,
                     object_id=object_id,
-                    sess_id=sess_id,
                     attempts=attempts - 1
                 )
             raise ReportException(WIALON_SESSION_EXPIRED)
@@ -306,9 +300,7 @@ def exec_report(user, template_id, dt_from, dt_to, report_resource_id=None, obje
     return result
 
 
-def get_report_rows(user, table_index, rows, offset=0, level=0, sess_id=None):
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
+def get_report_rows(sess_id, table_index, rows, offset=0, level=0):
 
     result = requests.post(
         settings.WIALON_BASE_URL + '?svc=report/select_result_rows&sid=' +

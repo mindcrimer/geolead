@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 
 from wialon.api import get_units, get_routes
+from wialon.auth import get_wialon_session_key, logout_session
 
 
 def forwards_func(apps, schema_editor):
@@ -17,14 +18,17 @@ def forwards_func(apps, schema_editor):
 
     for org in orgs.iterator():
         print('Organization %s' % org.username)
-        units = get_units(user=org)
+        sess_id = get_wialon_session_key(org)
+        units = get_units(sess_id)
         units_cache[org.pk] = {
             u['id']: '%s (%s) [%s]' % (u['name'], u['number'], u['vin']) for u in units
         }
 
-        routes = get_routes(user=org)
+        routes = get_routes(sess_id)
+        logout_session(org, sess_id)
         routes_cache[org.pk] = {r['id']: r['name'] for r in routes}
 
+    sess_id = None
     print('Jobs count: %s' % job_model.objects.count())
 
     i = 0

@@ -7,18 +7,13 @@ from ura.models import StandardPoint
 from wialon.api import get_routes
 from notifications.exceptions import NotificationError
 from wialon.api.notifications import update_notification
-from wialon.auth import get_wialon_session_key
 from wialon.utils import get_wialon_timezone_integer
 
 
-def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=None, **kwargs):
+def route_coming_off_notification(job, sess_id, routes_cache=None, **kwargs):
     """1. Съезд с маршрута"""
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -33,7 +28,7 @@ def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=Non
         raise NotificationError('Маршрут неизвестен или отсутствуют геозоны. ID ПЛ=%s' % job.pk)
 
     data = {
-        'itemId': get_wialon_report_resource_id(user),
+        'itemId': get_wialon_report_resource_id(job.user, sess_id),
         'id': 0,
         'callMode': 'create',
         'n': 'Съезд с маршрута %s' % route_title,
@@ -58,7 +53,7 @@ def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=Non
         # флаги
         'fl': 0,
         # часовой пояс
-        'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+        'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
         # язык пользователя (двухбуквенный код)
         'la': 'ru',
         # массив ID объектов/групп объектов
@@ -115,18 +110,14 @@ def route_coming_off_notification(job, user=None, sess_id=None, routes_cache=Non
         ]
     }
 
-    result = update_notification(data, user=user, sess_id=sess_id)
+    result = update_notification(data, sess_id)
     yield result[0], result[1], data
 
 
-def space_overstatements_notification(job, user=None, sess_id=None, routes_cache=None, **kwargs):
+def space_overstatements_notification(job, sess_id, routes_cache=None, **kwargs):
     """2. Перепростой вне планового маршрута"""
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -141,7 +132,7 @@ def space_overstatements_notification(job, user=None, sess_id=None, routes_cache
         raise NotificationError('Маршрут неизвестен или отсутствуют геозоны. ID ПЛ=%s' % job.pk)
 
     data = {
-        'itemId': get_wialon_report_resource_id(user),
+        'itemId': get_wialon_report_resource_id(job.user, sess_id),
         'id': 0,
         'callMode': 'create',
         'n': 'Перепростой вне планового маршрута %s' % route_title,
@@ -165,7 +156,7 @@ def space_overstatements_notification(job, user=None, sess_id=None, routes_cache
         # флаги
         'fl': 0,
         # часовой пояс
-        'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+        'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
         # язык пользователя (двухбуквенный код)
         'la': 'ru',
         # массив ID объектов/групп объектов
@@ -223,22 +214,17 @@ def space_overstatements_notification(job, user=None, sess_id=None, routes_cache
         ]
     }
 
-    result = update_notification(data, user=user, sess_id=sess_id)
+    result = update_notification(data, sess_id)
     yield result[0], result[1], data
 
 
-def route_overparking_notification(job, user=None, sess_id=None, routes_cache=None,
-                                   job_template=None):
+def route_overparking_notification(job, sess_id, routes_cache=None, job_template=None):
     """3. Перепростой на маршруте"""
     if not job_template:
         raise NotificationError('Не найден норматив шаблона задания. ID ПЛ=%s' % job.pk)
 
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -263,7 +249,7 @@ def route_overparking_notification(job, user=None, sess_id=None, routes_cache=No
             continue
 
         data = {
-            'itemId': get_wialon_report_resource_id(user),
+            'itemId': get_wialon_report_resource_id(job.user, sess_id),
             'id': 0,
             'callMode': 'create',
             'n': 'Перепростой на маршруте %s' % geozone['name'],
@@ -289,7 +275,7 @@ def route_overparking_notification(job, user=None, sess_id=None, routes_cache=No
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -347,22 +333,17 @@ def route_overparking_notification(job, user=None, sess_id=None, routes_cache=No
             ]
         }
 
-        result = update_notification(data, user=user, sess_id=sess_id)
+        result = update_notification(data, sess_id)
         yield result[0], result[1], data
 
 
-def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
-                               job_template=None):
+def load_overtime_notification(job, sess_id, routes_cache=None, job_template=None):
     """4. Превышение времени нахождения на погрузке"""
     if not job_template:
         raise NotificationError('Не найден норматив шаблона задания. ID ПЛ=%s' % job.pk)
 
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -394,7 +375,7 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
         place = 'погрузке' if 'погрузка' in geozone['name'].lower() else 'базе'
 
         data = {
-            'itemId': get_wialon_report_resource_id(user),
+            'itemId': get_wialon_report_resource_id(job.user, sess_id),
             'id': 0,
             'callMode': 'create',
             'n': 'Превысил время нахождения на %s в %s' % (place, geozone['name']),
@@ -420,7 +401,7 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -477,22 +458,17 @@ def load_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
             ]
         }
 
-        result = update_notification(data, user=user, sess_id=sess_id)
+        result = update_notification(data, sess_id)
         yield result[0], result[1], data
 
 
-def unload_overtime_notification(job, user=None, sess_id=None, routes_cache=None,
-                                 job_template=None):
+def unload_overtime_notification(job, sess_id, routes_cache=None, job_template=None):
     """5. Превышение времени нахождения на разгрузке"""
     if not job_template:
         raise NotificationError('Не найден норматив шаблона задания. ID ПЛ=%s' % job.pk)
 
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -519,7 +495,7 @@ def unload_overtime_notification(job, user=None, sess_id=None, routes_cache=None
             continue
 
         data = {
-            'itemId': get_wialon_report_resource_id(user),
+            'itemId': get_wialon_report_resource_id(job.user, sess_id),
             'id': 0,
             'callMode': 'create',
             'n': 'Превысил время нахождения на разгрузке в %s' % geozone['name'],
@@ -545,7 +521,7 @@ def unload_overtime_notification(job, user=None, sess_id=None, routes_cache=None
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -602,23 +578,19 @@ def unload_overtime_notification(job, user=None, sess_id=None, routes_cache=None
             ]
         }
 
-        result = update_notification(data, user=user, sess_id=sess_id)
+        result = update_notification(data, sess_id)
         yield result[0], result[1], data
 
 
-def space_notification(job, user=None, sess_id=None, routes_cache=None, job_template=None):
+def space_notification(job, sess_id, routes_cache=None, job_template=None):
     """6. Нахождение объекта вне планового маршрута"""
     if not job_template or not job_template.space_overstatements_standard:
         raise NotificationError(
             'Не найден норматив перенахождения вне маршрута. ID ПЛ=%s' % job.pk
         )
 
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -633,7 +605,7 @@ def space_notification(job, user=None, sess_id=None, routes_cache=None, job_temp
         raise NotificationError('Маршрут неизвестен или отсутствуют геозоны. ID ПЛ=%s' % job.pk)
 
     data = {
-        'itemId': get_wialon_report_resource_id(user),
+        'itemId': get_wialon_report_resource_id(job.user, sess_id),
         'id': 0,
         'callMode': 'create',
         'n': 'Нахождение вне планового маршрута %s' % route_title,
@@ -657,7 +629,7 @@ def space_notification(job, user=None, sess_id=None, routes_cache=None, job_temp
         # флаги
         'fl': 0,
         # часовой пояс
-        'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+        'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
         # язык пользователя (двухбуквенный код)
         'la': 'ru',
         # массив ID объектов/групп объектов
@@ -714,22 +686,17 @@ def space_notification(job, user=None, sess_id=None, routes_cache=None, job_temp
         ]
     }
 
-    result = update_notification(data, user=user, sess_id=sess_id)
+    result = update_notification(data, sess_id)
     yield result[0], result[1], data
 
 
-def route_overstatement_notification(job, user=None, sess_id=None, routes_cache=None,
-                                     job_template=None):
+def route_overstatement_notification(job, sess_id, routes_cache=None, job_template=None):
     """7. Превышение времени нахождения на маршруте"""
     if not job_template:
         raise NotificationError('Не найден норматив шаблона задания. ID ПЛ=%s' % job.pk)
 
-    user = user if user else job.user
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     if not routes_cache:
-        routes = get_routes(user=user, with_points=True)
+        routes = get_routes(sess_id, with_points=True)
         routes_cache = {r['id']: r for r in routes}
 
     dt_from = int(time.mktime(job.date_begin.timetuple()))
@@ -754,7 +721,7 @@ def route_overstatement_notification(job, user=None, sess_id=None, routes_cache=
             continue
 
         data = {
-            'itemId': get_wialon_report_resource_id(user),
+            'itemId': get_wialon_report_resource_id(job.user, sess_id),
             'id': 0,
             'callMode': 'create',
             'n': 'Превысил время нахождения на маршруте %s' % geozone['name'],
@@ -779,7 +746,7 @@ def route_overstatement_notification(job, user=None, sess_id=None, routes_cache=
             # флаги
             'fl': 0,
             # часовой пояс
-            'tz': get_wialon_timezone_integer(user.timezone or get_current_timezone()),
+            'tz': get_wialon_timezone_integer(job.user.timezone or get_current_timezone()),
             # язык пользователя (двухбуквенный код)
             'la': 'ru',
             # массив ID объектов/групп объектов
@@ -836,5 +803,5 @@ def route_overstatement_notification(job, user=None, sess_id=None, routes_cache=
             ]
         }
 
-        result = update_notification(data, user=user, sess_id=sess_id)
+        result = update_notification(data, sess_id)
         yield result[0], result[1], data

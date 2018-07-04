@@ -8,7 +8,6 @@ from snippets.utils.email import send_trigger_email
 
 from wialon import DEFAULT_CACHE_TIMEOUT
 from wialon.exceptions import WialonException
-from wialon.auth import get_wialon_session_key
 
 
 def process_error(result, error):
@@ -20,12 +19,8 @@ def process_error(result, error):
         raise WialonException(error + (' Ошибка: %s' % result))
 
 
-def get_drivers(user=None, sess_id=None):
+def get_drivers(sess_id):
     """Получает список водителей"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
 
     cache_key = 'drivers:%s' % sess_id
     drivers_list = cache.get(cache_key)
@@ -69,13 +64,8 @@ def get_drivers(user=None, sess_id=None):
     return drivers
 
 
-def get_group_object_id(name, user=None, sess_id=None):
+def get_group_object_id(name, user, sess_id):
     """Получает ID группового объекта"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     request_params = json.dumps({
         'spec': {
             'itemsType': 'avl_unit_group',
@@ -96,10 +86,9 @@ def get_group_object_id(name, user=None, sess_id=None):
     )
     res = r.json()
 
-    error = 'Не найден ID группового объекта.'
-    if user:
-        error += ' Проверьте правильность имени группового объекта в настройках интеграции ' \
-                 'у пользователя "%s".' % user
+    error = 'Не найден ID группового объекта. ' \
+            'Проверьте правильность имени группового объекта в настройках интеграции ' \
+            'у пользователя "%s".' % user
     process_error(res, error)
 
     if 'items' not in res or len(res['items']) == 0:
@@ -108,13 +97,8 @@ def get_group_object_id(name, user=None, sess_id=None):
     return res['items'][0]['id']
 
 
-def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
+def get_messages(item_id, time_from, time_to, sess_id):
     """Получение сообщений"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     requests.get(
         settings.WIALON_BASE_URL + (
                 '?svc=messages/unload&params={}&sid=%s' % sess_id
@@ -140,13 +124,8 @@ def get_messages(item_id, time_from, time_to, user=None, sess_id=None):
     return res
 
 
-def get_points(user=None, sess_id=None):
+def get_points(sess_id):
     """Получает список геозон (точек)"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     cache_key = 'points:%s' % sess_id
     points_list = cache.get(cache_key)
 
@@ -189,13 +168,8 @@ def get_points(user=None, sess_id=None):
     return points
 
 
-def get_resources(user=None, sess_id=None):
+def get_resources(sess_id):
     """Получает список ресурсов (организаций в рамках Виалона)"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     cache_key = 'resources:%s' % sess_id
     resources_list = cache.get(cache_key)
 
@@ -238,13 +212,8 @@ def get_resources(user=None, sess_id=None):
     return resources
 
 
-def get_resource_id(name, user=None, sess_id=None):
+def get_resource_id(name, user, sess_id):
     """Получает ID ресурса пользователя"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     request_params = json.dumps({
         'spec': {
             'itemsType': 'avl_resource',
@@ -265,10 +234,9 @@ def get_resource_id(name, user=None, sess_id=None):
     )
     res = r.json()
 
-    error = 'Не найден ID ресурса.'
-    if user:
-        error += ' Проверьте правильность имени ресурса пользователя в настройках интеграции ' \
-                 'у пользователя "%s".' % user
+    error = 'Не найден ID ресурса. ' \
+            'Проверьте правильность имени ресурса пользователя в настройках интеграции ' \
+            'у пользователя "%s".' % user
     process_error(res, error)
 
     if 'items' not in res or len(res['items']) == 0:
@@ -277,13 +245,8 @@ def get_resource_id(name, user=None, sess_id=None):
     return res['items'][0]['id']
 
 
-def get_report_template_id(name, user=None, sess_id=None):
+def get_report_template_id(name, user, sess_id):
     """Получает групповой объект"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     request_params = json.dumps({
         'spec': {
             'itemsType': 'avl_resource',
@@ -299,15 +262,14 @@ def get_report_template_id(name, user=None, sess_id=None):
     })
     r = requests.get(
         settings.WIALON_BASE_URL + (
-                '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
+            '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
     res = r.json()
 
-    error = 'Не найден ID шаблона отчета "%s"' % name
-    if user:
-        error += ' Проверьте правильность имени шаблона отчета в настройках интеграции ' \
-                 'у пользователя "%s".' % user
+    error = 'Не найден ID шаблона отчета "%s". ' \
+            'Проверьте правильность имени шаблона отчета в настройках интеграции ' \
+            'у пользователя "%s".' % (name, user)
 
     if 'error' in res and res['error'] != 1:
         send_trigger_email(
@@ -331,13 +293,8 @@ def get_report_template_id(name, user=None, sess_id=None):
     return None
 
 
-def get_routes(user=None, sess_id=None, with_points=False):
+def get_routes(sess_id, with_points=False):
     """Получает список маршрутов"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     cache_key = 'routes:%s:%s' % (sess_id, '1' if with_points else '0')
     routes_list = cache.get(cache_key)
 
@@ -346,7 +303,7 @@ def get_routes(user=None, sess_id=None, with_points=False):
 
     points_dict_by_name = {}
     if with_points:
-        points_dict_by_name = {x['name']: x for x in get_points(user=user, sess_id=sess_id)}
+        points_dict_by_name = {x['name']: x for x in get_points(sess_id)}
 
     request_params = json.dumps({
         'spec': {
@@ -392,13 +349,8 @@ def get_routes(user=None, sess_id=None, with_points=False):
     return routes
 
 
-def get_units(user=None, sess_id=None, extra_fields=False):
+def get_units(sess_id, extra_fields=False):
     """Получает список элементов"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     cache_key = 'units:%s' % sess_id
     units_list = cache.get(cache_key)
 
@@ -468,13 +420,8 @@ def get_units(user=None, sess_id=None, extra_fields=False):
     return units
 
 
-def get_drive_rank_settings(item_id, user=None, sess_id=None):
+def get_drive_rank_settings(item_id, sess_id):
     """Получает настройки качества вождения"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     request_params = json.dumps({
         'itemId': item_id,
         'sid': sess_id
@@ -498,19 +445,11 @@ def get_drive_rank_settings(item_id, user=None, sess_id=None):
     return result
 
 
-def get_unit_settings(item_id, user=None, sess_id=None, get_sensors=True, get_features=False):
+def get_unit_settings(item_id, sess_id, get_sensors=True):
     """Получение данных о машине (объекте)"""
-    assert user or sess_id
-
-    if sess_id is None:
-        sess_id = get_wialon_session_key(user)
-
     flags = 1
     if get_sensors:
         flags += 4096
-
-    if get_features:
-        flags += 8388608
 
     request_params = json.dumps({
         'id': item_id,

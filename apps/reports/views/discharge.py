@@ -95,7 +95,7 @@ class DischargeView(BaseReportView):
             raise ReportException(WIALON_NOT_LOGINED)
 
         try:
-            units_list = get_units(sess_id=sess_id, extra_fields=True)
+            units_list = get_units(sess_id, extra_fields=True)
         except WialonException as e:
             raise ReportException(str(e))
 
@@ -142,7 +142,9 @@ class DischargeView(BaseReportView):
                     except ValueError:
                         pass
 
-                template_id = get_wialon_report_template_id('discharge_individual', self.user)
+                template_id = get_wialon_report_template_id(
+                    'discharge_individual', self.user, sess_id
+                )
                 device_fields = defaultdict(lambda: {'extras': .0, 'idle': .0})
 
                 i = 0
@@ -216,22 +218,19 @@ class DischargeView(BaseReportView):
                     dt_from = int(time.mktime(report_row['periods'][0]['dt_from'].timetuple()))
                     dt_to = int(time.mktime(report_row['periods'][-1]['dt_to'].timetuple()))
 
-                    cleanup_and_request_report(self.user, template_id, sess_id=sess_id)
+                    cleanup_and_request_report(self.user, template_id, sess_id)
 
                     r = exec_report(
-                        self.user, template_id,
-                        dt_from, dt_to,
-                        sess_id=sess_id, object_id=unit_id
+                        self.user, template_id, sess_id, dt_from, dt_to, object_id=unit_id
                     )
 
                     wialon_report_rows = {}
                     for table_index, table_info in enumerate(r['reportResult']['tables']):
                         rows = get_report_rows(
-                            self.user,
+                            sess_id,
                             table_index,
                             table_info['rows'],
-                            level=2 if table_info['name'] == 'unit_thefts' else 1,
-                            sess_id=sess_id
+                            level=2 if table_info['name'] == 'unit_thefts' else 1
                         )
 
                         wialon_report_rows[table_info['name']] = [row['c'] for row in rows]

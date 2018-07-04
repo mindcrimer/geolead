@@ -8,15 +8,7 @@ from snippets.utils.email import send_trigger_email
 
 from wialon import DEFAULT_CACHE_TIMEOUT
 from wialon.exceptions import WialonException
-
-
-def process_error(result, error):
-    if 'error' in result:
-        if result['error'] == 1:
-            raise WialonException(
-                error + ' Ошибка: ваша сессия устарела. Зайдите заново в приложение через APPS.'
-            )
-        raise WialonException(error + (' Ошибка: %s' % result))
+from wialon.utils import process_error, load_requests_json
 
 
 def get_drivers(sess_id):
@@ -46,7 +38,7 @@ def get_drivers(sess_id):
                 '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
+    res = load_requests_json(r)
 
     process_error(res, 'Не удалось извлечь из Wialon список водителей.')
 
@@ -84,7 +76,7 @@ def get_group_object_id(name, user, sess_id):
                 '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
+    res = load_requests_json(r)
 
     error = 'Не найден ID группового объекта. ' \
             'Проверьте правильность имени группового объекта в настройках интеграции ' \
@@ -118,7 +110,7 @@ def get_messages(item_id, time_from, time_to, sess_id):
                 '?svc=messages/load_interval&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
+    res = load_requests_json(r)
     process_error(res, 'Не удалось извлечь список сообщений из Wialon. ID объекта: %s.' % item_id)
 
     return res
@@ -150,8 +142,7 @@ def get_points(sess_id):
             '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
-
+    res = load_requests_json(r)
     process_error(res, 'Не удалось извлечь из Wialon список геозон.')
 
     points = []
@@ -195,8 +186,7 @@ def get_resources(sess_id):
                 '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
-
+    res = load_requests_json(r)
     process_error(res, 'Не удалось извлечь из Wialon список ресурсов.')
 
     resources = []
@@ -232,8 +222,7 @@ def get_resource_id(name, user, sess_id):
                 '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
-
+    res = load_requests_json(r)
     error = 'Не найден ID ресурса. ' \
             'Проверьте правильность имени ресурса пользователя в настройках интеграции ' \
             'у пользователя "%s".' % user
@@ -265,8 +254,7 @@ def get_report_template_id(name, user, sess_id):
             '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
-
+    res = load_requests_json(r)
     error = 'Не найден ID шаблона отчета "%s". ' \
             'Проверьте правильность имени шаблона отчета в настройках интеграции ' \
             'у пользователя "%s".' % (name, user)
@@ -323,8 +311,7 @@ def get_routes(sess_id, with_points=False):
                 '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
-
+    res = load_requests_json(r)
     process_error(res, 'Не удалось извлечь из Wialon список маршрутов.')
 
     routes = []
@@ -379,7 +366,7 @@ def get_units(sess_id, extra_fields=False):
                 '?svc=core/search_items&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
+    res = load_requests_json(r)
     process_error(res, 'Не удалось извлечь из Wialon список объектов (ТС).')
 
     units = []
@@ -431,7 +418,7 @@ def get_drive_rank_settings(item_id, sess_id):
                 '?svc=unit/get_drive_rank_settings&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    res = r.json()
+    res = load_requests_json(r)
     if 'error' in res:
         return {}
     result = {}
@@ -460,4 +447,4 @@ def get_unit_settings(item_id, sess_id, get_sensors=True):
                 '?svc=core/search_item&params=%s&sid=%s' % (request_params, sess_id)
         )
     )
-    return r.json()['item']
+    return load_requests_json(r)['item']

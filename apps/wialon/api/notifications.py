@@ -5,7 +5,7 @@ from django.conf import settings
 import requests
 
 from reports.utils import get_wialon_report_resource_id
-from wialon.api import process_error
+from wialon.utils import process_error, load_requests_json
 
 
 def remove_notification(notification, user, sess_id):
@@ -19,7 +19,7 @@ def remove_notification(notification, user, sess_id):
             'sid': sess_id
         }
     )
-    res = r.json()
+    res = load_requests_json(r)
     process_error(
         res, 'Не удалось удалить шаблон уведомлений ID="%s"' % notification.pk
     )
@@ -34,7 +34,7 @@ def update_notification(request_params, sess_id):
             'sid': sess_id
         }
     )
-    res = r.json()
+    res = load_requests_json(r)
     action = 'сохранить'
     if request_params.get('callMode', '') == 'delete':
         action = 'удалить'

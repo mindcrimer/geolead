@@ -11,6 +11,7 @@ import requests
 
 from base.exceptions import APIProcessError
 from snippets.utils.email import send_trigger_email
+from wialon.utils import load_requests_json
 
 
 def get_session_cache_key(user):
@@ -44,7 +45,7 @@ def login_wialon_via_token(user, token, attempt=0):
     r = requests.get(
         settings.WIALON_BASE_URL + ('?svc=token/login&params=%s' % params)
     )
-    res = r.json()
+    res = load_requests_json(r)
 
     # какие-то проблемы с лимитами
     if res.get('error', 0) == 1:
@@ -123,7 +124,7 @@ def logout_session(user, sess_id):
     # r = requests.get(
     #     settings.WIALON_BASE_URL + ('?svc=core/logout&params=%s&sid=%s' % (params, sess_id))
     # )
-    # res = r.json()
+    # res = load_requests_json(r)
     #
     # succeeded = res.get('error', 0) == 0
     # if succeeded:

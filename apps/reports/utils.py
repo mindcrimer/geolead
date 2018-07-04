@@ -16,6 +16,7 @@ from snippets.utils.datetime import utcnow
 from wialon.api import get_group_object_id, get_resource_id, get_report_template_id
 from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
+from wialon.utils import load_requests_json
 
 
 def get_wialon_report_object_id(user, sess_id):
@@ -280,7 +281,7 @@ def exec_report(user, template_id, sess_id, dt_from, dt_to, report_resource_id=N
         }
     )
 
-    result = r.json()
+    result = load_requests_json(r)
 
     if 'error' in result:
         # сессия неожиданно устарела (такое очень редко и необъяснимо бывает) - отправляем еще раз
@@ -324,7 +325,7 @@ def get_report_rows(sess_id, table_index, rows, offset=0, level=0):
     )
 
     try:
-        rows = result.json()
+        rows = load_requests_json(result)
     except JSONDecodeError:
         raise ReportException('Ошибка раскодирования ответа Wialon: %s' % result.text)
 

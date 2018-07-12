@@ -76,7 +76,7 @@ class VchmTaxiingView(BaseVchmReportView):
         if start is None or end is None:
             return .0
 
-        return end - start
+        return end - start + getattr(visit, 'refillings_volume', .0)
 
     @staticmethod
     def render_faults(unit, visit):

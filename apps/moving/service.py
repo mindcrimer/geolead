@@ -159,6 +159,9 @@ class MovingService(object):
             ]
             route = fixed_routes[0] if fixed_routes else {'points': []}
             is_fixed_route = True
+        else:
+            if 'фиксир' in route['name'].lower():
+                is_fixed_route = True
 
         route_point_names = {
             self.prepare_geozone_name(x['name']) for x in route['points']
@@ -257,8 +260,20 @@ class MovingService(object):
                         first_visit.dt_from,
                     ))
 
-            if (self.utc_dt_to - visits[-1].dt_to).total_seconds() < delta:
-                visits[-1].dt_to = self.utc_dt_to
+            last_visit = visits[-1]
+            if last_visit:
+
+                last_delta = (self.utc_dt_to - last_visit.dt_to).total_seconds()
+                if last_delta < delta < 0:
+                    last_visit.dt_to = self.utc_dt_to
+
+                elif last_delta > 0:
+                    # если большая дельта в конце, добавляем SPACE
+                    visits.append(Visit(
+                        'SPACE',
+                        last_visit.dt_to,
+                        self.utc_dt_to
+                    ))
 
         else:
             # если ничего не найдено, отдаем полный SPACE

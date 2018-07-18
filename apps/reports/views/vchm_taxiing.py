@@ -64,7 +64,7 @@ class VchmTaxiingView(BaseVchmReportView):
     def get_point_name(point_name):
         if point_name and point_name.lower() != 'space':
             return re.sub(r'[(\[].*?[)\]]', '', point_name)
-        return 'Неизвестная'
+        return None
 
     @staticmethod
     def get_odometer(unit, visit):
@@ -218,7 +218,12 @@ class VchmTaxiingView(BaseVchmReportView):
                 if job:
                     standard = standards.get(int(job.route_id))
 
-                for visit in unit_report_data.geozones.target:
+                for i, visit in enumerate(unit_report_data.geozones.target):
+                    try:
+                        next_visit = unit_report_data.geozones.target[i + 1]
+                    except IndexError:
+                        next_visit = None
+
                     point_standard = None
                     if standard:
                         point_standard = standard.get('points', {}).get(visit.geozone_full, {})
@@ -231,11 +236,16 @@ class VchmTaxiingView(BaseVchmReportView):
                         parking_standard = point_standard['parking_time_standard'] * 60
 
                     total_delta = (visit.dt_to - visit.dt_from).total_seconds()
-                    parking_delta = getattr(visit, 'parkings_delta', .0)
                     moving_delta = getattr(visit, 'trips_delta', .0)
+                    # переделал пока под расчет разницы между периодом нахождения и временем в
+                    # движении, так как в расчет стоянок иногда не принимаются концевые участки
+                    # длиной несколько минут
+                    # parking_delta = getattr(visit, 'parkings_delta', .0)
+                    parking_delta = max(.0, total_delta - moving_delta)
+
                     motohours_delta = getattr(visit, 'motohours_delta', .0)
                     idle_delta = getattr(visit, 'idle_delta', .0)
-                    off_delta = min(.0, total_delta - motohours_delta)
+                    off_delta = max(.0, total_delta - motohours_delta)
                     angle_sensor_delta = getattr(visit, 'angle_sensor_delta', .0)
                     refillings_volume = getattr(visit, 'refillings_volume', .0)
                     discharges_volume = getattr(visit, 'discharges_volume', .0)
@@ -254,13 +264,22 @@ class VchmTaxiingView(BaseVchmReportView):
                             and parking_delta / parking_standard > normal_ratio:
                         overstatement_time += parking_delta - parking_standard
 
+                    point_name = self.get_point_name(visit.geozone)
+                    if not point_name:
+                        # если первая строка, и зона неизвестна, то это зона, где машина
+                        # находилась до включения блока (допущение, предложенное заказчиком)
+                        if i == 0 and next_visit:
+                            point_name = self.get_point_name(next_visit.geozone)
+                        else:
+                            point_name = 'Неизвестная'
+
                     report_row = {
                         'car_number': self.get_car_number(unit['name']),
                         'driver_fio': job.driver_fio
                         if job and job.driver_fio else 'Неизвестный',
                         'route_name': job.route_title
                         if job and job.route_title else 'Неизвестный маршрут',
-                        'point_name': self.get_point_name(visit.geozone),
+                        'point_name': point_name,
                         'dt_from': visit.dt_from,
                         'dt_to': visit.dt_to,
                         'total_time': total_delta,

@@ -17,6 +17,7 @@ $(document).ready(function() {
     dayOfWeekStart: 1
   });
 
+  $('select.select-searchable').select2();
   $('.grouping').click(function () {
     $(this).toggleClass('collapsed').toggleClass('expanded');
     $(this).parents('table').find('tr.detailed[data-rel="' + $(this).data('rel') + '"]').toggleClass('hidden');

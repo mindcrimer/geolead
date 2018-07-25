@@ -97,7 +97,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
         return {
             'unit_name': row.unit_name,
             'unit_number': unit['number'] if unit['number'] else unit['name'],
-            'driver_fio': self.driver_cache.get(unit['id'], DRIVER_NO_NAME),
+            'driver_fio': self.driver_cache.get(int(unit['id']), DRIVER_NO_NAME),
             'total_mileage': row.mileage,
             'violations_measures': {
                 'avg_overspeed': {
@@ -255,6 +255,10 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 jobs = Job.objects.filter(
                     user=ura_user, date_begin__lt=dt_to, date_end__gt=dt_from
                 )
+
+                if form.cleaned_data.get('unit'):
+                    jobs = jobs.filter(unit_id=str(form.cleaned_data['unit']))
+
                 self.driver_cache = {
                     int(j.unit_id): j.driver_fio
                     for j in jobs

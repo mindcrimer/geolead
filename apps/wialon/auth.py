@@ -5,12 +5,12 @@ import urllib.request
 from time import sleep
 
 from django.conf import settings
-from django.core.cache import cache
 
 import requests
 
 from base.exceptions import APIProcessError
 from snippets.utils.email import send_trigger_email
+from wialon.sessions import session_store
 from wialon.utils import load_requests_json
 
 
@@ -20,17 +20,18 @@ def get_session_cache_key(user):
 
 def get_wialon_session_key(user, invalidate=False):
     """Возвращает идентификатор сессии пользователя Wialon"""
-    cache_key = get_session_cache_key(user)
-    sess_id = cache.get(cache_key)
-
-    if not sess_id or invalidate:
-        token = get_user_wialon_token(user)
-        sess_id = login_wialon_via_token(user, token)
-
-        if sess_id:
-            cache.set(cache_key, sess_id, settings.WIALON_SESSION_TIMEOUT)
-
-    return sess_id
+    return session_store.get_session_key(user, invalidate=invalidate)
+    # cache_key = get_session_cache_key(user)
+    # sess_id = cache.get(cache_key)
+    #
+    # if not sess_id or invalidate:
+    #     token = get_user_wialon_token(user)
+    #     sess_id = login_wialon_via_token(user, token)
+    #
+    #     if sess_id:
+    #         cache.set(cache_key, sess_id, settings.WIALON_SESSION_TIMEOUT)
+    #
+    # return sess_id
 
 
 def login_wialon_via_token(user, token, attempt=0):
@@ -137,4 +138,6 @@ def logout_session(user, sess_id):
     # return succeeded
 
     # пока отключил, чтобы не убивало так необходимый кэш
-    return False
+    # return False
+    return session_store.return_session_key(sess_id, user)
+

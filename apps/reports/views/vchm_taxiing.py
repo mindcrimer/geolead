@@ -2,9 +2,10 @@ import datetime
 from collections import OrderedDict
 import re
 
-import xlwt
 from django.db.models import Q
 from django.db.models.query import Prefetch
+
+import xlwt
 
 from base.exceptions import ReportException
 from moving.service import MovingService

@@ -30,6 +30,7 @@ class VchmTaxiingView(BaseVchmReportView):
         super(VchmTaxiingView).__init__(*args, **kwargs)
         self.units_dict = {}
         self.user = None
+        self.module_fault_timeout = 60 * 15
 
     def get_default_context_data(self, **kwargs):
         context = super(VchmTaxiingView, self).get_default_context_data(**kwargs)
@@ -79,10 +80,44 @@ class VchmTaxiingView(BaseVchmReportView):
 
         return end - start + getattr(visit, 'refillings_volume', .0)
 
-    @staticmethod
-    def render_faults(unit, visit):
-        # TODO рассчитывать большие промежутки в сообщениях, координатах, ДУТ,
-        # TODO завязанный на моточасы
+    def render_faults(self, visit, index, unit_report_data):
+        """Рассчитывает большие промежутки в сообщениях, ДУТ, завязанный на моточасы"""
+        # первая геозона до включения массы
+        if index == 0 and len(visit.odometers) < 3:
+            return 'OK'
+
+        faults = []
+        # если топливо не меняется в течение геозоны, но при этом есть минимум 1км пробега:
+        fuel_start, fuel_end = getattr(visit, 'start_fuel_level'), getattr(visit, 'end_fuel_level')
+        odometer_start = getattr(visit, 'start_odometer')
+        odometer_end = getattr(visit, 'end_odometer')
+
+        if fuel_start is not None and fuel_end is not None and fuel_end - fuel_start == .0:
+            if odometer_start is not None and odometer_end is not None \
+                    and odometer_end - odometer_start > 1:
+                faults.append([visit.dt_from, visit.dt_to, 'ДУТ'])
+
+        prev_odometer = None
+        for odometer in visit.odometers:
+            if prev_odometer:
+                if (odometer.dt - prev_odometer.dt).total_seconds() > self.module_fault_timeout:
+                    # если период неисправности продолжается, то есть текущий диапазон тоже
+                    # большой, как и предыдущий, тогда склеиваем 2 возможные неисправности
+                    if faults and faults[-1][1] == prev_odometer.dt:
+                        faults[-1][1] = odometer.dt
+                    else:
+                        faults.append([prev_odometer.dt, odometer.dt, 'бортовой блок'])
+
+            prev_odometer = odometer
+
+        for fault in faults:
+            fault.append(format_timedelta((fault[1] - fault[0]).total_seconds()))
+            fault[0] = date_format(utc_to_local_time(fault[0], self.user.timezone), 'H:i')
+            fault[1] = date_format(utc_to_local_time(fault[1], self.user.timezone), 'H:i')
+
+        if faults:
+            return '\n'.join(['%s - %s (%s), %s' % (x[0], x[1], x[3], x[2]) for x in faults])
+
         return 'OK'
 
     def get_context_data(self, **kwargs):
@@ -141,9 +176,9 @@ class VchmTaxiingView(BaseVchmReportView):
                 )
 
                 unit_id = form.cleaned_data.get('unit')
-                self.units_dict = OrderedDict(
+                self.units_dict = OrderedDict([
                     (x['name'], x) for x in units_list if x['id'] == unit_id
-                )
+                ])
                 unit = list(self.units_dict.values())[0]
 
                 routes = {x['id']: x for x in get_routes(sess_id, with_points=True)}
@@ -296,7 +331,7 @@ class VchmTaxiingView(BaseVchmReportView):
                         'discharge_delta': discharges_volume,
                         'overstatement_mileage': .0,
                         'overstatement_time': overstatement_time,
-                        'faults': self.render_faults(unit, visit)
+                        'faults': self.render_faults(visit, i, unit_report_data)
                     }
                     report_data.append(report_row)
 

@@ -286,11 +286,6 @@ class VchmTaxiingView(BaseVchmReportView):
                     refillings_volume = getattr(visit, 'refillings_volume', .0)
                     discharges_volume = getattr(visit, 'discharges_volume', .0)
 
-                    over_3min_parkings_count = len([
-                        True for x in getattr(visit, 'parkings', [])
-                        if (x.dt_to - x.dt_from).total_seconds() > 3 * 60
-                    ])
-
                     overstatement_time = .0
                     if total_standart is not None \
                             and total_delta / total_standart > normal_ratio:
@@ -308,6 +303,13 @@ class VchmTaxiingView(BaseVchmReportView):
                             point_name = self.get_point_name(next_visit.geozone)
                         else:
                             point_name = 'Неизвестная'
+
+                    over_3min_parkings_count = 0
+                    if point_name == 'Неизвестная':
+                        over_3min_parkings_count = len([
+                            True for x in getattr(visit, 'parkings', [])
+                            if (x.dt_to - x.dt_from).total_seconds() > 3 * 60
+                        ])
 
                     report_row = {
                         'car_number': self.get_car_number(unit['name']),

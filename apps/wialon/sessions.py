@@ -43,6 +43,7 @@ class SessionStore(object):
         self.cache.setex(self.get_expiry_key(sess_id), int(time.time()), self.expiraton_seconds)
 
     def get_new_session_key(self, user):
+        from wialon.auth import get_user_wialon_token, login_wialon_via_token
         token = get_user_wialon_token(user)
         sess_id = login_wialon_via_token(user, token)
         self.acquire_session_key(sess_id)

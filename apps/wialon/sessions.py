@@ -5,7 +5,6 @@ from django.conf import settings
 import redis
 
 from snippets.utils.passwords import generate_random_string
-from wialon.auth import get_user_wialon_token, login_wialon_via_token
 
 
 class SessionStore(object):

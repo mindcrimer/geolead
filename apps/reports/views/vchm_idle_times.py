@@ -8,12 +8,13 @@ import xlwt
 
 from base.exceptions import ReportException
 from moving.service import MovingService
-from reports import forms, DEFAULT_TOTAL_TIME_STANDARD_MINUTES, \
-    DEFAULT_PARKING_TIME_STANDARD_MINUTES, DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
+from reports import forms, DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE, \
+    DEFAULT_SPACE_TOTAL_TIME_STANDARD_MINUTES
 from reports.utils import local_to_utc_time, format_timedelta
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from snippets.jinjaglobals import date as date_format
 from ura.models import StandardJobTemplate, StandardPoint, Job
+from ura.utils import is_fixed_route
 from users.models import User
 from wialon.api import get_units, get_routes
 from wialon.exceptions import WialonException
@@ -33,8 +34,7 @@ class VchmIdleTimesView(BaseVchmReportView):
     def get_default_context_data(self, **kwargs):
         context = super(VchmIdleTimesView, self).get_default_context_data(**kwargs)
         context.update({
-            'default_total_time_standard': DEFAULT_TOTAL_TIME_STANDARD_MINUTES,
-            'default_parking_time_standard': DEFAULT_PARKING_TIME_STANDARD_MINUTES,
+            'default_space_time_standard': DEFAULT_SPACE_TOTAL_TIME_STANDARD_MINUTES,
             'overstatement_param': DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
         })
         return context
@@ -43,8 +43,7 @@ class VchmIdleTimesView(BaseVchmReportView):
         data = self.request.POST if self.request.method == 'POST' else {
             'dt_from': datetime.date.today() - datetime.timedelta(days=1),
             'dt_to': datetime.date.today() - datetime.timedelta(days=1),
-            'default_total_time_standard': DEFAULT_TOTAL_TIME_STANDARD_MINUTES,
-            'default_parking_time_standard': DEFAULT_PARKING_TIME_STANDARD_MINUTES,
+            'default_space_time_standard': DEFAULT_SPACE_TOTAL_TIME_STANDARD_MINUTES,
             'overstatement_param': DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
         }
         return self.form_class(data)
@@ -203,39 +202,48 @@ class VchmIdleTimesView(BaseVchmReportView):
 
                     job = jobs_cache.get(unit['id'])
                     standard = None
+                    fixed_route = False
                     if job:
+                        fixed_route = is_fixed_route(job.route_title)
                         standard = standards.get(int(job.route_id))
 
                     unit_report_data = service.report_data.get(unit['name'], {})
+
                     for visit in unit_report_data.geozones.target:
+                        total_standart = parking_standard = space_standard = None
                         point_standard = {}
                         if standard:
                             point_standard = standard.get('points', {}).get(visit.geozone_full, {})
                             if not point_standard:
                                 point_standard = standard.get('points', {}).get(visit.geozone, {})
 
-                        if not point_standard.get('total_time_standard'):
-                            point_standard['total_time_standard'] = form.cleaned_data.get(
-                                'default_total_time_standard',
-                                DEFAULT_TOTAL_TIME_STANDARD_MINUTES
-                            )
-                        if not point_standard.get('parking_time_standard'):
-                            point_standard['parking_time_standard'] = form.cleaned_data.get(
-                                'default_parking_time_standard',
-                                DEFAULT_PARKING_TIME_STANDARD_MINUTES
+                        if fixed_route:
+                            point_standard['space_time_standard'] = form.cleaned_data.get(
+                                'default_space_time_standard',
+                                DEFAULT_SPACE_TOTAL_TIME_STANDARD_MINUTES
                             )
 
-                        total_standart = point_standard['total_time_standard'] * 60
-                        parking_standard = point_standard['parking_time_standard'] * 60
+                        if point_standard.get('total_time_standard'):
+                            total_standart = point_standard['total_time_standard'] * 60
+                        if point_standard.get('parking_time_standard'):
+                            parking_standard = point_standard['parking_time_standard'] * 60
+                        if point_standard.get('space_time_standard'):
+                            space_standard = point_standard['space_time_standard'] * 60
 
                         overstatement = .0
                         total_time = (visit.dt_to - visit.dt_from).total_seconds()
                         parking_time = getattr(visit, 'parkings_delta', .0)
-                        if total_standart is not None \
+
+                        if visit.geozone.lower() == 'space':
+                            if space_standard is not None \
+                                    and total_time / space_standard > normal_ratio:
+                                overstatement += total_time - total_standart
+
+                        elif total_standart is not None \
                                 and total_time / total_standart > normal_ratio:
                             overstatement += total_time - total_standart
 
-                        elif parking_standard is not None \
+                        if parking_standard is not None \
                                 and parking_time / parking_standard > normal_ratio:
                             overstatement += parking_time - parking_standard
 

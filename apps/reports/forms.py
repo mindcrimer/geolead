@@ -102,16 +102,12 @@ class VchmIdleTimesForm(forms.Form):
     dt_from = forms.DateField(label=_('С'))
     dt_to = forms.DateField(label=_('По'))
     unit = forms.IntegerField(required=False, label=_('Объект'))
-    default_total_time_standard = forms.FloatField(
+    default_space_time_standard = forms.FloatField(
         label=_(
-            'Норматив суммарного нахождения в геозонах (минут), '
+            'Норматив нахождения в неизвестных геозонах (минут), '
             'если не указано в таблице нормативов'
         ),
         min_value=0, max_value=10000, initial=DEFAULT_TOTAL_TIME_STANDARD_MINUTES, required=True
-    )
-    default_parking_time_standard = forms.FloatField(
-        label=_('Норматив простоя в геозонах (минут), если не указано в таблице нормативов'),
-        min_value=0, max_value=10000, initial=DEFAULT_PARKING_TIME_STANDARD_MINUTES, required=True
     )
     overstatement_param = forms.IntegerField(
         label=_('Условие превышения над нормативным временем, перенахождения / перепростоя, %'),

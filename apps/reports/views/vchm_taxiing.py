@@ -31,6 +31,7 @@ class VchmTaxiingView(BaseVchmReportView):
         self.units_dict = {}
         self.user = None
         self.module_fault_timeout = 60 * 15
+        self.default_unit = None
 
     def get_default_context_data(self, **kwargs):
         context = super(VchmTaxiingView, self).get_default_context_data(**kwargs)
@@ -40,10 +41,15 @@ class VchmTaxiingView(BaseVchmReportView):
         return context
 
     def get_default_form(self):
-        data = self.request.POST if self.request.method == 'POST' else {
-            'dt': datetime.date.today() - datetime.timedelta(days=1),
-            'overstatement_param': DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
-        }
+        if self.request.method == 'POST':
+            data = self.request.POST
+        else:
+            data = {
+                'dt': datetime.date.today() - datetime.timedelta(days=1),
+                'overstatement_param': DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
+            }
+            if self.default_unit:
+                data['unit'] = self.default_unit
         return self.form_class(data)
 
     def get_car_number(self, unit_name):
@@ -121,9 +127,6 @@ class VchmTaxiingView(BaseVchmReportView):
         return 'OK'
 
     def get_context_data(self, **kwargs):
-        kwargs = super(VchmTaxiingView, self).get_context_data(**kwargs)
-        form = kwargs['form']
-
         sess_id = self.request.session.get('sid')
         if not sess_id:
             raise ReportException(WIALON_NOT_LOGINED)
@@ -133,233 +136,244 @@ class VchmTaxiingView(BaseVchmReportView):
         except WialonException as e:
             raise ReportException(str(e))
 
+        self.default_unit = units_list[0]['id']
+        kwargs = super(VchmTaxiingView, self).get_context_data(**kwargs)
+        form = kwargs['form']
         kwargs['units'] = units_list
 
-        if self.request.POST:
+        if not self.request.POST:
+            return kwargs
 
-            if form.is_valid():
-                report_data = []
-                stats = {
-                    'dt_from_min': None,
-                    'dt_to_max': None,
-                    'total_time': .0,
-                    'moving_time': .0,
-                    'parking_time': .0,
-                    'idle_time': .0,
-                    'idle_off_time': .0,
-                    'angle_sensor_time': .0,
-                    'over_3min_parkings_count': 0,
-                    'odometer': .0,
-                    'fuel_level_delta': .0,
-                    'refills_delta': .0,
-                    'discharge_delta': .0,
-                    'overstatement_mileage': .0,
-                    'overstatement_time': .0
-                }
-                kwargs.update(
-                    report_data=report_data,
-                    stats=stats
-                )
+        if form.is_valid():
+            report_data = []
+            stats = {
+                'dt_from_min': None,
+                'dt_to_max': None,
+                'total_time': .0,
+                'moving_time': .0,
+                'parking_time': .0,
+                'idle_time': .0,
+                'idle_off_time': .0,
+                'angle_sensor_time': .0,
+                'over_3min_parkings_count': 0,
+                'odometer': .0,
+                'fuel_level_delta': .0,
+                'refills_delta': .0,
+                'discharge_delta': .0,
+                'overstatement_mileage': .0,
+                'overstatement_time': .0
+            }
+            kwargs.update(
+                report_data=report_data,
+                stats=stats
+            )
 
-                self.user = User.objects.filter(is_active=True) \
-                    .filter(wialon_username=self.request.session.get('user')).first()
-                if not self.user:
-                    raise ReportException(WIALON_USER_NOT_FOUND)
+            self.user = User.objects.filter(is_active=True) \
+                .filter(wialon_username=self.request.session.get('user')).first()
+            if not self.user:
+                raise ReportException(WIALON_USER_NOT_FOUND)
 
-                local_dt_from = datetime.datetime.combine(
-                    form.cleaned_data['dt'],
-                    datetime.time(0, 0, 0)
-                )
-                local_dt_to = datetime.datetime.combine(
-                    form.cleaned_data['dt'],
-                    datetime.time(23, 59, 59)
-                )
+            local_dt_from = datetime.datetime.combine(
+                form.cleaned_data['dt'],
+                datetime.time(0, 0, 0)
+            )
+            local_dt_to = datetime.datetime.combine(
+                form.cleaned_data['dt'],
+                datetime.time(23, 59, 59)
+            )
 
-                unit_id = form.cleaned_data.get('unit')
-                self.units_dict = OrderedDict([
-                    (x['name'], x) for x in units_list if x['id'] == unit_id
-                ])
-                unit = list(self.units_dict.values())[0]
+            unit_id = form.cleaned_data.get('unit')
+            self.units_dict = OrderedDict([
+                (x['name'], x) for x in units_list if x['id'] == unit_id
+            ])
+            unit = list(self.units_dict.values())[0]
 
-                routes = {x['id']: x for x in get_routes(sess_id, with_points=True)}
-                standard_job_templates = StandardJobTemplate.objects \
-                    .filter(wialon_id__in=[str(x) for x in routes.keys()]) \
-                    .prefetch_related(
-                        Prefetch(
-                            'points',
-                            StandardPoint.objects.filter(
-                                Q(total_time_standard__isnull=False) |
-                                Q(parking_time_standard__isnull=False)
-                            ),
-                            'points_cache'
-                        )
+            routes = {x['id']: x for x in get_routes(sess_id, with_points=True)}
+            standard_job_templates = StandardJobTemplate.objects \
+                .filter(wialon_id__in=[str(x) for x in routes.keys()]) \
+                .prefetch_related(
+                    Prefetch(
+                        'points',
+                        StandardPoint.objects.filter(
+                            Q(total_time_standard__isnull=False) |
+                            Q(parking_time_standard__isnull=False)
+                        ),
+                        'points_cache'
                     )
-
-                standards = {
-                    int(x.wialon_id): {
-                        'space_overstatements_standard': x.space_overstatements_standard
-                        if x.space_overstatements_standard is not None else None,
-                        'points': {
-                            p.title: {
-                                'total_time_standard': p.total_time_standard
-                                if p.total_time_standard is not None else None,
-                                'parking_time_standard': p.parking_time_standard
-                                if p.parking_time_standard is not None else None
-                            } for p in x.points_cache
-                        }
-                    } for x in standard_job_templates
-                    if x.space_overstatements_standard is not None or x.points_cache
-                }
-
-                service = MovingService(
-                    self.user,
-                    local_dt_from,
-                    local_dt_to,
-                    sess_id,
-                    object_id=unit_id,
-                    units_dict=self.units_dict
-                )
-                service.exec_report()
-                service.analyze()
-
-                ura_user = self.user.ura_user if self.user.ura_user_id else self.user
-                jobs = Job.objects.filter(
-                    user=ura_user,
-                    date_begin__gte=local_to_utc_time(local_dt_from, ura_user.timezone),
-                    date_end__lte=local_to_utc_time(local_dt_to, ura_user.timezone)
-                )
-                jobs_cache = {int(j.unit_id): j for j in jobs}
-
-                normal_ratio = 1 + (
-                    form.cleaned_data.get(
-                        'overstatement_param',
-                        DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
-                    ) / 100.0
                 )
 
-                unit_report_data = service.report_data.get(unit['name'])
-                if not unit_report_data:
-                    return kwargs
-
-                kwargs.update(heading_data=OrderedDict((
-                    ('Марка, модель', self.get_car_model(unit['name'])),
-                    ('Гос.номер', self.get_car_number(unit['name'])),
-                    ('VIN', self.get_car_vin(unit['name'])),
-                    ('Тип ТС', self.get_car_type(unit['name'])),
-                    ('Дата', date_format(form.cleaned_data['dt'], 'd.m.Y'))
-                )))
-
-                job = jobs_cache.get(unit['id'])
-                standard = None
-                if job:
-                    standard = standards.get(int(job.route_id))
-
-                for i, visit in enumerate(unit_report_data.geozones.target):
-                    try:
-                        next_visit = unit_report_data.geozones.target[i + 1]
-                    except IndexError:
-                        next_visit = None
-
-                    point_standard = None
-                    if standard:
-                        point_standard = standard.get('points', {}).get(visit.geozone_full, {})
-                        if not point_standard:
-                            point_standard = standard.get('points', {}).get(visit.geozone, {})
-
-                    total_standart = parking_standard = None
-                    if point_standard:
-                        total_standart = point_standard['total_time_standard'] * 60
-                        parking_standard = point_standard['parking_time_standard'] * 60
-
-                    total_delta = (visit.dt_to - visit.dt_from).total_seconds()
-                    moving_delta = getattr(visit, 'trips_delta', .0)
-                    # переделал пока под расчет разницы между периодом нахождения и временем в
-                    # движении, так как в расчет стоянок иногда не принимаются концевые участки
-                    # длиной несколько минут
-                    # parking_delta = getattr(visit, 'parkings_delta', .0)
-                    parking_delta = max(.0, total_delta - moving_delta)
-
-                    motohours_delta = getattr(visit, 'motohours_delta', .0)
-                    idle_delta = getattr(visit, 'idle_delta', .0)
-                    off_delta = max(.0, total_delta - motohours_delta)
-                    angle_sensor_delta = getattr(visit, 'angle_sensor_delta', .0)
-                    refillings_volume = getattr(visit, 'refillings_volume', .0)
-                    discharges_volume = getattr(visit, 'discharges_volume', .0)
-
-                    overstatement_time = .0
-                    if total_standart is not None \
-                            and total_delta / total_standart > normal_ratio:
-                        overstatement_time += total_delta - total_standart
-
-                    elif parking_standard is not None \
-                            and parking_delta / parking_standard > normal_ratio:
-                        overstatement_time += parking_delta - parking_standard
-
-                    point_name = self.get_point_name(visit.geozone)
-                    if not point_name:
-                        # если первая строка, и зона неизвестна, то это зона, где машина
-                        # находилась до включения блока (допущение, предложенное заказчиком)
-                        if i == 0 and next_visit:
-                            point_name = self.get_point_name(next_visit.geozone)
-                        else:
-                            point_name = 'Неизвестная'
-
-                    over_3min_parkings_count = 0
-                    if point_name == 'Неизвестная':
-                        over_3min_parkings_count = len([
-                            True for x in getattr(visit, 'parkings', [])
-                            if (x.dt_to - x.dt_from).total_seconds() > 3 * 60
-                        ])
-
-                    report_row = {
-                        'car_number': self.get_car_number(unit['name']),
-                        'driver_fio': job.driver_fio
-                        if job and job.driver_fio else 'Неизвестный',
-                        'route_name': job.route_title
-                        if job and job.route_title else 'Неизвестный маршрут',
-                        'point_name': point_name,
-                        'dt_from': visit.dt_from,
-                        'dt_to': visit.dt_to,
-                        'total_time': total_delta,
-                        'moving_time': moving_delta,
-                        'parking_time': parking_delta,
-                        'idle_time': idle_delta,
-                        'idle_off_time': off_delta,
-                        'angle_sensor_time': angle_sensor_delta,
-                        'over_3min_parkings_count': over_3min_parkings_count,
-                        'odometer': self.get_odometer(unit, visit),
-                        'fuel_level_delta': self.get_fuel_delta(unit, visit),
-                        'refills_delta': refillings_volume,
-                        'discharge_delta': discharges_volume,
-                        'overstatement_mileage': .0,
-                        'overstatement_time': overstatement_time,
-                        'faults': self.render_faults(visit, i, unit_report_data)
+            standards = {
+                int(x.wialon_id): {
+                    'space_overstatements_standard': x.space_overstatements_standard
+                    if x.space_overstatements_standard is not None else None,
+                    'points': {
+                        p.title: {
+                            'total_time_standard': p.total_time_standard
+                            if p.total_time_standard is not None else None,
+                            'parking_time_standard': p.parking_time_standard
+                            if p.parking_time_standard is not None else None
+                        } for p in x.points_cache
                     }
-                    report_data.append(report_row)
+                } for x in standard_job_templates
+                if x.space_overstatements_standard is not None or x.points_cache
+            }
 
-                    if stats['dt_from_min'] is None:
-                        stats['dt_from_min'] = visit.dt_from
+            service = MovingService(
+                self.user,
+                local_dt_from,
+                local_dt_to,
+                sess_id,
+                object_id=unit_id,
+                units_dict=self.units_dict,
+                last_visit_allowance=60 * 10
+            )
+            service.exec_report()
+            service.analyze()
+
+            ura_user = self.user.ura_user if self.user.ura_user_id else self.user
+            jobs = Job.objects.filter(
+                user=ura_user,
+                date_begin__gte=local_to_utc_time(local_dt_from, ura_user.timezone),
+                date_end__lte=local_to_utc_time(local_dt_to, ura_user.timezone)
+            )
+            jobs_cache = {int(j.unit_id): j for j in jobs}
+
+            normal_ratio = 1 + (
+                form.cleaned_data.get(
+                    'overstatement_param',
+                    DEFAULT_OVERSTATEMENT_NORMAL_PERCENTAGE
+                ) / 100.0
+            )
+
+            unit_report_data = service.report_data.get(unit['name'])
+            if not unit_report_data:
+                return kwargs
+
+            kwargs.update(heading_data=OrderedDict((
+                ('Марка, модель', self.get_car_model(unit['name'])),
+                ('Гос.номер', self.get_car_number(unit['name'])),
+                ('VIN', self.get_car_vin(unit['name'])),
+                ('Тип ТС', self.get_car_type(unit['name'])),
+                ('Дата', date_format(form.cleaned_data['dt'], 'd.m.Y'))
+            )))
+
+            job = jobs_cache.get(unit['id'])
+            standard = None
+            if job:
+                standard = standards.get(int(job.route_id))
+
+            if unit_report_data.geozones.target and unit_report_data.motohours.source:
+                last_visit = unit_report_data.geozones.target[-1]
+                last_motohour = unit_report_data.motohours.source[-1]
+                if last_visit.dt_from < last_motohour.dt_to:
+
+
+            for i, visit in enumerate(unit_report_data.geozones.target):
+                try:
+                    next_visit = unit_report_data.geozones.target[i + 1]
+                except IndexError:
+                    next_visit = None
+
+                point_standard = None
+                if standard:
+                    point_standard = standard.get('points', {}).get(visit.geozone_full, {})
+                    if not point_standard:
+                        point_standard = standard.get('points', {}).get(visit.geozone, {})
+
+                total_standart = parking_standard = None
+                if point_standard:
+                    total_standart = point_standard['total_time_standard'] * 60
+                    parking_standard = point_standard['parking_time_standard'] * 60
+
+                total_delta = (visit.dt_to - visit.dt_from).total_seconds()
+                moving_delta = getattr(visit, 'trips_delta', .0)
+                # переделал пока под расчет разницы между периодом нахождения и временем в
+                # движении, так как в расчет стоянок иногда не принимаются концевые участки
+                # длиной несколько минут
+                # parking_delta = getattr(visit, 'parkings_delta', .0)
+                parking_delta = max(.0, total_delta - moving_delta)
+
+                motohours_delta = getattr(visit, 'motohours_delta', .0)
+                idle_delta = getattr(visit, 'idle_delta', .0)
+                off_delta = max(.0, total_delta - motohours_delta)
+                angle_sensor_delta = getattr(visit, 'angle_sensor_delta', .0)
+                refillings_volume = getattr(visit, 'refillings_volume', .0)
+                discharges_volume = getattr(visit, 'discharges_volume', .0)
+
+                overstatement_time = .0
+                if total_standart is not None \
+                        and total_delta / total_standart > normal_ratio:
+                    overstatement_time += total_delta - total_standart
+
+                elif parking_standard is not None \
+                        and parking_delta / parking_standard > normal_ratio:
+                    overstatement_time += parking_delta - parking_standard
+
+                point_name = self.get_point_name(visit.geozone)
+                if not point_name:
+                    # если первая строка, и зона неизвестна, то это зона, где машина
+                    # находилась до включения блока (допущение, предложенное заказчиком)
+                    if i == 0 and next_visit:
+                        point_name = self.get_point_name(next_visit.geozone)
                     else:
-                        stats['dt_from_min'] = min(stats['dt_from_min'], visit.dt_from)
+                        point_name = 'Неизвестная'
 
-                    if stats['dt_to_max'] is None:
-                        stats['dt_to_max'] = visit.dt_to
-                    else:
-                        stats['dt_to_max'] = max(stats['dt_to_max'], visit.dt_to)
+                over_3min_parkings_count = 0
+                if point_name == 'Неизвестная':
+                    over_3min_parkings_count = len([
+                        True for x in getattr(visit, 'parkings', [])
+                        if (x.dt_to - x.dt_from).total_seconds() > 3 * 60
+                    ])
 
-                    stats['total_time'] += total_delta
-                    stats['moving_time'] += moving_delta
-                    stats['parking_time'] += parking_delta
-                    stats['idle_time'] += idle_delta
-                    stats['idle_off_time'] += off_delta
-                    stats['angle_sensor_time'] += angle_sensor_delta
-                    stats['over_3min_parkings_count'] += over_3min_parkings_count
-                    stats['odometer'] += self.get_odometer(unit, visit)
-                    stats['fuel_level_delta'] += self.get_fuel_delta(unit, visit)
-                    stats['refills_delta'] += refillings_volume
-                    stats['discharge_delta'] += discharges_volume
-                    stats['overstatement_mileage'] += .0
-                    stats['overstatement_time'] += overstatement_time
+                report_row = {
+                    'car_number': self.get_car_number(unit['name']),
+                    'driver_fio': job.driver_fio
+                    if job and job.driver_fio else 'Неизвестный',
+                    'route_name': job.route_title
+                    if job and job.route_title else 'Неизвестный маршрут',
+                    'point_name': point_name,
+                    'dt_from': visit.dt_from,
+                    'dt_to': visit.dt_to,
+                    'total_time': total_delta,
+                    'moving_time': moving_delta,
+                    'parking_time': parking_delta,
+                    'idle_time': idle_delta,
+                    'idle_off_time': off_delta,
+                    'angle_sensor_time': angle_sensor_delta,
+                    'over_3min_parkings_count': over_3min_parkings_count,
+                    'odometer': self.get_odometer(unit, visit),
+                    'fuel_level_delta': self.get_fuel_delta(unit, visit),
+                    'refills_delta': refillings_volume,
+                    'discharge_delta': discharges_volume,
+                    'overstatement_mileage': .0,
+                    'overstatement_time': overstatement_time,
+                    'faults': self.render_faults(visit, i, unit_report_data)
+                }
+                report_data.append(report_row)
+
+                if stats['dt_from_min'] is None:
+                    stats['dt_from_min'] = visit.dt_from
+                else:
+                    stats['dt_from_min'] = min(stats['dt_from_min'], visit.dt_from)
+
+                if stats['dt_to_max'] is None:
+                    stats['dt_to_max'] = visit.dt_to
+                else:
+                    stats['dt_to_max'] = max(stats['dt_to_max'], visit.dt_to)
+
+                stats['total_time'] += total_delta
+                stats['moving_time'] += moving_delta
+                stats['parking_time'] += parking_delta
+                stats['idle_time'] += idle_delta
+                stats['idle_off_time'] += off_delta
+                stats['angle_sensor_time'] += angle_sensor_delta
+                stats['over_3min_parkings_count'] += over_3min_parkings_count
+                stats['odometer'] += self.get_odometer(unit, visit)
+                stats['fuel_level_delta'] += self.get_fuel_delta(unit, visit)
+                stats['refills_delta'] += refillings_volume
+                stats['discharge_delta'] += discharges_volume
+                stats['overstatement_mileage'] += .0
+                stats['overstatement_time'] += overstatement_time
 
         return kwargs
 

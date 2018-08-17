@@ -21,7 +21,8 @@ class MovingService(object):
     """Сервис получения данных о движение объекта"""
 
     def __init__(self, user, local_dt_from, local_dt_to, sess_id, object_id=None,
-                 units_dict=None, tables=None, calc_odometer=True, calc_idle=True):
+                 units_dict=None, tables=None, calc_odometer=True, calc_idle=True,
+                 first_visit_allowance=60 * 3, last_visit_allowance=60 * 3):
         self.user = user
         self.local_dt_from = local_dt_from
         self.local_dt_to = local_dt_to
@@ -36,6 +37,9 @@ class MovingService(object):
         self.mobile_vehicle_types = set()
         self.calc_odometer = calc_odometer
         self.calc_idle = calc_idle
+        # допущения в секундах для первого и последнего визита, если больше, то вставляется space
+        self.first_visit_allowance = first_visit_allowance
+        self.last_visit_allowance = last_visit_allowance
 
         self.tables = []
         all_tables = [x['name'] for x in MOVING_SERVICE_MAPPING.values() if x['level'] > 0]
@@ -242,9 +246,8 @@ class MovingService(object):
             # обработаем концевые участки: сигнал с объекта мог не успеть прийти в начале
             # и конце диапазона запроса, поэтому если сигнал не приходил в приемлимое время
             # (3 минуты), считаем, что объект там и находился
-            delta = 60 * 3
             first_visit_delta = (first_visit.dt_from - self.utc_dt_from).total_seconds()
-            if first_visit_delta < delta:
+            if first_visit_delta < self.first_visit_allowance:
                 first_visit.dt_from = self.utc_dt_from
 
             elif first_visit_delta > 0:
@@ -264,7 +267,7 @@ class MovingService(object):
             if last_visit:
 
                 last_delta = (self.utc_dt_to - last_visit.dt_to).total_seconds()
-                if last_delta < delta < 0:
+                if last_delta < self.last_visit_allowance:
                     last_visit.dt_to = self.utc_dt_to
 
                 elif last_delta > 0:

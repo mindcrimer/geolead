@@ -225,7 +225,7 @@ class VchmIdleTimesView(BaseVchmReportView):
                                 and parking_time / parking_standard > normal_ratio:
                             overstatement += parking_time - parking_standard
 
-                        if overstatement > .0:
+                        if overstatement > .0 and total_time < 86395:  # суточный простой исключаем
                             row = dict()
                             row['driver_fio'] = job.driver_fio \
                                 if job and job.driver_fio else 'Неизвестный'

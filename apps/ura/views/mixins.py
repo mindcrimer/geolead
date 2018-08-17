@@ -101,9 +101,7 @@ class BaseUraRidesView(URAResource):
                 object_id=self.unit_id
             )
         except ReportException as e:
-            raise WialonException(
-                'Не удалось получить в Wialon отчет о поездках: %s' % e
-            )
+            raise WialonException('Не удалось получить в Wialon отчет о поездках: %s' % e)
 
         for table_index, table_info in enumerate(r['reportResult']['tables']):
             if table_info['name'] not in self.report_data:
@@ -132,9 +130,7 @@ class BaseUraRidesView(URAResource):
                             self.fuel_data[key] = parse_float(row['c'][1]) or .0
 
             except ReportException as e:
-                raise WialonException(
-                    'Не удалось получить в Wialon отчет о поездках. Исходная ошибка: %s' % e
-                )
+                raise WialonException('Не удалось получить в Wialon отчет о поездках: %s' % e)
 
     def get_object_messages(self):
         self.messages = list(filter(

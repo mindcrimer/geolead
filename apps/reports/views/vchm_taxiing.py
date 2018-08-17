@@ -262,12 +262,6 @@ class VchmTaxiingView(BaseVchmReportView):
             if job:
                 standard = standards.get(int(job.route_id))
 
-            if unit_report_data.geozones.target and unit_report_data.motohours.source:
-                last_visit = unit_report_data.geozones.target[-1]
-                last_motohour = unit_report_data.motohours.source[-1]
-                if last_visit.dt_from < last_motohour.dt_to:
-
-
             for i, visit in enumerate(unit_report_data.geozones.target):
                 try:
                     next_visit = unit_report_data.geozones.target[i + 1]

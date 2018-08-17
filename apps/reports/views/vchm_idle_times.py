@@ -237,7 +237,7 @@ class VchmIdleTimesView(BaseVchmReportView):
                         if visit.geozone.lower() == 'space':
                             if space_standard is not None \
                                     and total_time / space_standard > normal_ratio:
-                                overstatement += total_time - total_standart
+                                overstatement += total_time - space_standard
 
                         elif total_standart is not None \
                                 and total_time / total_standart > normal_ratio:

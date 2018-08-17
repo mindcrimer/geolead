@@ -164,6 +164,11 @@ class VchmIdleTimesView(BaseVchmReportView):
                 )
                 jobs_cache = {int(j.unit_id): j for j in jobs}
 
+                mobile_vehicle_types = set()
+                vehtypes = user.wialon_mobile_vehicle_types or ura_user.wialon_mobile_vehicle_types
+                if vehtypes:
+                    mobile_vehicle_types = set(x.strip() for x in vehtypes.lower().split(','))
+
                 service = MovingService(
                     user,
                     local_dt_from,
@@ -187,6 +192,15 @@ class VchmIdleTimesView(BaseVchmReportView):
                 for unit in self.units_dict.values():
                     i += 1
                     print('%s/%s: %s' % (i, total_count, unit['name']))
+
+                    vehicle_type = unit['vehicle_type'].lower()
+                    if mobile_vehicle_types and vehicle_type \
+                            and vehicle_type not in mobile_vehicle_types:
+                        print('%s) Skip vehicle type "%s" of item %s' % (
+                            i, vehicle_type, unit['name']
+                        ))
+                        continue
+
                     job = jobs_cache.get(unit['id'])
                     standard = None
                     if job:

@@ -22,7 +22,8 @@ class MovingService(object):
 
     def __init__(self, user, local_dt_from, local_dt_to, sess_id, object_id=None,
                  units_dict=None, tables=None, calc_odometer=True, calc_idle=True,
-                 first_visit_allowance=60 * 3, last_visit_allowance=60 * 3):
+                 first_visit_allowance=60 * 3, last_visit_allowance=60 * 3,
+                 devide_last_parking_by_motohours=False):
         self.user = user
         self.local_dt_from = local_dt_from
         self.local_dt_to = local_dt_to
@@ -40,6 +41,7 @@ class MovingService(object):
         # допущения в секундах для первого и последнего визита, если больше, то вставляется space
         self.first_visit_allowance = first_visit_allowance
         self.last_visit_allowance = last_visit_allowance
+        self.devide_last_parking_by_motohours = devide_last_parking_by_motohours
 
         self.tables = []
         all_tables = [x['name'] for x in MOVING_SERVICE_MAPPING.values() if x['level'] > 0]
@@ -266,9 +268,39 @@ class MovingService(object):
             last_visit = visits[-1]
             if last_visit:
 
+                # если включен режим разбивки последней стоянке по последним моточасам:
+                if self.devide_last_parking_by_motohours:
+                    motohours = None
+                    try:
+                        motohours = getattr(self.report_data[unit_name], 'motohours').source[-1]
+                    except (IndexError, AttributeError):
+                        pass
+
+                    if motohours:
+                        if last_visit.dt_from < motohours.dt_to < last_visit.dt_to:
+                            visits.insert(-1, Visit(
+                                last_visit.geozone,
+                                last_visit.dt_from,
+                                motohours.dt_to,
+                                last_visit.geozone_full
+                            ))
+                            # так как visit - это nameptuple, то придется целиком заменить его
+                            visits[-1] = Visit(
+                                last_visit.geozone,
+                                motohours.dt_to,
+                                last_visit.dt_to,
+                                last_visit.geozone_full
+                            )
+                            last_visit = visits[-1]
+
                 last_delta = (self.utc_dt_to - last_visit.dt_to).total_seconds()
                 if last_delta < self.last_visit_allowance:
-                    last_visit.dt_to = self.utc_dt_to
+                    visits[-1] = Visit(
+                        last_visit.geozone,
+                        last_visit.dt_from,
+                        self.utc_dt_to,
+                        last_visit.geozone_full
+                    )
 
                 elif last_delta > 0:
                     # если большая дельта в конце, добавляем SPACE

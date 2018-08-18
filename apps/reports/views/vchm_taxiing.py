@@ -225,7 +225,8 @@ class VchmTaxiingView(BaseVchmReportView):
                 sess_id,
                 object_id=unit_id,
                 units_dict=self.units_dict,
-                last_visit_allowance=60 * 10
+                last_visit_allowance=60 * 10,
+                devide_last_parking_by_motohours=True
             )
             service.exec_report()
             service.analyze()

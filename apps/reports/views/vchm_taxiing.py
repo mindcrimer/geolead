@@ -71,7 +71,7 @@ class VchmTaxiingView(BaseVchmReportView):
     @staticmethod
     def get_point_name(point_name):
         if point_name and point_name.lower() != 'space':
-            return re.sub(r'[(\[].*?[)\]]', '', point_name)
+            return MovingService.prepare_geozone_name(point_name)
         return None
 
     @staticmethod

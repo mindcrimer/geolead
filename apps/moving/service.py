@@ -146,7 +146,9 @@ class MovingService(object):
 
     @staticmethod
     def prepare_geozone_name(geozone_name):
-        return re.sub(r'[(\[].*?[)\]]', '', geozone_name).strip()
+        if 'ПЗУ' in geozone_name.upper():
+            geozone_name = re.sub(r'[(\[].*?[)\]]', '', geozone_name)
+        return geozone_name.strip()
 
     def get_visits(self, unit):
         assert 'geozones' in self.tables

@@ -46,6 +46,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
     def __init__(self, *args, **kwargs):
         super(VchmDrivingStyleView, self).__init__(*args, **kwargs)
         self.driver_cache = {}
+        self.mileage_cache = {}
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -191,8 +192,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         return rating
 
-    @staticmethod
-    def parse_report_row(row, user):
+    def parse_report_row(self, row, user, total_mileage=False):
         return ReportRow(
             row[0],  # unit_name
             row[1].lower().strip(),  # violation
@@ -210,7 +210,8 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     row[7]['t'] if isinstance(row[7], dict) else row[7]
                 ), user.timezone
             ),  # to_dt
-            parse_float(row[9], default=.0)  # mileage_corrected
+            self.mileage_cache.get(row[0], .0)
+            if total_mileage else parse_float(row[9], default=.0)  # mileage_corrected
         )
 
     def get_context_data(self, **kwargs):
@@ -296,11 +297,19 @@ class VchmDrivingStyleView(BaseVchmReportView):
                         level=2 if table_info['name'] == 'unit_group_ecodriving' else 1
                     )
 
+                self.mileage_cache = {
+                    row['c'][0]: parse_float(row['c'][1], default=.0)
+                    for row in wialon_report_rows.get('unit_group_trips', [])
+                }
+
                 i = 0
                 for row in wialon_report_rows.get('unit_group_ecodriving', []):
                     i += 1
-                    violations = [self.parse_report_row(x['c'], user) for x in row['r']]
-                    row = self.parse_report_row(row['c'], user)
+                    violations = [
+                        self.parse_report_row(x['c'], user, total_mileage=False)
+                        for x in row['r']
+                    ]
+                    row = self.parse_report_row(row['c'], user, total_mileage=True)
                     unit = units_dict.get(row.unit_name)
 
                     if not unit:

@@ -47,6 +47,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
         super(VchmDrivingStyleView, self).__init__(*args, **kwargs)
         self.driver_cache = {}
         self.mileage_cache = {}
+        self.duration_cache = {}
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -192,12 +193,13 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         return rating
 
-    def parse_report_row(self, row, user, total_mileage=False):
+    def parse_report_row(self, row, user, total=False):
         return ReportRow(
             row[0],  # unit_name
             row[1].lower().strip(),  # violation
             int(row[2]) if row[2] else 1,  # violation_count
-            parse_timedelta(row[3]).total_seconds(),  # duration
+            self.duration_cache.get(row[0], 0)
+            if total else parse_timedelta(row[3]).total_seconds(),  # duration
             parse_float(row[4], default=.0),  # fine
             parse_float(row[5], default=.0),  # rating
             local_to_utc_time(
@@ -211,7 +213,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 ), user.timezone
             ),  # to_dt
             self.mileage_cache.get(row[0], .0)
-            if total_mileage else parse_float(row[9], default=.0)  # mileage_corrected
+            if total else parse_float(row[9], default=.0)  # mileage_corrected
         )
 
     def get_context_data(self, **kwargs):
@@ -301,15 +303,19 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     row['c'][0]: parse_float(row['c'][1], default=.0)
                     for row in wialon_report_rows.get('unit_group_trips', [])
                 }
+                self.duration_cache = {
+                    row['c'][0]: parse_timedelta(row['c'][2]).total_seconds()
+                    for row in wialon_report_rows.get('unit_group_trips', [])
+                }
 
                 i = 0
                 for row in wialon_report_rows.get('unit_group_ecodriving', []):
                     i += 1
                     violations = [
-                        self.parse_report_row(x['c'], user, total_mileage=False)
+                        self.parse_report_row(x['c'], user, total=False)
                         for x in row['r']
                     ]
-                    row = self.parse_report_row(row['c'], user, total_mileage=True)
+                    row = self.parse_report_row(row['c'], user, total=True)
                     unit = units_dict.get(row.unit_name)
 
                     if not unit:

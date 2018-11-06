@@ -102,7 +102,7 @@ def email_reports(period=None):
                 mail = EmailMessage(
                     '%s отчет о качестве вождения (ВЧМ)' % period_verbose,
                     'Здравствуйте, %s. Отчет по вложении.' % user.full_name,
-                    to=['wizzzet@gmail.com']  # user.email
+                    to=['rkamashev@yandex.ru']  # user.email
                 )
                 filename = '%s_vchm_driving_report_%s.xls' % (period, user.pk)
                 mail.attach(filename, res.content, 'application/vnd.ms-excel')

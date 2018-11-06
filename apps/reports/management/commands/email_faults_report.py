@@ -89,7 +89,7 @@ def email_reports():
                 mail = EmailMessage(
                     'Ежедневный отчет о состоянии оборудования',
                     'Здравствуйте, %s. Отчет по вложении.' % user.full_name,
-                    to=['wizzzet@gmail.com']  # user.email
+                    to=['rkamashev@yandex.ru']  # user.email
                 )
                 filename = 'faults_report_%s.xls' % user.pk
                 mail.attach(filename, res.content, 'application/vnd.ms-excel')

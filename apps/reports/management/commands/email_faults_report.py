@@ -88,6 +88,7 @@ def email_reports():
                 log.save()
 
             except Exception as e:
+                print('Error: %s' % e)
                 send_trigger_email(
                     'Ошибка в работе системы рассылки отчетов', extra_data={
                         'Exception': str(e),

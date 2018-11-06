@@ -75,6 +75,7 @@ def email_reports():
                 filename = 'faults_report_%s.xls' % user.pk
                 mail.attach(filename, res.content, 'application/vnd.ms-excel')
                 mail.send()
+                print('Email sent.')
 
                 log = models.ReportEmailDeliveryLog(
                     user=user,

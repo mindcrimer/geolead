@@ -32,3 +32,19 @@ class FaultsReportDeliveryAdmin(AbstractReportDelivery):
     list_display = list(AbstractReportDelivery.list_display[:])
     list_display.insert(2, 'job_extra_offset')
     fields = models.FaultsReportDelivery().collect_fields() + ['users']
+
+
+@admin.register(models.ReportEmailDeliveryLog)
+class ReportEmailDeliveryLogAdmin(admin.ModelAdmin):
+    """
+    Лог рассылки отчета
+    """
+    date_hierarchy = 'created'
+    fields = models.ReportEmailDeliveryLog().collect_fields()
+    list_display = ('user', 'email', 'report_type', 'created')
+    list_filter = ('report_type',)
+    list_select_related = True
+    readonly_fields = models.ReportEmailDeliveryLog().collect_fields()
+    search_fields = (
+        '=id', 'user__email', 'user__username', 'user__first_name', 'user__last_name', 'email'
+    )

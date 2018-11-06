@@ -96,6 +96,7 @@ def email_reports(period=None):
                 filename = '%s_vchm_driving_report_%s.xls' % (period, user.pk)
                 mail.attach(filename, res.content, 'application/vnd.ms-excel')
                 mail.send()
+                print('Email sent.')
 
                 log = models.ReportEmailDeliveryLog(
                     user=user,

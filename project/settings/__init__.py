@@ -36,8 +36,8 @@ LANGUAGE_CODES = tuple([x[0] for x in LANGUAGES])
 LANGUAGE_CODES_PUBLIC = ('ru',)
 DEFAULT_LANGUAGE = LANGUAGES[0][0]
 
-SITE_NAME = 'geolead-resource-ura.ru'
-SITE_PROTOCOL = 'http://'
+SITE_NAME = 'nlmk.tetron.ru'
+SITE_PROTOCOL = 'https://'
 
 USE_I18N = True
 USE_L10N = True

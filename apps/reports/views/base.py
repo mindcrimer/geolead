@@ -5,6 +5,7 @@ from django.http import HttpResponse
 import xlwt
 
 from base.exceptions import ReportException
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
@@ -33,6 +34,10 @@ class BaseReportView(BaseTemplateView):
         super(BaseReportView, self).__init__(*args, **kwargs)
         self.styles = {}
         self.workbook = None
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(BaseReportView, self).dispatch(request, *args, **kwargs)
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {}
@@ -70,7 +75,6 @@ class BaseReportView(BaseTemplateView):
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
-    @csrf_exempt
     def post(self, request, *args, **kwargs):
         try:
             context = self.get_context_data(**kwargs)

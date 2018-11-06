@@ -29,13 +29,15 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     s = requests.Session()
     s.headers.update({'referer': settings.SITE_URL})
     s.get(
-        '%s/' % settings.SITE_URL, params={'sid': sess_id, 'user': ura_user.username},
-        timeout=timeout
+        '%s/' % settings.SITE_URL,
+        params={'sid': sess_id, 'user': ura_user.username},
+        timeout=timeout,
+        verify=False
     )
     res = s.post('%s%s' % (settings.SITE_URL, URL), data={
         'dt_from': date_from.strftime('%d.%m.%Y'),
         'dt_to': date_to.strftime('%d.%m.%Y')
-    }, timeout=timeout)
+    },timeout=timeout, verify=False)
 
     if 'error\': ' in res.text:
         print('Wialon error. Waiting...')

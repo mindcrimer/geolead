@@ -31,14 +31,16 @@ def make_report(report, user, sess_id, attempts=0):
     s = requests.Session()
     s.headers.update({'referer': settings.SITE_URL})
     s.get(
-        '%s/' % settings.SITE_URL, params={'sid': sess_id, 'user': ura_user.username},
-        timeout=timeout
+        '%s/' % settings.SITE_URL,
+        params={'sid': sess_id, 'user': ura_user.username},
+        timeout=timeout,
+        verify=False
     )
     yesterday = (local_now - datetime.timedelta(days=1)).date()
     res = s.post('%s%s' % (settings.SITE_URL, URL), data={
         'dt': yesterday.strftime('%d.%m.%Y'),
         'job_extra_offset': str(report.job_extra_offset)
-    }, timeout=timeout)
+    }, timeout=timeout, verify=False)
 
     if 'error\': ' in res.text:
         print('Wialon error. Waiting...')
@@ -71,7 +73,10 @@ def email_reports():
                 sess_id = get_wialon_session_key(user)
                 s = make_report(report, user, sess_id, attempts=0)
                 res = s.get(
-                    '%s%s' % (settings.SITE_URL, URL), params={'download': '1'}, timeout=timeout
+                    '%s%s' % (settings.SITE_URL, URL),
+                    params={'download': '1'},
+                    timeout=timeout,
+                    verify=False
                 )
 
                 mail = EmailMessage(

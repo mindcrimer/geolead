@@ -30,14 +30,19 @@ def make_report(report, user, sess_id, attempts=0):
     ura_user = user.ura_user if user.ura_user_id else user
     s = requests.Session()
     s.headers.update({'referer': settings.SITE_URL})
+    url = '%s/' % settings.SITE_URL
+    print(url)
     s.get(
-        '%s/' % settings.SITE_URL,
+        url,
         params={'sid': sess_id, 'user': ura_user.username},
         timeout=timeout,
         verify=False
     )
+
     yesterday = (local_now - datetime.timedelta(days=1)).date()
-    res = s.post('%s%s' % (settings.SITE_URL, URL), data={
+    url = '%s%s' % (settings.SITE_URL, URL)
+    print(url)
+    res = s.post(url, data={
         'dt': yesterday.strftime('%d.%m.%Y'),
         'job_extra_offset': str(report.job_extra_offset)
     }, timeout=timeout, verify=False)
@@ -72,8 +77,10 @@ def email_reports():
                 # получаем отчеты через HTTP
                 sess_id = get_wialon_session_key(user)
                 s = make_report(report, user, sess_id, attempts=0)
+                url = '%s%s' % (settings.SITE_URL, URL)
+                print(url + '?download=1')
                 res = s.get(
-                    '%s%s' % (settings.SITE_URL, URL),
+                    url,
                     params={'download': '1'},
                     timeout=timeout,
                     verify=False

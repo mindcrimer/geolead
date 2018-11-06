@@ -28,16 +28,20 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     ura_user = user.ura_user if user.ura_user_id else user
     s = requests.Session()
     s.headers.update({'referer': settings.SITE_URL})
+    url = '%s/' % settings.SITE_URL
+    print(url)
     s.get(
-        '%s/' % settings.SITE_URL,
+        url,
         params={'sid': sess_id, 'user': ura_user.username},
         timeout=timeout,
         verify=False
     )
-    res = s.post('%s%s' % (settings.SITE_URL, URL), data={
+    url = '%s%s' % (settings.SITE_URL, URL)
+    print(url)
+    res = s.post(url, data={
         'dt_from': date_from.strftime('%d.%m.%Y'),
         'dt_to': date_to.strftime('%d.%m.%Y')
-    },timeout=timeout, verify=False)
+    }, timeout=timeout, verify=False)
 
     if 'error\': ' in res.text:
         print('Wialon error. Waiting...')

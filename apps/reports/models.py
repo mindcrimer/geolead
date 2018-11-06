@@ -62,6 +62,9 @@ class AbstractReportDelivery(BaseModel):
         verbose_name = _('Настройка рассылки отчета')
         verbose_name_plural = _('Настройка рассылок отчета')
 
+    def __str__(self):
+        return self.work_title
+
 
 class FaultsReportDelivery(AbstractReportDelivery):
     """
@@ -89,6 +92,9 @@ class DrivingStyleReportDelivery(AbstractReportDelivery):
         'users.User', verbose_name='Пользователи', blank=False,
         related_name='driving_style_report_delivery_settings'
     )
+    is_daily = models.BooleanField('Ежедневный отчет', default=True)
+    is_weekly = models.BooleanField('Еженедельный отчет', default=True)
+    is_monthly = models.BooleanField('Ежемесячный отчет', default=True)
 
     class Meta:
         verbose_name = _('Настройка рассылки отчета "Качество вождения"')

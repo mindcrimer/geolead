@@ -18,6 +18,7 @@ from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
 URL = '/vchm/driving_style/'
+timeout = 60 * 60 * 24
 
 
 def make_report(report, user, sess_id, date_from, date_to, attempts=0):
@@ -27,11 +28,14 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     ura_user = user.ura_user if user.ura_user_id else user
     s = requests.Session()
     s.headers.update({'referer': settings.SITE_URL})
-    s.get('%s/' % settings.SITE_URL, params={'sid': sess_id, 'user': ura_user.username})
+    s.get(
+        '%s/' % settings.SITE_URL, params={'sid': sess_id, 'user': ura_user.username},
+        timeout=timeout
+    )
     res = s.post('%s%s' % (settings.SITE_URL, URL), data={
         'dt_from': date_from.strftime('%d.%m.%Y'),
         'dt_to': date_to.strftime('%d.%m.%Y')
-    })
+    }, timeout=timeout)
 
     if 'error\': ' in res.text:
         print('Wialon error. Waiting...')

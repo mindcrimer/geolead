@@ -18,6 +18,7 @@ from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
 URL = '/faults/'
+timeout = 60 * 60 * 24
 
 
 def make_report(report, user, sess_id, attempts=0):
@@ -29,12 +30,15 @@ def make_report(report, user, sess_id, attempts=0):
     ura_user = user.ura_user if user.ura_user_id else user
     s = requests.Session()
     s.headers.update({'referer': settings.SITE_URL})
-    s.get('%s/' % settings.SITE_URL, params={'sid': sess_id, 'user': ura_user.username})
+    s.get(
+        '%s/' % settings.SITE_URL, params={'sid': sess_id, 'user': ura_user.username},
+        timeout=timeout
+    )
     yesterday = (local_now - datetime.timedelta(days=1)).date()
     res = s.post('%s%s' % (settings.SITE_URL, URL), data={
         'dt': yesterday.strftime('%d.%m.%Y'),
         'job_extra_offset': str(report.job_extra_offset)
-    })
+    }, timeout=timeout)
 
     if 'error\': ' in res.text:
         print('Wialon error. Waiting...')
@@ -66,7 +70,9 @@ def email_reports():
                 # получаем отчеты через HTTP
                 sess_id = get_wialon_session_key(user)
                 s = make_report(report, user, sess_id, attempts=0)
-                res = s.get('%s%s' % (settings.SITE_URL, URL), params={'download': '1'})
+                res = s.get(
+                    '%s%s' % (settings.SITE_URL, URL), params={'download': '1'}, timeout=timeout
+                )
 
                 mail = EmailMessage(
                     'Ежедневный отчет о состоянии оборудования',

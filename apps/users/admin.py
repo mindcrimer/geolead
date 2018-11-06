@@ -16,7 +16,7 @@ class UserAdmin(UserAdmin):
         (None, {
             'classes': ('suit-tab', 'suit-tab-general'),
             'fields': (
-                'username', 'password', 'is_active', 'created', 'updated'
+                'username', 'email', 'password', 'is_active', 'created', 'updated'
             )
         }),
         (_('Права доступа'), {

@@ -16,7 +16,7 @@ from snippets.utils.email import send_trigger_email
 from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
-SITE_URL = 'http://91.242.34.141'
+SITE_URL = 'http://127.0.0.1'
 URL = '/faults/'
 timeout = 60 * 60 * 24
 

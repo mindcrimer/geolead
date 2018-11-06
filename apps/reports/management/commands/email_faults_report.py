@@ -66,7 +66,7 @@ def email_reports():
 
         for user in report.users.all():
             local_now = utc_to_local_time(now, user.timezone)
-            if not user.email:  # or local_now.hour != 5:
+            if not user.email or local_now.hour != 5:
                 print('Skipping user %s' % user)
                 continue
 
@@ -89,7 +89,7 @@ def email_reports():
                 mail = EmailMessage(
                     'Ежедневный отчет о состоянии оборудования',
                     'Здравствуйте, %s. Отчет по вложении.' % user.full_name,
-                    to=['rkamashev@yandex.ru']  # user.email
+                    to=[user.email]
                 )
                 filename = 'faults_report_%s.xls' % user.pk
                 mail.attach(filename, res.content, 'application/vnd.ms-excel')

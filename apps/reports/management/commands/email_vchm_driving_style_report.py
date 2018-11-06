@@ -2,7 +2,6 @@ import datetime
 import traceback
 from time import sleep
 
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
@@ -17,6 +16,7 @@ from snippets.utils.email import send_trigger_email
 from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
+SITE_URL = 'http://91.242.34.141'
 URL = '/vchm/driving_style/'
 timeout = 60 * 60 * 24
 
@@ -27,8 +27,8 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
 
     ura_user = user.ura_user if user.ura_user_id else user
     s = requests.Session()
-    s.headers.update({'referer': settings.SITE_URL})
-    url = '%s/' % settings.SITE_URL
+    s.headers.update({'referer': SITE_URL})
+    url = '%s/' % SITE_URL
     print(url)
     s.get(
         url,
@@ -36,7 +36,7 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
         timeout=timeout,
         verify=False
     )
-    url = '%s%s' % (settings.SITE_URL, URL)
+    url = '%s%s' % (SITE_URL, URL)
     print(url)
     res = s.post(url, data={
         'dt_from': date_from.strftime('%d.%m.%Y'),

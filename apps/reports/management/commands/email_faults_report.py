@@ -56,6 +56,7 @@ def email_reports():
         for user in report.users.all():
             local_now = utc_to_local_time(now, user.timezone)
             if not user.email:  # or local_now.hour != 5:
+                print('Skipping user %s' % user)
                 continue
 
             print('User %s' % user)

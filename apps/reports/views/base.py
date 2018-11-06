@@ -5,6 +5,7 @@ from django.http import HttpResponse
 import xlwt
 
 from base.exceptions import ReportException
+from django.views.decorators.csrf import csrf_exempt
 from snippets.utils.datetime import utcnow
 from snippets.views import BaseTemplateView
 from users.models import User
@@ -69,6 +70,7 @@ class BaseReportView(BaseTemplateView):
             context = self.get_default_context_data(**context)
             return self.render_to_response(context)
 
+    @csrf_exempt
     def post(self, request, *args, **kwargs):
         try:
             context = self.get_context_data(**kwargs)

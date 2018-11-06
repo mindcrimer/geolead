@@ -114,5 +114,5 @@ class ReportEmailDeliveryLog(BasicModel, LastModMixin):
 
     class Meta:
         ordering = ('-created',)
-        verbose_name = _('Настройка рассылки отчета "Качество вождения"')
-        verbose_name_plural = _('Настройка рассылок отчета "Качество вождения"')
+        verbose_name = _('Запись лога рассылки отчетов')
+        verbose_name_plural = _('Лог рассылки отчетов')

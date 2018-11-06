@@ -27,8 +27,8 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='email_logs', to=settings.AUTH_USER_MODEL, verbose_name='Пользователь')),
             ],
             options={
-                'verbose_name': 'Настройка рассылки отчета "Качество вождения"',
-                'verbose_name_plural': 'Настройка рассылок отчета "Качество вождения"',
+                'verbose_name': 'Запись лога рассылки отчетов',
+                'verbose_name_plural': 'Лог рассылки отчетов',
                 'ordering': ('-created',),
             },
         ),

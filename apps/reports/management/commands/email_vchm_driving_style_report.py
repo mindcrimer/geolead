@@ -3,7 +3,6 @@ import traceback
 from time import sleep
 
 from django.core.files.base import ContentFile
-from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
 
 import requests
@@ -16,9 +15,11 @@ from snippets.utils.email import send_trigger_email
 from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
+
+SEND_HOUR = 5
 SITE_URL = 'http://127.0.0.1'
+TIMEOUT = 60 * 60 * 24
 URL = '/vchm/driving_style/'
-timeout = 60 * 60 * 24
 
 
 def make_report(report, user, sess_id, date_from, date_to, attempts=0):
@@ -33,7 +34,7 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     s.get(
         url,
         params={'sid': sess_id, 'user': ura_user.username},
-        timeout=timeout,
+        timeout=TIMEOUT,
         verify=False
     )
     url = '%s%s' % (SITE_URL, URL)
@@ -41,7 +42,7 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     res = s.post(url, data={
         'dt_from': date_from.strftime('%d.%m.%Y'),
         'dt_to': date_to.strftime('%d.%m.%Y')
-    }, timeout=timeout, verify=False)
+    }, timeout=TIMEOUT, verify=False)
 
     if 'error\': ' in res.text:
         print('Wialon error. Waiting...')
@@ -76,8 +77,13 @@ def email_reports(period=None):
 
         for user in report.users.all():
             local_now = utc_to_local_time(now, user.timezone)
-            if not user.email or local_now.hour != 5:
-                print('Skipping user %s' % user)
+
+            if not user.email:
+                print('Skipping user %s (no email)' % user)
+                continue
+
+            if local_now.hour != SEND_HOUR:
+                print('Skipping user %s (%s != %s)' % (user, local_now.hour, SEND_HOUR))
                 continue
 
             print('User %s' % user)

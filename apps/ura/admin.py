@@ -1,10 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import TabularInline
-from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 
 from import_export.admin import ImportExportMixin, ExportMixin
-from reports.jinjaglobals import date
 
 from ura import models, import_export, admin_filters
 from ura.enums import JobLogResolution

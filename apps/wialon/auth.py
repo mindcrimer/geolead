@@ -140,4 +140,3 @@ def logout_session(user, sess_id):
     # пока отключил, чтобы не убивало так необходимый кэш
     # return False
     return session_store.return_session_key(sess_id, user)
-

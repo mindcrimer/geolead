@@ -1,7 +1,11 @@
+import traceback
+from smtplib import SMTPException
+
+from django.core.mail import EmailMessage
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from reports.enums import EmailDeliveryReportTypeEnum
 
+from reports.enums import EmailDeliveryReportTypeEnum
 from snippets.models import BasicModel, LastModMixin, BaseModel
 from snippets.utils.passwords import generate_uuid4
 
@@ -111,8 +115,38 @@ class ReportEmailDeliveryLog(BasicModel, LastModMixin):
         'Тип отчета', choices=EmailDeliveryReportTypeEnum.get_choices(), max_length=50
     )
     report = models.FileField('Отчет', max_length=255, upload_to='reports/%Y/%m/%d')
+    success = models.BooleanField('Удачно', default=False)
+    error_message = models.TextField('Текст ошибки', blank=True, null=True)
+    subject = models.CharField('Тема письма', max_length=255)
+    body = models.TextField('Текст письма')
 
     class Meta:
         ordering = ('-created',)
         verbose_name = _('Запись лога рассылки отчетов')
         verbose_name_plural = _('Лог рассылки отчетов')
+
+    def send(self, reraise=False):
+        if not self.user.email:
+            return False
+
+        try:
+            mail = EmailMessage(
+                self.subject,
+                self.body,
+                to=[self.user.email]
+            )
+            content = self.report.read()
+            mail.attach(self.report.name, content, 'application/vnd.ms-excel')
+            mail.send()
+        except (ConnectionError, SMTPException) as e:
+            self.error_message = str(e)
+            self.error_message += '\nTraceback:\n' + traceback.format_exc()
+            self.success = False
+            self.save()
+            print('Email error (%s)' % self.pk)
+            if reraise:
+                raise
+        else:
+            self.success = True
+            self.save()
+            print('Email sent (%s)' % self.pk)

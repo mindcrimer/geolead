@@ -86,24 +86,19 @@ def email_reports():
                     verify=False
                 )
 
-                mail = EmailMessage(
-                    'Ежедневный отчет о состоянии оборудования',
-                    'Здравствуйте, %s. Отчет по вложении.' % user.full_name,
-                    to=[user.email]
-                )
                 filename = 'faults_report_%s.xls' % user.pk
-                mail.attach(filename, res.content, 'application/vnd.ms-excel')
-                mail.send()
-                print('Email sent.')
 
                 log = models.ReportEmailDeliveryLog(
                     user=user,
                     email=user.email,
                     report_type=EmailDeliveryReportTypeEnum.FAULTS,
+                    subject='Ежедневный отчет о состоянии оборудования',
+                    body='Здравствуйте, %s. Отчет по вложении.' % user.full_name
                 )
                 content = ContentFile(res.content)
                 log.report.save(filename, content)
                 log.save()
+                log.send(reraise=True)
 
             except Exception as e:
                 print('Error: %s' % e)

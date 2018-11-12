@@ -109,6 +109,10 @@ class User(AbstractUser, LastModMixin, BasicModel):
     def get_organization_name(self):
         return self.organization_name if self.organization_name else self.username
 
+    def get_full_name(self):
+        fn = ' '.join(filter(lambda x: x, (self.first_name, self.last_name)))
+        return fn if fn else self.username
+
     @property
     def full_name(self):
-        return ' '.join(filter(lambda x: x, (self.first_name, self.last_name)))
+        return self.get_full_name()

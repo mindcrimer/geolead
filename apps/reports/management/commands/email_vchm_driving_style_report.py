@@ -99,24 +99,18 @@ def email_reports(period=None):
                     report, user, sess_id, date_from=date_from, date_to=date_to, attempts=0
                 )
 
-                mail = EmailMessage(
-                    '%s отчет о качестве вождения (ВЧМ)' % period_verbose,
-                    'Здравствуйте, %s. Отчет по вложении.' % user.full_name,
-                    to=[user.email]
-                )
                 filename = '%s_vchm_driving_report_%s.xls' % (period, user.pk)
-                mail.attach(filename, res.content, 'application/vnd.ms-excel')
-                mail.send()
-                print('Email sent.')
-
                 log = models.ReportEmailDeliveryLog(
                     user=user,
                     email=user.email,
                     report_type=EmailDeliveryReportTypeEnum.DRIVING_STYLE,
+                    subject='%s отчет о качестве вождения (ВЧМ)' % period_verbose,
+                    body='Здравствуйте, %s. Отчет по вложении.' % user.full_name
                 )
                 content = ContentFile(res.content)
                 log.report.save(filename, content)
                 log.save()
+                log.send(reraise=True)
 
             except Exception as e:
                 print('Error: %s' % e)

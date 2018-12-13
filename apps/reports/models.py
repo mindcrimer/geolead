@@ -129,11 +129,13 @@ class ReportEmailDeliveryLog(BasicModel, LastModMixin):
         if not self.user.email:
             return False
 
+        emails = [x.strip().lower() for x in self.user.email.split(',')]
+
         try:
             mail = EmailMessage(
                 self.subject,
                 self.body,
-                to=[self.user.email]
+                to=emails
             )
             content = self.report.read()
             mail.attach(self.report.name, content, 'application/vnd.ms-excel')

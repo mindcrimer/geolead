@@ -2,8 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from snippets.models import LastModMixin, BasicModel
 from timezone_field import TimeZoneField
+
+from snippets.models import LastModMixin, BasicModel
 from users.managers import UserManager
 
 
@@ -26,6 +27,9 @@ class User(AbstractUser, LastModMixin, BasicModel):
     )
     last_name = models.CharField(
         _('Фамилия ответственного лица'), max_length=150, blank=True, null=True
+    )
+    email = models.CharField(
+        _('email address'), blank=True, max_length=255, help_text='Можно указать через запятую'
     )
 
     wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)

@@ -16,7 +16,7 @@ from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
 
-SEND_HOUR = 16
+SEND_HOUR = 5
 SITE_URL = 'http://127.0.0.1'
 TIMEOUT = 60 * 60 * 24
 URL = '/faults/'

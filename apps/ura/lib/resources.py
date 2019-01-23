@@ -1,3 +1,4 @@
+import gc
 import traceback
 from time import sleep
 
@@ -195,6 +196,7 @@ class URAResource(TemplateView):
             response=response.rendered_content,
             response_status=response.status_code
         )
+        gc.collect()
         return response
 
     def authenticate(self, request):

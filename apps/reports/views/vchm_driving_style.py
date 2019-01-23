@@ -97,9 +97,9 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
     def new_grouping(self, row, unit):
         return {
+            'driver_fio': self.driver_cache.get(int(unit['id']), DRIVER_NO_NAME),
             'unit_name': row.unit_name,
             'unit_number': unit['number'] if unit['number'] else unit['name'],
-            'driver_fio': self.driver_cache.get(int(unit['id']), DRIVER_NO_NAME),
             'total_mileage': row.mileage,
             'violations_measures': {
                 'avg_overspeed': {

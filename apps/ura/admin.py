@@ -91,6 +91,26 @@ class JobAdmin(ExportMixin, admin.ModelAdmin):
         return False
 
 
+class ResponseStatusListFilter(admin.SimpleListFilter):
+    title = 'Статус'
+
+    parameter_name = 'response_status'
+
+    def lookups(self, request, model_admin):
+        return (
+            (200, '200'),
+            (400, '400'),
+            (403, '403'),
+            (404, '404'),
+            (500, '500'),
+        )
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val:
+            return queryset.filter(response_status=val)
+
+
 @admin.register(models.JobLog)
 class JobLogAdmin(ExportMixin, admin.ModelAdmin):
     """Лог путевых листов"""
@@ -99,7 +119,7 @@ class JobLogAdmin(ExportMixin, admin.ModelAdmin):
     fields = models.JobLog().collect_fields()
     list_display = ('id', 'job_id', 'url', 'user', 'resolution', 'response_status', 'created')
     list_display_links = ('id', 'job_id')
-    list_filter = ('response_status', 'user', 'resolution')
+    list_filter = (ResponseStatusListFilter, 'user', 'resolution')
     list_select_related = False
     list_per_page = 20
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')

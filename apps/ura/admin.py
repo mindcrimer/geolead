@@ -124,7 +124,7 @@ class JobLogAdmin(ExportMixin, admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('created', 'updated', 'job', 'request', 'response', 'response_status')
     resource_class = import_export.JobLogResource
-    search_fields = ('url', 'request', 'response')
+    search_fields = ('=url', 'request', 'response')
 
     def has_add_permission(self, request):
         return False

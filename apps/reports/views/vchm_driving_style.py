@@ -480,6 +480,9 @@ class VchmDrivingStyleView(BaseVchmReportView):
             # собираем суммарную статистику по каждому водителю
             report_data = list(groups.values())
             for group in report_data:
+                if len(group['rows']) < 2:
+                    continue
+
                 for row in group['rows']:
                     group['stats']['total_mileage'] += row['total_mileage']
                     group['stats']['total_duration'] += row['total_duration']

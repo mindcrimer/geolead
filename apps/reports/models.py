@@ -72,7 +72,7 @@ class AbstractReportDelivery(BaseModel):
 
 class FaultsReportDelivery(AbstractReportDelivery):
     """
-    Настройка рассыллок отчетов
+    Настройка рассыллок отчетов "Состояние оборудования"
     """
     job_extra_offset = models.PositiveSmallIntegerField(
         _('Дополнительное время до и после ПЛ, ч'), default=2
@@ -90,7 +90,7 @@ class FaultsReportDelivery(AbstractReportDelivery):
 
 class DrivingStyleReportDelivery(AbstractReportDelivery):
     """
-    Настройка рассыллок отчетов
+    Настройка рассыллок отчетов "Качество вождения"
     """
     users = models.ManyToManyField(
         'users.User', verbose_name='Пользователи', blank=False,
@@ -103,6 +103,20 @@ class DrivingStyleReportDelivery(AbstractReportDelivery):
     class Meta:
         verbose_name = _('Настройка рассылки отчета "Качество вождения"')
         verbose_name_plural = _('Настройка рассылок отчета "Качество вождения"')
+
+
+class DrivingStyleTotalReportDelivery(AbstractReportDelivery):
+    """
+    Настройка рассыллок отчетов "Качество вождения (Сводный)"
+    """
+    users = models.ManyToManyField(
+        'users.User', verbose_name='Пользователи', blank=False,
+        related_name='driving_style_total_report_delivery_settings'
+    )
+
+    class Meta:
+        verbose_name = _('Настройка рассылки отчета "Качество вождения (Сводный)"')
+        verbose_name_plural = _('Настройка рассылок отчета "Качество вождения (Сводный)"')
 
 
 class ReportEmailDeliveryLog(BasicModel, LastModMixin):

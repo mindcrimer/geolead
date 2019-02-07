@@ -29,7 +29,6 @@ class UserAdmin(UserAdmin):
                 'wialon_token', 'wialon_username', 'wialon_password', 'timezone',
                 'wialon_group_object_name',
                 'wialon_resource_name',
-
                 'wialon_discharge_individual_report_template_name',
                 'wialon_driving_style_report_template_name',
                 'wialon_driving_style_individual_report_template_name',
@@ -37,15 +36,15 @@ class UserAdmin(UserAdmin):
                 'wialon_last_data_report_template_name',
                 'wialon_sensors_report_template_name',
                 'wialon_taxiing_report_template_name',
-
                 'wialon_mobile_vehicle_types'
             )
         }),
         (_('УРА'), {
             'classes': ('suit-tab', 'suit-tab-ura'),
-            'fields': ('organization_name', 'supervisor', 'ura_user')
+            'fields': ('organization_name', 'supervisor', 'ura_user', 'total_report_users')
         })
     )
+    filter_horizontal = ('total_report_users',)
     form = UserAdminForm
     list_display = (
         'username', 'organization_name', 'wialon_username', 'supervisor', 'is_active', 'is_staff'

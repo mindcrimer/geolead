@@ -99,6 +99,10 @@ class User(AbstractUser, LastModMixin, BasicModel):
         ),
         on_delete=models.SET_NULL
     )
+    total_report_users = models.ManyToManyField(
+        'self', verbose_name='Подчиненные пользователи для сводных отчетов',
+        related_name='total_report_supervisors', blank=True
+    )
 
     class Meta:
         ordering = ('username',)

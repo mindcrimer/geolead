@@ -15,6 +15,7 @@ from snippets.jinjaglobals import date as date_format, floatcomma
 from ura.models import Job
 from users.models import User
 from wialon.api import get_units, get_drive_rank_settings
+from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
 
 
@@ -244,17 +245,26 @@ class VchmDrivingStyleView(BaseVchmReportView):
         if form.is_valid():
             report_data = []
 
-            user = User.objects.filter(
-                is_active=True,
-                wialon_username=self.request.session.get('user')
-            ).first()
-            if not user:
-                raise ReportException(WIALON_USER_NOT_FOUND)
-
-            users = {user}
             if self.request.POST.get('total_report'):
-                user_staff = set(user.total_report_accounts.all())
-                users.update(user_staff)
+                user = User.objects.filter(
+                    is_active=True,
+                    username=self.request.session.get('user')
+                ).first()
+
+                if not user:
+                    raise ReportException(WIALON_USER_NOT_FOUND)
+
+                users = set(user.total_report_users.select_related('ura_user'))
+            else:
+                user = User.objects.filter(
+                    is_active=True,
+                    wialon_username=self.request.session.get('user')
+                ).first()
+
+                if not user:
+                    raise ReportException(WIALON_USER_NOT_FOUND)
+
+                users = {user}
 
             dt_from = local_to_utc_time(datetime.datetime.combine(
                 form.cleaned_data['dt_from'],
@@ -269,6 +279,19 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 print('Evaluating report for user %s' % user)
                 ura_user = user.ura_user if user.ura_user_id else user
                 print('URA user is %s' % ura_user)
+
+                if self.request.POST.get('total_report'):
+                    sess_id = get_wialon_session_key(user)
+                    if not sess_id:
+                        raise ReportException(WIALON_NOT_LOGINED)
+
+                    try:
+                        units_list = get_units(sess_id, extra_fields=True)
+                    except WialonException as e:
+                        raise ReportException(str(e))
+
+                    kwargs['units'] = units_list
+                    units_dict = {u['name']: u for u in units_list}
 
                 jobs = Job.objects\
                     .filter(user=ura_user, date_begin__lt=dt_to, date_end__gt=dt_from)
@@ -301,6 +324,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 if form.cleaned_data.get('unit'):
                     report_kwargs['object_id'] = form.cleaned_data['unit']
 
+                print('Executing report...')
                 r = exec_report(
                     user,
                     template_id,

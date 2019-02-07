@@ -24,6 +24,14 @@ class DrivingStyleReportDeliveryAdmin(AbstractReportDelivery):
     fields = models.DrivingStyleReportDelivery().collect_fields() + ['users']
 
 
+@admin.register(models.DrivingStyleTotalReportDelivery)
+class DrivingStyleTotalReportDeliveryAdmin(AbstractReportDelivery):
+    """
+    Настройки рассылки отчета по БДД (Сводный)
+    """
+    fields = models.DrivingStyleTotalReportDelivery().collect_fields() + ['users']
+
+
 @admin.register(models.FaultsReportDelivery)
 class FaultsReportDeliveryAdmin(AbstractReportDelivery):
     """

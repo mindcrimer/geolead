@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import datetime
 import time
 
@@ -46,6 +46,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
     def __init__(self, *args, **kwargs):
         super(VchmDrivingStyleView, self).__init__(*args, **kwargs)
         self.driver_cache = {}
+        self.driver_id_cache = {}
         self.mileage_cache = {}
         self.duration_cache = {}
 
@@ -95,12 +96,13 @@ class VchmDrivingStyleView(BaseVchmReportView):
             format_timedelta(scope['time_sec'])
         ]) if scope['count'] else ''
 
-    def new_grouping(self, row, unit):
+    def new_grouping(self, row=None, unit=None):
         return {
-            'driver_fio': self.driver_cache.get(int(unit['id']), DRIVER_NO_NAME),
-            'unit_name': row.unit_name,
-            'unit_number': unit['number'] if unit['number'] else unit['name'],
-            'total_mileage': row.mileage,
+            'driver_id': self.driver_id_cache.get(int(unit['id']), None) if unit else None,
+            'unit_name': row.unit_name if row else '',
+            'unit_number': (unit['number'] if unit['number'] else unit['name']) if unit else '',
+            'total_mileage': row.mileage if row else .0,
+            'total_duration': row.duration if row else .0,
             'violations_measures': {
                 'avg_overspeed': {
                     'count': 0,
@@ -130,13 +132,16 @@ class VchmDrivingStyleView(BaseVchmReportView):
             },
             'per_100km_count': {
                 'brakings': {
-                    'count': .0
+                    'count': .0,
+                    'total_count': 0
                 },
                 'accelerations': {
-                    'count': .0
+                    'count': .0,
+                    'total_count': 0
                 },
                 'turns': {
-                    'count': .0
+                    'count': .0,
+                    'total_count': 0
                 }
             },
             'rating': {
@@ -231,41 +236,56 @@ class VchmDrivingStyleView(BaseVchmReportView):
             raise ReportException(str(e))
 
         kwargs['units'] = units_list
+
+        if not self.request.POST:
+            return kwargs
+
         units_dict = {u['name']: u for u in units_list}
+        if form.is_valid():
+            report_data = []
 
-        if self.request.POST:
+            user = User.objects.filter(
+                is_active=True,
+                wialon_username=self.request.session.get('user')
+            ).first()
+            if not user:
+                raise ReportException(WIALON_USER_NOT_FOUND)
 
-            if form.is_valid():
-                report_data = []
+            users = {user}
+            if self.request.POST.get('total_report'):
+                user_staff = set(user.total_report_accounts.all())
+                users.update(user_staff)
 
-                user = User.objects.filter(
-                    is_active=True,
-                    wialon_username=self.request.session.get('user')
-                ).first()
-                if not user:
-                    raise ReportException(WIALON_USER_NOT_FOUND)
+            dt_from = local_to_utc_time(datetime.datetime.combine(
+                form.cleaned_data['dt_from'],
+                datetime.time(0, 0, 0)
+            ), user.timezone)
+            dt_to = local_to_utc_time(datetime.datetime.combine(
+                form.cleaned_data['dt_to'],
+                datetime.time(23, 59, 59)
+            ), user.timezone)
 
-                dt_from = local_to_utc_time(datetime.datetime.combine(
-                    form.cleaned_data['dt_from'],
-                    datetime.time(0, 0, 0)
-                ), user.timezone)
-                dt_to = local_to_utc_time(datetime.datetime.combine(
-                    form.cleaned_data['dt_to'],
-                    datetime.time(23, 59, 59)
-                ), user.timezone)
-
+            for user in users:
+                print('Evaluating report for user %s' % user)
                 ura_user = user.ura_user if user.ura_user_id else user
-                jobs = Job.objects.filter(
-                    user=ura_user, date_begin__lt=dt_to, date_end__gt=dt_from
-                )
+                print('URA user is %s' % ura_user)
+
+                jobs = Job.objects\
+                    .filter(user=ura_user, date_begin__lt=dt_to, date_end__gt=dt_from)
 
                 if form.cleaned_data.get('unit'):
                     jobs = jobs.filter(unit_id=str(form.cleaned_data['unit']))
 
                 self.driver_cache = {
-                    int(j.unit_id): j.driver_fio
+                    j.driver_id: j.driver_fio
                     for j in jobs
-                    if j.unit_title and j.driver_fio.lower() != 'нет в.а.'
+                    if j.driver_fio.lower() != 'нет в.а.'
+                }
+
+                self.driver_id_cache = {
+                    int(j.unit_id): j.driver_id
+                    for j in jobs
+                    if j.driver_fio.lower() != 'нет в.а.'
                 }
 
                 template_id = get_wialon_report_template_id('driving_style', user, sess_id)
@@ -363,13 +383,18 @@ class VchmDrivingStyleView(BaseVchmReportView):
                             violation_name = 'turns'
 
                         if not violation_name:
-                            print('%s) %s: unknown violaton name %s' % (i, row.unit_name, verbose))
+                            print(
+                                '%s) %s: unknown violaton name %s' % (
+                                    i, row.unit_name, verbose
+                                )
+                            )
                             continue
 
                         scope = report_row[violation_scope][violation_name]
 
                         if violation_scope == 'per_100km_count':
-                            scope['count'] += (violation.violation_count / row.mileage * 100)
+                            scope['count'] += violation.violation_count / row.mileage * 100
+                            scope['total_count'] += violation.violation_count
                         else:
                             scope['count'] += violation.violation_count
                             scope['total_time_percentage'] += (
@@ -408,10 +433,83 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
                     report_data.append(report_row)
 
-            # сортируем нарушителей
-            kwargs['report_data'] = sorted(
-                report_data, key=lambda row: row['rating_total']['critical_avg']['rating']
+            # группируем строки по нарушителям и сортируем, самых нарушающих наверх
+            groups = defaultdict(lambda: {
+                'rows': [],
+                'driver_id': '',
+                'driver_fio': ''
+            })
+
+            # сначала отсортируем без группировки, чтобы внутри групп была правильная сортировка
+            report_data = sorted(
+                report_data,
+                key=lambda x: x['rating_total']['critical_avg']['rating']
             )
+
+            for row in report_data:
+                group = groups[row['driver_id']]
+                group['driver_id'] = row['driver_id']
+                group['driver_fio'] = self.driver_cache.get(row['driver_id'], DRIVER_NO_NAME)
+                group['stats'] = self.new_grouping()
+                group['rows'].append(row)
+
+            # собираем суммарную статистику по каждому водителю
+            report_data = list(groups.values())
+            for group in report_data:
+                for row in group['rows']:
+                    group['stats']['total_mileage'] += row['total_mileage']
+                    group['stats']['total_duration'] += row['total_duration']
+
+                for field in ('avg_overspeed', 'critical_overspeed', 'belt', 'lights', 'jib'):
+                    for row in group['rows']:
+                        group['stats']['violations_measures'][field]['count'] += \
+                            row['violations_measures'][field]['count']
+
+                        group['stats']['violations_measures'][field]['time_sec'] += \
+                            row['violations_measures'][field]['time_sec']
+
+                    group['stats']['violations_measures'][field]['total_time_percentage'] = \
+                        group['stats']['violations_measures'][field]['time_sec'] \
+                        / group['stats']['total_duration'] * 100.0
+
+                for field in ('brakings', 'accelerations', 'turns'):
+                    for row in group['rows']:
+                        group['stats']['per_100km_count'][field]['total_count'] += \
+                            row['per_100km_count'][field]['total_count']
+
+                    group['stats']['per_100km_count'][field]['count'] = \
+                        group['stats']['per_100km_count'][field]['total_count'] \
+                        / group['stats']['total_mileage'] * 100
+
+                for field in (
+                    'overspeed', 'belt', 'lights', 'brakings', 'accelerations', 'turns', 'jib'
+                ):
+                    for row in group['rows']:
+                        fine = row['rating'][field]['fine']
+                        group['stats']['rating'][field]['fine'] += fine
+                        group['stats']['rating_total']['avg']['fine'] += fine
+
+                        if field in ('belt', 'lights', 'jib', 'brakings'):
+                            group['stats']['rating_total']['critical_avg']['fine'] += fine
+
+                # расчет статистики (рейтинга)
+                for key in group['stats']['rating']:
+                    scope = group['stats']['rating'][key]
+                    scope['rating'] = self.calculate_rating(scope['fine'])
+                group['stats']['rating_total']['avg']['rating'] = self.calculate_rating(
+                    group['stats']['rating_total']['avg']['fine']
+                )
+                group['stats']['rating_total']['critical_avg']['rating'] = self.calculate_rating(
+                    group['stats']['rating_total']['critical_avg']['fine']
+                )
+
+            # финально отсортируем всю группу
+            report_data = sorted(
+                report_data,
+                key=lambda x: x['stats']['rating_total']['critical_avg']['rating']
+            )
+
+        kwargs['report_data'] = report_data
         return kwargs
 
     def write_xls_data(self, worksheet, context):
@@ -457,8 +555,8 @@ class VchmDrivingStyleView(BaseVchmReportView):
         self.styles['border_right_75_style'].pattern = pattern
 
         worksheet.set_portrait(False)
-        worksheet.col(0).width = 2900
-        worksheet.col(1).width = 5500
+        worksheet.col(0).width = 5500
+        worksheet.col(1).width = 2900
         worksheet.col(2).width = 2130
         worksheet.col(3).width = 4700
         worksheet.col(4).width = 4700
@@ -480,8 +578,8 @@ class VchmDrivingStyleView(BaseVchmReportView):
         worksheet.col(20).width = 3000
 
         headings = (
-            'Гос №',
             'Водитель',
+            'Гос №',
             'Пробег,\nкм',
             'Превышение\nдопустимой\nскорости',
             'Превышение\nкритической\nскорости',
@@ -518,14 +616,13 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         worksheet.row(2).height = 900
 
-        for row in context['report_data']:
-            x += 1
+        def write_row(x, group, row):
             worksheet.write(
-                x, 0, row['unit_number'],
+                x, 0, group['driver_fio'],
                 style=self.styles['border_left_style']
             )
             worksheet.write(
-                x, 1, row['driver_fio'],
+                x, 1, row['unit_number'],
                 style=self.styles['border_left_style']
             )
             worksheet.write(
@@ -600,6 +697,16 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 x, 19, self.render_rating(row['rating_total']['critical_avg']),
                 style=self.render_background(row['rating_total']['critical_avg'])
             )
+
+        for group in context['report_data']:
+            for row in group['rows']:
+                x += 1
+                write_row(x, group, row)
+
+            if len(group['rows']) > 1:
+                x += 1
+                write_row(x, group, group['stats'])
+
         return worksheet
 
     @staticmethod

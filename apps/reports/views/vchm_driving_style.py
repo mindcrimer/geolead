@@ -224,7 +224,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(VchmDrivingStyleView, self).get_context_data(**kwargs)
-        report_data = None
+        total_report_data = []
         form = kwargs['form']
 
         sess_id = self.request.session.get('sid')
@@ -243,8 +243,6 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         units_dict = {u['name']: u for u in units_list}
         if form.is_valid():
-            report_data = []
-
             if self.request.POST.get('total_report'):
                 user = User.objects.filter(
                     is_active=True,
@@ -276,6 +274,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
             ), user.timezone)
 
             for user in users:
+                report_data = []
                 print('Evaluating report for user %s' % user)
                 ura_user = user.ura_user if user.ura_user_id else user
                 print('URA user is %s' % ura_user)
@@ -457,86 +456,89 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
                     report_data.append(report_row)
 
-            # группируем строки по нарушителям и сортируем, самых нарушающих наверх
-            groups = defaultdict(lambda: {
-                'rows': [],
-                'driver_id': '',
-                'driver_fio': ''
-            })
+                # группируем строки по нарушителям и сортируем, самых нарушающих наверх
+                groups = defaultdict(lambda: {
+                    'rows': [],
+                    'driver_id': '',
+                    'driver_fio': ''
+                })
 
-            # сначала отсортируем без группировки, чтобы внутри групп была правильная сортировка
-            report_data = sorted(
-                report_data,
-                key=lambda x: x['rating_total']['critical_avg']['rating']
-            )
-
-            for row in report_data:
-                group = groups[row['driver_id']]
-                group['driver_id'] = row['driver_id']
-                group['driver_fio'] = self.driver_cache.get(row['driver_id'], DRIVER_NO_NAME)
-                group['stats'] = self.new_grouping()
-                group['rows'].append(row)
-
-            # собираем суммарную статистику по каждому водителю
-            report_data = list(groups.values())
-            for group in report_data:
-                if len(group['rows']) < 2:
-                    continue
-
-                for row in group['rows']:
-                    group['stats']['total_mileage'] += row['total_mileage']
-                    group['stats']['total_duration'] += row['total_duration']
-
-                for field in ('avg_overspeed', 'critical_overspeed', 'belt', 'lights', 'jib'):
-                    for row in group['rows']:
-                        group['stats']['violations_measures'][field]['count'] += \
-                            row['violations_measures'][field]['count']
-
-                        group['stats']['violations_measures'][field]['time_sec'] += \
-                            row['violations_measures'][field]['time_sec']
-
-                    group['stats']['violations_measures'][field]['total_time_percentage'] = \
-                        group['stats']['violations_measures'][field]['time_sec'] \
-                        / group['stats']['total_duration'] * 100.0
-
-                for field in ('brakings', 'accelerations', 'turns'):
-                    for row in group['rows']:
-                        group['stats']['per_100km_count'][field]['total_count'] += \
-                            row['per_100km_count'][field]['total_count']
-
-                    group['stats']['per_100km_count'][field]['count'] = \
-                        group['stats']['per_100km_count'][field]['total_count'] \
-                        / group['stats']['total_mileage'] * 100
-
-                for field in (
-                    'overspeed', 'belt', 'lights', 'brakings', 'accelerations', 'turns', 'jib'
-                ):
-                    for row in group['rows']:
-                        fine = row['rating'][field]['fine']
-                        group['stats']['rating'][field]['fine'] += fine
-                        group['stats']['rating_total']['avg']['fine'] += fine
-
-                        if field in ('belt', 'lights', 'jib', 'brakings'):
-                            group['stats']['rating_total']['critical_avg']['fine'] += fine
-
-                # расчет статистики (рейтинга)
-                for key in group['stats']['rating']:
-                    scope = group['stats']['rating'][key]
-                    scope['rating'] = self.calculate_rating(scope['fine'])
-                group['stats']['rating_total']['avg']['rating'] = self.calculate_rating(
-                    group['stats']['rating_total']['avg']['fine']
+                # сначала отсортируем без группировки,
+                # чтобы внутри групп была правильная сортировка
+                report_data = sorted(
+                    report_data,
+                    key=lambda x: x['rating_total']['critical_avg']['rating']
                 )
-                group['stats']['rating_total']['critical_avg']['rating'] = self.calculate_rating(
-                    group['stats']['rating_total']['critical_avg']['fine']
-                )
+
+                for row in report_data:
+                    group = groups[row['driver_id']]
+                    group['driver_id'] = row['driver_id']
+                    group['driver_fio'] = self.driver_cache.get(row['driver_id'], DRIVER_NO_NAME)
+                    group['stats'] = self.new_grouping()
+                    group['rows'].append(row)
+
+                # собираем суммарную статистику по каждому водителю
+                report_data = list(groups.values())
+                for group in report_data:
+                    if len(group['rows']) < 2:
+                        continue
+
+                    for row in group['rows']:
+                        group['stats']['total_mileage'] += row['total_mileage']
+                        group['stats']['total_duration'] += row['total_duration']
+
+                    for field in ('avg_overspeed', 'critical_overspeed', 'belt', 'lights', 'jib'):
+                        for row in group['rows']:
+                            group['stats']['violations_measures'][field]['count'] += \
+                                row['violations_measures'][field]['count']
+
+                            group['stats']['violations_measures'][field]['time_sec'] += \
+                                row['violations_measures'][field]['time_sec']
+
+                        group['stats']['violations_measures'][field]['total_time_percentage'] = \
+                            group['stats']['violations_measures'][field]['time_sec'] \
+                            / group['stats']['total_duration'] * 100.0
+
+                    for field in ('brakings', 'accelerations', 'turns'):
+                        for row in group['rows']:
+                            group['stats']['per_100km_count'][field]['total_count'] += \
+                                row['per_100km_count'][field]['total_count']
+
+                        group['stats']['per_100km_count'][field]['count'] = \
+                            group['stats']['per_100km_count'][field]['total_count'] \
+                            / group['stats']['total_mileage'] * 100
+
+                    for field in (
+                        'overspeed', 'belt', 'lights', 'brakings', 'accelerations', 'turns', 'jib'
+                    ):
+                        for row in group['rows']:
+                            fine = row['rating'][field]['fine']
+                            group['stats']['rating'][field]['fine'] += fine
+                            group['stats']['rating_total']['avg']['fine'] += fine
+
+                            if field in ('belt', 'lights', 'jib', 'brakings'):
+                                group['stats']['rating_total']['critical_avg']['fine'] += fine
+
+                    # расчет статистики (рейтинга)
+                    for key in group['stats']['rating']:
+                        scope = group['stats']['rating'][key]
+                        scope['rating'] = self.calculate_rating(scope['fine'])
+                    group['stats']['rating_total']['avg']['rating'] = self.calculate_rating(
+                        group['stats']['rating_total']['avg']['fine']
+                    )
+                    group['stats']['rating_total']['critical_avg']['rating'] = self.calculate_rating(
+                        group['stats']['rating_total']['critical_avg']['fine']
+                    )
+
+                total_report_data.extend(report_data)
 
             # финально отсортируем всю группу
-            report_data = sorted(
-                report_data,
+            total_report_data = sorted(
+                total_report_data,
                 key=lambda x: x['stats']['rating_total']['critical_avg']['rating']
             )
 
-        kwargs['report_data'] = report_data
+        kwargs['report_data'] = total_report_data
         return kwargs
 
     def write_xls_data(self, worksheet, context):

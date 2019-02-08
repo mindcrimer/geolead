@@ -16,7 +16,7 @@ from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
 
-SEND_HOUR = 10
+# SEND_HOUR = 10
 SITE_URL = 'http://127.0.0.1'
 TIMEOUT = 60 * 60 * 24
 URL = '/vchm/driving_style/'
@@ -68,9 +68,9 @@ def email_reports():
                 print('Skipping user %s (no email)' % user)
                 continue
 
-            if local_now.hour != SEND_HOUR:
-                print('Skipping user %s (%s != %s)' % (user, local_now.hour, SEND_HOUR))
-                continue
+            # if local_now.hour != SEND_HOUR:
+            #     print('Skipping user %s (%s != %s)' % (user, local_now.hour, SEND_HOUR))
+            #     continue
 
             print('User %s' % user)
             sess_id = None

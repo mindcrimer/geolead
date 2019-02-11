@@ -98,10 +98,12 @@ class BaseReportView(BaseTemplateView):
     def get_dump_context(self, context):
         return {x: y for x, y in context.items() if x in self.context_dump_fields}
 
-    def download_xls(self, request, *args, **kwargs):
+    def download_xls(self, request, context=None, *args, **kwargs):
         from reports.utils import utc_to_local_time
 
-        context = request.session.get(self.get_session_key())
+        if context is None:
+            context = request.session.get(self.get_session_key())
+
         if not context:
             messages.error(request, 'Данные отчета не найдены. Сначала выполните отчет')
             context = super(BaseReportView, self).get_context_data(**kwargs)
@@ -197,8 +199,7 @@ class BaseVchmReportView(BaseReportView):
                 dump_context['cleaned_data'] = context['form'].cleaned_data
                 dump_context['heading_data'] = context.get('heading_data', {})
                 dump_context['stats'] = context.get('stats', {})
-                request.session[self.get_session_key()] = dump_context
-                return self.download_xls(request, *args, **kwargs)
+                return self.download_xls(request, *args, context=dump_context, **kwargs)
 
         except (ReportException, WialonException) as e:
             messages.error(request, str(e))

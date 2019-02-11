@@ -523,9 +523,10 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     group['stats']['rating_total']['avg']['rating'] = self.calculate_rating(
                         group['stats']['rating_total']['avg']['fine']
                     )
-                    group['stats']['rating_total']['critical_avg']['rating'] = self.calculate_rating(
-                        group['stats']['rating_total']['critical_avg']['fine']
-                    )
+                    group['stats']['rating_total']['critical_avg']['rating'] = \
+                        self.calculate_rating(
+                            group['stats']['rating_total']['critical_avg']['fine']
+                        )
 
                 total_report_data.extend(report_data)
 

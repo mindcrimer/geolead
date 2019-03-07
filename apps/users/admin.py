@@ -53,6 +53,7 @@ class UserAdmin(UserAdmin):
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     list_select_related = True
     readonly_fields = ('last_login', 'date_joined', 'wialon_token', 'created', 'updated')
+    save_as = True
     search_fields = (
         '=id', 'username', 'email', 'wialon_token', 'organization_name', 'wialon_username'
     )

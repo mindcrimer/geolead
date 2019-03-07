@@ -44,7 +44,7 @@ class UserAdmin(UserAdmin):
             'fields': ('organization_name', 'supervisor', 'ura_user', 'total_report_users')
         })
     )
-    filter_horizontal = ('total_report_users',)
+    filter_horizontal = ('total_report_users', 'user_permissions')
     form = UserAdminForm
     list_display = (
         'username', 'organization_name', 'wialon_username', 'supervisor', 'is_active', 'is_staff'

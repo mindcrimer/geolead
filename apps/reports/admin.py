@@ -66,7 +66,7 @@ class ReportEmailDeliveryLogAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
     fields = models.ReportEmailDeliveryLog().collect_fields()
     list_display = ('user', 'email', 'report_type', 'success', 'created')
-    list_filter = ('report_type',)
+    list_filter = ('report_type', 'success')
     list_select_related = True
     readonly_fields = models.ReportEmailDeliveryLog().collect_fields()
     readonly_fields.remove('success')

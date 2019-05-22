@@ -219,7 +219,7 @@ class FaultsView(BaseReportView):
                             data = [r['c'] for r in rows]
                             if field == 'ВСЕ':
                                 try:
-                                    # есть ли какое-нибудьт изменение скорости?
+                                    # есть ли какое-нибудь изменение скорости?
                                     has_movings = len(set(map(lambda x: x[4], data))) > 1
                                 except IndexError:
                                     pass

@@ -91,7 +91,7 @@ def email_reports():
                     body='Здравствуйте, %s. Отчет по вложении.' % user.full_name
                 )
                 content = ContentFile(res.content)
-                log.report.save(filename, content)
+                log.report.save(filename, content, save=False)
                 log.save()
                 log.send(reraise=True)
 

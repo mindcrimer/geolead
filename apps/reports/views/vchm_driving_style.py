@@ -767,7 +767,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 x += 1
                 write_row(x, group, row)
 
-            if len(group['rows']) > 1:
+            if len(group['rows']) > 1 and group.get('stats'):
                 x += 1
                 write_row(x, group, group['stats'])
 

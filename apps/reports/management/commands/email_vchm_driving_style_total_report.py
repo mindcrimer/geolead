@@ -44,7 +44,7 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     }, timeout=TIMEOUT, verify=False)
 
     if 'error\': ' in res.text:
-        print('Wialon error. Waiting...')
+        print('Wialon error: %s. Waiting...' % res.text)
         sleep(5)
         return make_report(report, user, sess_id, date_from, date_to, attempts=attempts + 1)
 

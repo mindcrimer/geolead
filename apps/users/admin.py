@@ -7,6 +7,18 @@ from users.forms import UserAdminForm, UserCreationForm
 from users import models
 
 
+class UserTotalReportUserInline(admin.TabularInline):
+    """Компании, по которым пользователь может получить сводные отчеты"""
+
+    extra = 0
+    fields = models.UserTotalReportUser().collect_fields()
+    fk_name = 'executor_user'
+    model = models.UserTotalReportUser
+    raw_id_fields = ('report_user',)
+    readonly_fields = ('created', 'updated')
+    suit_classes = 'suit-tab suit-tab-total_report'
+
+
 @admin.register(models.User)
 class UserAdmin(UserAdmin):
     """Пользователи"""
@@ -16,7 +28,8 @@ class UserAdmin(UserAdmin):
         (None, {
             'classes': ('suit-tab', 'suit-tab-general'),
             'fields': (
-                'username', 'email', 'password', 'is_active', 'created', 'updated'
+                'username', 'email', 'company_name', 'first_name', 'last_name', 'password',
+                'is_active', 'created', 'updated'
             )
         }),
         (_('Права доступа'), {
@@ -41,11 +54,12 @@ class UserAdmin(UserAdmin):
         }),
         (_('УРА'), {
             'classes': ('suit-tab', 'suit-tab-ura'),
-            'fields': ('organization_name', 'supervisor', 'ura_user', 'total_report_users')
+            'fields': ('organization_name', 'supervisor', 'ura_user')
         })
     )
-    filter_horizontal = ('total_report_users', 'user_permissions')
+    filter_horizontal = ('user_permissions',)
     form = UserAdminForm
+    inlines = (UserTotalReportUserInline,)
     list_display = (
         'username', 'organization_name', 'wialon_username', 'supervisor', 'is_active', 'is_staff'
     )
@@ -61,7 +75,8 @@ class UserAdmin(UserAdmin):
         ('general', _('Общее')),
         ('permission', _('Права')),
         ('wialon', _('Wialon')),
-        ('ura', _('УРА'))
+        ('ura', _('УРА')),
+        ('total_report', _('Сводные отчеты'))
     )
 
     def get_actions(self, request):

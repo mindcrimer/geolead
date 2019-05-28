@@ -1,31 +1,33 @@
-from django.conf.urls import url
+from django.urls import path
 
 from core import views
 
 
+app_name = 'core'
+
 urlpatterns = (
-    url(
-        r'^$',
+    path(
+        '',
         views.ReportsHomeView.as_view(), name='reports_home'
     ),
-    url(
-        r'^reports/nlmk/$',
+    path(
+        'reports/nlmk/',
         views.ReportsHomeView.as_view(), name='reports_nlmk_home'
     ),
-    url(
-        r'^nlmk/$',
+    path(
+        'nlmk/',
         views.ReportsHomeView.as_view(), name='reports_nlmk_home_short'
     ),
-    url(
-        r'^reports/vchm/$',
+    path(
+        'reports/vchm/',
         views.ReportsVchmHomeView.as_view(), name='reports_vchm_home'
     ),
-    url(
-        r'^vchm/$',
+    path(
+        'vchm/',
         views.ReportsVchmHomeView.as_view(), name='reports_vchm_home_short'
     ),
-    url(
-        r'^exit/$',
+    path(
+        'exit/',
         views.ExitView.as_view(), name='exit'
-    ),
+    )
 )

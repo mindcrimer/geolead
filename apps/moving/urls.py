@@ -1,11 +1,13 @@
-from django.conf.urls import url
+from django.urls import path
 
 from moving import views
 
 
+app_name = 'moving'
+
 urlpatterns = (
-    url(
-        r'^test/$',
+    path(
+        'test/',
         views.MovingTestView.as_view(), name='moving_test'
     ),
 )

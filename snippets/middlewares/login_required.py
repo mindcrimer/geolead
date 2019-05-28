@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 
 from django.conf import settings
@@ -32,7 +31,7 @@ class LoginRequiredMiddleware(object):
         if not getattr(settings, 'LOGIN_ALWAYS_REQUIRED', True):
             return None
 
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             path = request.path_info.lstrip('/')
 
             if not any(m.match(path) for m in EXEMPT_URLS):

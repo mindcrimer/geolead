@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 import sys
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.core.urlresolvers import reverse
 from django.template.defaultfilters import date as date_format
+from django.urls import reverse
 
 import jinja2
 

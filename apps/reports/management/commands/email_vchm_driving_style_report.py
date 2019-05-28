@@ -134,6 +134,11 @@ def email_reports(period=None):
 
 
 class Command(BaseCommand):
+    """
+    Отчет по БДД. Ежедневный отчет вызывается каждый час, но отчет сравнивает часовые пояса
+    клиентов, и отправляет только тогда, когда у пользователя {SEND_HOUR} часов дня.
+    """
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--period',

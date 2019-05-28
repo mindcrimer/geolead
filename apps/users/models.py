@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from timezone_field import TimeZoneField
 
-from snippets.models import LastModMixin, BasicModel
+from snippets.models import LastModMixin, BasicModel, BaseModel
 from users.managers import UserManager
 
 
@@ -31,6 +31,7 @@ class User(AbstractUser, LastModMixin, BasicModel):
     email = models.CharField(
         _('email address'), blank=True, max_length=255, help_text='Можно указать через запятую'
     )
+    company_name = models.CharField('Название компании', blank=True, null=True, max_length=255)
 
     wialon_token = models.CharField(_('Токен в Wialon'), blank=True, null=True, max_length=255)
     wialon_username = models.CharField(_('Логин в Wialon'), max_length=255, blank=True, null=True)
@@ -99,10 +100,6 @@ class User(AbstractUser, LastModMixin, BasicModel):
         ),
         on_delete=models.SET_NULL
     )
-    total_report_users = models.ManyToManyField(
-        'self', verbose_name='Подчиненные пользователи для сводных отчетов',
-        related_name='total_report_supervisors', blank=True
-    )
 
     class Meta:
         ordering = ('username',)
@@ -124,3 +121,21 @@ class User(AbstractUser, LastModMixin, BasicModel):
     @property
     def full_name(self):
         return self.get_full_name()
+
+
+class UserTotalReportUser(BaseModel):
+    """Компании сводного отчета на выбор получателя отчета"""
+
+    executor_user = models.ForeignKey(
+        'users.User', verbose_name='Получатель отчета', related_name='total_report_companies',
+        on_delete=models.CASCADE
+    )
+    report_user = models.ForeignKey(
+        'users.User', related_name='total_report_executors',
+        verbose_name='Аккаунт, по которому составляется отчет', on_delete=models.CASCADE
+    )
+
+    class Meta:
+        ordering = ('ordering',)
+        verbose_name = 'Подчиненная компания для сводных отчетов'
+        verbose_name_plural = 'Подчиненные компании для сводных отчетов'

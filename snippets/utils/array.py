@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 def move_list_element_to_front(arr, element):
     """Передвигает элемент списка в начало"""
     arr.insert(0, arr.pop(arr.index(element)))

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpResponseNotFound, \
     HttpResponseServerError
 from django.template.loader import render_to_string
@@ -6,7 +5,7 @@ from django.template.loader import render_to_string
 from snippets.utils.i18n import get_language
 
 
-def e400(request, **kwargs):
+def e400(request, exception, *args, **kwargs):
     """400 handler"""
     message = kwargs.get('message', '')
     request.LANGUAGE_CODE = get_language(request)
@@ -23,7 +22,7 @@ def e400(request, **kwargs):
     )
 
 
-def e403(request, **kwargs):
+def e403(request, exception, *args, **kwargs):
     """403 handler"""
     message = kwargs.get('message', '')
     request.LANGUAGE_CODE = get_language(request)
@@ -40,7 +39,7 @@ def e403(request, **kwargs):
     )
 
 
-def e404(request, **kwargs):
+def e404(request, exception, *args, **kwargs):
     """404 handler"""
     message = kwargs.get('message', '')
     request.LANGUAGE_CODE = get_language(request)
@@ -57,7 +56,7 @@ def e404(request, **kwargs):
     )
 
 
-def e500(request, **kwargs):
+def e500(request, *args, **kwargs):
     """500 handler"""
     message = kwargs.get('message', '')
     request.LANGUAGE_CODE = get_language(request)

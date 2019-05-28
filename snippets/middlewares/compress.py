@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.http.response import HttpResponse, HttpResponseRedirectBase
 
 from snippets.slimmer import slimmer

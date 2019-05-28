@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.conf.urls import include, url
+from django.urls import re_path, include, path
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.static import serve
@@ -13,22 +13,22 @@ handler404 = 'snippets.general.views.e404'
 handler500 = 'snippets.general.views.e500'
 
 urlpatterns = (
-    url(r'^ckeditor/', include('ckeditor_uploader.urls')),
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^ura/', include('ura.urls', namespace='ura')),
-    url(r'^moving/', include('moving.urls', namespace='moving')),
-    url(r'^', include('reports.urls', namespace='reports')),
-    url(r'^', include('base.urls', namespace='base'))
+    re_path(r'^ckeditor/', include('ckeditor_uploader.urls')),
+    path('admin/', admin.site.urls),
+    path('ura/', include('ura.urls', namespace='ura')),
+    path('moving/', include('moving.urls', namespace='moving')),
+    path('', include('reports.urls', namespace='reports')),
+    path('', include('base.urls', namespace='base'))
 )
 
 if settings.DEBUG is True:
     urlpatterns += (
-        url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
     )
 
 if getattr(settings, 'ENV', 'production') == 'dev':
     urlpatterns += tuple(staticfiles_urlpatterns())
 
 urlpatterns += (
-    url(r'^', include('core.urls', namespace='core')),
+    path('', include('core.urls', namespace='core')),
 )

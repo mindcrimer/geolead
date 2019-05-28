@@ -1,6 +1,3 @@
-# coding: utf-8
-
-
 def mergedicts(dict1, dict2):
     for k in set(dict1.keys()).union(dict2.keys()):
         if k in dict1 and k in dict2:

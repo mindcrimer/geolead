@@ -13,7 +13,7 @@ from reports.utils import local_to_utc_time, get_wialon_report_template_id, exec
 from reports.views.base import BaseVchmReportView, WIALON_NOT_LOGINED, WIALON_USER_NOT_FOUND
 from snippets.jinjaglobals import date as date_format, floatcomma
 from ura.models import Job
-from users.models import User
+from users.models import User, UserTotalReportUser
 from wialon.api import get_units, get_drive_rank_settings
 from wialon.auth import get_wialon_session_key
 from wialon.exceptions import WialonException
@@ -97,8 +97,10 @@ class VchmDrivingStyleView(BaseVchmReportView):
             format_timedelta(scope['time_sec'])
         ]) if scope['count'] else ''
 
-    def new_grouping(self, row=None, unit=None):
+    def new_grouping(self, row=None, unit=None, user=None):
         return {
+            'company_name': ''
+            if not user else (user.company_name or user.wialon_resource_name or ''),
             'driver_id': self.driver_id_cache.get(int(unit['id']), None) if unit else None,
             'unit_name': row.unit_name if row else '',
             'unit_number': (unit['number'] if unit['number'] else unit['name']) if unit else '',
@@ -252,7 +254,14 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 if not user:
                     raise ReportException(WIALON_USER_NOT_FOUND)
 
-                users = set(user.total_report_users.select_related('ura_user'))
+                report_users = UserTotalReportUser.objects\
+                    .published()\
+                    .order_by('ordering')\
+                    .filter(executor_user=user)\
+                    .select_related('report_user', 'report_user__ura_user')
+
+                users = set(user.report_user for user in report_users)
+
             else:
                 user = User.objects.filter(
                     is_active=True,
@@ -376,7 +385,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     print('%s) Processing %s' % (i, row.unit_name))
                     ecodriving = get_drive_rank_settings(unit['id'], sess_id)
                     ecodriving = {k.lower(): v for k, v in ecodriving.items()}
-                    report_row = self.new_grouping(row, unit)
+                    report_row = self.new_grouping(row, unit, user)
 
                     # собственно расчеты метрик
                     for violation in violations:
@@ -605,6 +614,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
         worksheet.col(20).width = 3000
 
         headings = (
+            'Компания',
             'Водитель',
             'Гос №',
             'Пробег,\nкм',
@@ -644,6 +654,10 @@ class VchmDrivingStyleView(BaseVchmReportView):
         worksheet.row(2).height = 900
 
         def write_row(x, group, row):
+            worksheet.write(
+                x, 0, group['company_name'],
+                style=self.styles['border_left_style']
+            )
             worksheet.write(
                 x, 0, group['driver_fio'],
                 style=self.styles['border_left_style']

@@ -1,6 +1,6 @@
 beautifulsoup4
 bpython
-django==1.11.8
+django
 django-ckeditor
 django-import-export
 django-mptt

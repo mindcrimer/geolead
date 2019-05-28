@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.db import connections, models
 from django.db.models.sql.compiler import SQLCompiler
 

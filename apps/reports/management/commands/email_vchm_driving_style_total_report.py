@@ -16,7 +16,6 @@ from wialon.auth import get_wialon_session_key, logout_session
 from wialon.exceptions import WialonException
 
 
-# SEND_HOUR = 10
 SITE_URL = 'http://127.0.0.1'
 TIMEOUT = 60 * 60 * 24
 URL = '/vchm/driving_style/'
@@ -68,16 +67,14 @@ def email_reports():
                 print('Skipping user %s (no email)' % user)
                 continue
 
-            # if local_now.hour != SEND_HOUR:
-            #     print('Skipping user %s (%s != %s)' % (user, local_now.hour, SEND_HOUR))
-            #     continue
-
             print('User %s' % user)
             sess_id = None
 
             try:
                 # получаем отчеты через HTTP
                 sess_id = get_wialon_session_key(user)
+                # если время выполнения - 1е число месяца, то отчет сформируется за прошлый месяц,
+                # иначе отчет подготовится за текущий месяц вчерашний день включительно.
                 date_to = (local_now - datetime.timedelta(days=1)).date()
                 date_from = date_to.replace(day=1)
 
@@ -114,5 +111,10 @@ def email_reports():
 
 
 class Command(BaseCommand):
+    """
+    Сводный отчет по БДД. Вызывается раз в месяц.
+    Проверки на текущий час нет, так как в планировщике указывается конкретный час выполнения
+    """
+
     def handle(self, *args, **options):
         return email_reports()

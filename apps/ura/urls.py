@@ -1,56 +1,59 @@
-from django.conf.urls import url
+from django.urls import path
 
 from ura import views
 
 
+app_name = 'ura'
+
+
 urlpatterns = (
-    url(
-        r'^drivers/$',
+    path(
+        'drivers/',
         views.URADriversResource.as_view(),
         name='ura_drivers'
     ),
-    url(
-        r'^echo/$',
+    path(
+        'echo/',
         views.URAEchoResource.as_view(),
         name='ura_echo'
     ),
-    url(
-        r'^jobs/set/$',
+    path(
+        'jobs/set/',
         views.URASetJobsResource.as_view(),
         name='ura_jobs_set'
     ),
-    url(
-        r'^jobs/break/$',
+    path(
+        'jobs/break/',
         views.URABreakJobsResource.as_view(),
         name='ura_jobs_break'
     ),
-    url(
-        r'^races/$',
+    path(
+        'races/',
         views.URARacesResource.as_view(),
         name='ura_races'
     ),
-    url(
-        r'^moving/$',
+    path(
+        'moving/',
         views.URAMovingResource.as_view(),
         name='ura_moving'
     ),
-    url(
-        r'^orgs/$',
+    path(
+        'orgs/',
         views.URAOrgsResource.as_view(),
         name='ura_orgs'
     ),
-    url(
-        r'^points/$',
+    path(
+        'points/',
         views.URAPointsResource.as_view(),
         name='ura_points'
     ),
-    url(
-        r'^routes/$',
+    path(
+        'routes/',
         views.URARoutesResource.as_view(),
         name='ura_routes'
     ),
-    url(
-        r'^units/$',
+    path(
+        'units/',
         views.URAUnitsResource.as_view(),
         name='ura_units'
     )

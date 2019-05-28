@@ -123,7 +123,10 @@ class ReportEmailDeliveryLog(BasicModel, LastModMixin):
     """
     Лог доставки отчетов
     """
-    user = models.ForeignKey('users.User', verbose_name='Пользователь', related_name='email_logs')
+    user = models.ForeignKey(
+        'users.User', verbose_name='Пользователь', related_name='email_logs',
+        on_delete=models.CASCADE
+    )
     email = models.EmailField('Email пользователя', max_length=254)
     report_type = models.CharField(
         'Тип отчета', choices=EmailDeliveryReportTypeEnum.get_choices(), max_length=50

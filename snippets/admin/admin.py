@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.contrib.admin import ModelAdmin
 
 from snippets.utils.array import move_list_element_to_end

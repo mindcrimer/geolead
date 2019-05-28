@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 def get_siblings(qs, obj_id):
     """Извлекает предыдущий и следующий объект"""
     prev_obj, prev_obj_candidate, next_obj, next_is_next = None, None, None, False

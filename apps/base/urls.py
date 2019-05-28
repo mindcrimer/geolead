@@ -1,27 +1,29 @@
-from django.conf.urls import url
+from django.urls import path
 
 from base import views
 
 
+app_name = 'base'
+
 urlpatterns = (
-    url(
-        r'^400/$',
+    path(
+        '400/',
         views.Error400View.as_view(), name='400'
     ),
-    url(
-        r'^403/$',
+    path(
+        '403/',
         views.Error403View.as_view(), name='403'
     ),
-    url(
-        r'^404/$',
+    path(
+        '404/',
         views.Error404View.as_view(), name='404'
     ),
-    url(
-        r'^500/$',
+    path(
+        '500/',
         views.Error500View.as_view(), name='500'
     ),
-    url(
-        r'^500-test/$',
+    path(
+        '500-test/',
         views.Error500TestView.as_view(), name='500_test'
     )
 )

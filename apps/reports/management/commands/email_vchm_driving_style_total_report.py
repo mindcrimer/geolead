@@ -22,7 +22,7 @@ URL = '/vchm/driving_style/'
 
 
 def make_report(report, user, sess_id, date_from, date_to, attempts=0):
-    if attempts > 5:
+    if attempts > 10:
         raise WialonException('Не удалось получить отчет из-за ошибок Виалона')
 
     s = requests.Session()
@@ -44,9 +44,10 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
     }, timeout=TIMEOUT, verify=False)
 
     if 'error\': ' in res.text:
-        print('Wialon error: %s. Waiting...' % res.text)
-        sleep(5)
-        return make_report(report, user, sess_id, date_from, date_to, attempts=attempts + 1)
+        attempts += 1
+        print('Wialon error: %s. Attempt %s. Waiting...' % (res.text, attempts))
+        sleep(10)
+        return make_report(report, user, sess_id, date_from, date_to, attempts=attempts)
 
     return res
 

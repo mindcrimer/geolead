@@ -50,6 +50,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
         self.driver_id_cache = {}
         self.mileage_cache = {}
         self.duration_cache = {}
+        self.is_total = False
 
     def get_default_form(self):
         data = self.request.POST if self.request.method == 'POST' else {
@@ -97,10 +98,8 @@ class VchmDrivingStyleView(BaseVchmReportView):
             format_timedelta(scope['time_sec'])
         ]) if scope['count'] else ''
 
-    def new_grouping(self, row=None, unit=None, user=None):
+    def new_grouping(self, row=None, unit=None):
         return {
-            'company_name': ''
-            if not user else (user.company_name or user.wialon_resource_name or ''),
             'driver_id': self.driver_id_cache.get(int(unit['id']), None) if unit else None,
             'unit_name': row.unit_name if row else '',
             'unit_number': (unit['number'] if unit['number'] else unit['name']) if unit else '',
@@ -226,6 +225,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(VchmDrivingStyleView, self).get_context_data(**kwargs)
+        self.is_total = bool(self.request.POST.get('total_report'))
         total_report_data = []
         form = kwargs['form']
 
@@ -245,7 +245,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         units_dict = {u['name']: u for u in units_list}
         if form.is_valid():
-            if self.request.POST.get('total_report'):
+            if self.is_total:
                 user = User.objects.filter(
                     is_active=True,
                     username=self.request.session.get('user')
@@ -385,7 +385,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     print('%s) Processing %s' % (i, row.unit_name))
                     ecodriving = get_drive_rank_settings(unit['id'], sess_id)
                     ecodriving = {k.lower(): v for k, v in ecodriving.items()}
-                    report_row = self.new_grouping(row, unit, user)
+                    report_row = self.new_grouping(row, unit)
 
                     # собственно расчеты метрик
                     for violation in violations:
@@ -469,7 +469,8 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 groups = defaultdict(lambda: {
                     'rows': [],
                     'driver_id': '',
-                    'driver_fio': ''
+                    'driver_fio': '',
+                    'company_name': ''
                 })
 
                 # сначала отсортируем без группировки,
@@ -483,6 +484,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     group = groups[row['driver_id']]
                     group['driver_id'] = row['driver_id']
                     group['driver_fio'] = self.driver_cache.get(row['driver_id'], DRIVER_NO_NAME)
+                    group['company_name'] = user.company_name or user.wialon_resource_name or ''
                     group['stats'] = self.new_grouping()
                     group['rows'].append(row)
 
@@ -591,30 +593,18 @@ class VchmDrivingStyleView(BaseVchmReportView):
         self.styles['border_right_75_style'].pattern = pattern
 
         worksheet.set_portrait(False)
-        worksheet.col(0).width = 5500
-        worksheet.col(1).width = 2900
-        worksheet.col(2).width = 2130
-        worksheet.col(3).width = 4700
-        worksheet.col(4).width = 4700
-        worksheet.col(5).width = 4700
-        worksheet.col(6).width = 4700
-        worksheet.col(7).width = 4700
-        worksheet.col(8).width = 4700
-        worksheet.col(9).width = 2400
-        worksheet.col(10).width = 2400
-        worksheet.col(11).width = 2500
-        worksheet.col(12).width = 2300
-        worksheet.col(13).width = 2450
-        worksheet.col(14).width = 2300
-        worksheet.col(15).width = 3000
-        worksheet.col(16).width = 2750
-        worksheet.col(17).width = 2750
-        worksheet.col(18).width = 2330
-        worksheet.col(19).width = 3000
-        worksheet.col(20).width = 3000
+        widths = [
+            5500, 2900, 2130, 4700, 4700, 4700, 4700, 4700, 4700, 2400, 2400, 2500, 2300, 2450,
+            2300, 3000, 2750, 2750, 2330, 3000, 3000
+        ]
 
-        headings = (
-            'Компания',
+        if self.is_total:
+            widths.insert(0, 5500)
+
+        for y, width in enumerate(widths):
+            worksheet.col(y).width = width
+
+        headings = [
             'Водитель',
             'Гос №',
             'Пробег,\nкм',
@@ -635,11 +625,14 @@ class VchmDrivingStyleView(BaseVchmReportView):
             'КМУ\n*(кузов)',
             'Взвеш.\nоценка\nкачества\nвождения',
             'Оценка\nкритических\nпараметров'
-        )
+        ]
+
+        if self.is_total:
+            headings.insert(0, 'Компания')
 
         # header
         worksheet.write_merge(
-            1, 1, 0, 16, 'За период: %s - %s' % (
+            1, 1, 0, 17 if self.is_total else 16, 'За период: %s - %s' % (
                 date_format(context['cleaned_data']['dt_from'], 'd.m.Y'),
                 date_format(context['cleaned_data']['dt_to'], 'd.m.Y')
             )
@@ -654,90 +647,115 @@ class VchmDrivingStyleView(BaseVchmReportView):
         worksheet.row(2).height = 900
 
         def write_row(x, group, row):
+            y = 0
+
+            if self.is_total:
+                worksheet.write(
+                    x, y, group['company_name'],
+                    style=self.styles['border_left_style']
+                )
+                y += 1
+
             worksheet.write(
-                x, 0, group['company_name'],
+                x, y, group['driver_fio'],
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 0, group['driver_fio'],
+                x, y, row['unit_number'],
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 1, row['unit_number'],
-                style=self.styles['border_left_style']
-            )
-            worksheet.write(
-                x, 2, row['total_mileage'],
+                x, y, row['total_mileage'],
                 style=self.styles['border_right_style']
             )
+            y += 1
             worksheet.write(
-                x, 3, self.render_measure(row, 'avg_overspeed'),
+                x, y, self.render_measure(row, 'avg_overspeed'),
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 4, self.render_measure(row, 'critical_overspeed'),
+                x, y, self.render_measure(row, 'critical_overspeed'),
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 5, self.render_measure(row, 'belt'),
+                x, y, self.render_measure(row, 'belt'),
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 6, self.render_measure(row, 'lights'),
+                x, y, self.render_measure(row, 'lights'),
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 7, self.render_measure(row, 'jib'),
+                x, y, self.render_measure(row, 'jib'),
                 style=self.styles['border_left_style']
             )
+            y += 1
             worksheet.write(
-                x, 8, floatcomma(row['per_100km_count']['brakings']['count'], -2),
+                x, y, floatcomma(row['per_100km_count']['brakings']['count'], -2),
                 style=self.styles['border_right_style']
             )
+            y += 1
             worksheet.write(
-                x, 9, floatcomma(row['per_100km_count']['accelerations']['count'], -2),
+                x, y, floatcomma(row['per_100km_count']['accelerations']['count'], -2),
                 style=self.styles['border_right_style']
             )
+            y += 1
             worksheet.write(
-                x, 10, floatcomma(row['per_100km_count']['turns']['count'], -2),
+                x, y, floatcomma(row['per_100km_count']['turns']['count'], -2),
                 style=self.styles['border_right_style']
             )
+            y += 1
             worksheet.write(
-                x, 11, self.render_rating(row['rating']['overspeed']),
+                x, y, self.render_rating(row['rating']['overspeed']),
                 style=self.render_background(row['rating']['overspeed'])
             )
+            y += 1
             worksheet.write(
-                x, 12, self.render_rating(row['rating']['belt']),
+                x, y, self.render_rating(row['rating']['belt']),
                 style=self.render_background(row['rating']['belt'])
             )
+            y += 1
             worksheet.write(
-                x, 13, self.render_rating(row['rating']['lights']),
+                x, y, self.render_rating(row['rating']['lights']),
                 style=self.render_background(row['rating']['lights'])
             )
+            y += 1
             worksheet.write(
-                x, 14, self.render_rating(row['rating']['brakings']),
+                x, y, self.render_rating(row['rating']['brakings']),
                 style=self.render_background(row['rating']['brakings'])
             )
+            y += 1
             worksheet.write(
-                x, 15, self.render_rating(row['rating']['accelerations']),
+                x, y, self.render_rating(row['rating']['accelerations']),
                 style=self.render_background(row['rating']['accelerations'])
             )
+            y += 1
             worksheet.write(
-                x, 16, self.render_rating(row['rating']['turns']),
+                x, y, self.render_rating(row['rating']['turns']),
                 style=self.render_background(row['rating']['turns'])
             )
+            y += 1
             worksheet.write(
-                x, 17, self.render_rating(row['rating']['jib']),
+                x, y, self.render_rating(row['rating']['jib']),
                 style=self.render_background(row['rating']['jib'])
             )
+            y += 1
             worksheet.write(
-                x, 18, self.render_rating(row['rating_total']['avg']),
+                x, y, self.render_rating(row['rating_total']['avg']),
                 style=self.render_background(row['rating_total']['avg'])
             )
+            y += 1
             worksheet.write(
-                x, 19, self.render_rating(row['rating_total']['critical_avg']),
+                x, y, self.render_rating(row['rating_total']['critical_avg']),
                 style=self.render_background(row['rating_total']['critical_avg'])
             )
+            y += 1
 
         for group in context['report_data']:
             for row in group['rows']:

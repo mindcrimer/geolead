@@ -43,7 +43,7 @@ def make_report(report, user, sess_id, date_from, date_to, attempts=0):
         'total_report': '1'
     }, timeout=TIMEOUT, verify=False)
 
-    if 'error\': ' in res.text:
+    if 'error\': ' in res.text or 'ошибка\': ' in res.text.lower():
         attempts += 1
         print('Wialon error: %s. Attempt %s. Waiting...' % (res.text, attempts))
         sleep(10)

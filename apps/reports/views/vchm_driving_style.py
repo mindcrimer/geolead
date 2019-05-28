@@ -651,7 +651,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         worksheet.row(2).height = 900
 
-        def write_row(x, group, row):
+        def write_row(x, group, row, total=False):
             y = 0
 
             if self.is_total:
@@ -769,7 +769,7 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
             if len(group['rows']) > 1 and group.get('stats'):
                 x += 1
-                write_row(x, group, group['stats'])
+                write_row(x, group, group['stats'], total=True)
 
         return worksheet
 

@@ -59,34 +59,36 @@ class VchmDrivingStyleView(BaseVchmReportView):
         }
         return self.form_class(data)
 
-    def render_background(self, scope, style=True):
+    def render_background(self, scope, style=True, total=False):
         value = scope['rating']
+        boldness = '_bold' if total else ''
+
         if value is None:
             if style:
-                return self.styles['border_right_0_style']
+                return self.styles['border_right_0_style' + boldness]
             return '#FFF'
 
         if value < 25:
             # green
             if style:
-                return self.styles['border_right_25_style']
+                return self.styles['border_right_25_style' + boldness]
             return '#FFFF00'
 
         elif value < 50:
             # yellow
             if style:
-                return self.styles['border_right_50_style']
+                return self.styles['border_right_50_style' + boldness]
             return '#FFFF00'
 
         elif value < 75:
             # gold
             if style:
-                return self.styles['border_right_75_style']
+                return self.styles['border_right_75_style' + boldness]
             return '#90EE90'
 
         # red
         if style:
-            return self.styles['border_right_0_style']
+            return self.styles['border_right_0_style' + boldness]
         return '#FFF'
 
     @staticmethod
@@ -553,7 +555,31 @@ class VchmDrivingStyleView(BaseVchmReportView):
     def write_xls_data(self, worksheet, context):
         worksheet = super(VchmDrivingStyleView, self).write_xls_data(worksheet, context)
 
-        self.styles.update({
+        self.styles = {
+            'heading_style': xlwt.easyxf('font: bold 1, height 340'),
+            'bottom_border_style': xlwt.easyxf('borders: bottom thin'),
+            'left_center_style': xlwt.easyxf('align: vert centre, horiz left'),
+            'right_center_style': xlwt.easyxf('align: wrap on, vert centre, horiz right'),
+            'border_left_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz left'
+            ),
+            'border_left_style_bold': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz left; font: bold 1, height 200'
+            ),
+            'border_center_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz centre'
+            ),
+            'border_right_style': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz right'
+            ),
+            'border_right_style_bold': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: wrap on, vert centre, horiz right; font: bold 1, height 200'
+            ),
             'border_right_0_style': xlwt.easyxf(
                 'borders: bottom thin, left thin, right thin, top thin;'
                 'align: vert centre, horiz right'
@@ -569,28 +595,48 @@ class VchmDrivingStyleView(BaseVchmReportView):
             'border_right_75_style': xlwt.easyxf(
                 'borders: bottom thin, left thin, right thin, top thin;'
                 'align: vert centre, horiz right'
+            ),
+            'border_right_0_style_bold': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: vert centre, horiz right; font: bold 1, height 200'
+            ),
+            'border_right_25_style_bold': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: vert centre, horiz right; font: bold 1, height 200'
+            ),
+            'border_right_50_style_bold': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: vert centre, horiz right; font: bold 1, height 200'
+            ),
+            'border_right_75_style_bold': xlwt.easyxf(
+                'borders: bottom thin, left thin, right thin, top thin;'
+                'align: vert centre, horiz right; font: bold 1, height 200'
             )
-        })
+        }
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
         pattern.pattern_fore_colour = xlwt.Style.colour_map['light_green']
         self.styles['border_right_0_style'].pattern = pattern
+        self.styles['border_right_0_style_bold'].pattern = pattern
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
         pattern.pattern_fore_colour = xlwt.Style.colour_map['red']
         self.styles['border_right_25_style'].pattern = pattern
+        self.styles['border_right_25_style_bold'].pattern = pattern
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
         pattern.pattern_fore_colour = xlwt.Style.colour_map['gold']
         self.styles['border_right_50_style'].pattern = pattern
+        self.styles['border_right_50_style_bold'].pattern = pattern
 
         pattern = xlwt.Pattern()
         pattern.pattern = xlwt.Pattern.SOLID_PATTERN
         pattern.pattern_fore_colour = xlwt.Style.colour_map['light_yellow']
         self.styles['border_right_75_style'].pattern = pattern
+        self.styles['border_right_75_style_bold'].pattern = pattern
 
         worksheet.set_portrait(False)
         widths = [
@@ -640,128 +686,123 @@ class VchmDrivingStyleView(BaseVchmReportView):
 
         x = 2
         for y, heading in enumerate(headings):
-            worksheet.write(
-                x, y, heading, style=self.styles['border_center_style']
-            )
+            worksheet.write(x, y, heading, style=self.styles['border_center_style'])
 
         worksheet.row(2).height = 900
 
         def write_row(x, group, row, total=False):
             y = 0
+            boldness = '_bold' if total else ''
 
             if self.is_total:
                 worksheet.write(
                     x, y, group['company_name'],
-                    style=self.styles['border_left_style']
+                    style=self.styles['border_left_style' + boldness]
                 )
                 y += 1
 
             worksheet.write(
                 x, y, group['driver_fio'],
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, row['unit_number'],
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, row['total_mileage'],
-                style=self.styles['border_right_style']
+                style=self.styles['border_right_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, self.render_measure(row, 'avg_overspeed'),
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, self.render_measure(row, 'critical_overspeed'),
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, self.render_measure(row, 'belt'),
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, self.render_measure(row, 'lights'),
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, self.render_measure(row, 'jib'),
-                style=self.styles['border_left_style']
+                style=self.styles['border_left_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, floatcomma(row['per_100km_count']['brakings']['count'], -2),
-                style=self.styles['border_right_style']
+                style=self.styles['border_right_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, floatcomma(row['per_100km_count']['accelerations']['count'], -2),
-                style=self.styles['border_right_style']
+                style=self.styles['border_right_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, floatcomma(row['per_100km_count']['turns']['count'], -2),
-                style=self.styles['border_right_style']
+                style=self.styles['border_right_style' + boldness]
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['overspeed']),
-                style=self.render_background(row['rating']['overspeed'])
+                style=self.render_background(row['rating']['overspeed'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['belt']),
-                style=self.render_background(row['rating']['belt'])
+                style=self.render_background(row['rating']['belt'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['lights']),
-                style=self.render_background(row['rating']['lights'])
+                style=self.render_background(row['rating']['lights'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['brakings']),
-                style=self.render_background(row['rating']['brakings'])
+                style=self.render_background(row['rating']['brakings'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['accelerations']),
-                style=self.render_background(row['rating']['accelerations'])
+                style=self.render_background(row['rating']['accelerations'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['turns']),
-                style=self.render_background(row['rating']['turns'])
+                style=self.render_background(row['rating']['turns'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating']['jib']),
-                style=self.render_background(row['rating']['jib'])
+                style=self.render_background(row['rating']['jib'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating_total']['avg']),
-                style=self.render_background(row['rating_total']['avg'])
+                style=self.render_background(row['rating_total']['avg'], total=total)
             )
             y += 1
             worksheet.write(
                 x, y, self.render_rating(row['rating_total']['critical_avg']),
-                style=self.render_background(row['rating_total']['critical_avg'])
+                style=self.render_background(row['rating_total']['critical_avg'], total=total)
             )
             y += 1
 
         for group in context['report_data']:
-            for row in group['rows']:
-                x += 1
-                write_row(x, group, row)
-
             if len(group['rows']) > 1 \
                     and (
                         not group['driver_fio']
@@ -769,6 +810,14 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     ):
                 x += 1
                 write_row(x, group, group['stats'], total=True)
+                worksheet.row(x).level = 1
+                # worksheet.row(x).collapse = 1
+
+            for row in group['rows']:
+                x += 1
+                write_row(x, group, row)
+                worksheet.row(x).level = 2 if len(group['rows']) > 1 else 1
+                worksheet.row(x).collapse = 1 if len(group['rows']) > 1 else 0
 
         return worksheet
 

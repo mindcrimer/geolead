@@ -485,17 +485,12 @@ class VchmDrivingStyleView(BaseVchmReportView):
                     group['driver_id'] = row['driver_id']
                     group['driver_fio'] = self.driver_cache.get(row['driver_id'], DRIVER_NO_NAME)
                     group['company_name'] = user.company_name or user.wialon_resource_name or ''
-                    if not group['driver_fio'] \
-                            or group['driver_fio'].strip().lower() != 'неизвестный':
-                        group['stats'] = self.new_grouping()
+                    group['stats'] = self.new_grouping()
                     group['rows'].append(row)
 
                 # собираем суммарную статистику по каждому водителю
                 report_data = list(groups.values())
                 for group in report_data:
-                    if 'stats' not in group:
-                        continue
-
                     for row in group['rows']:
                         group['stats']['total_mileage'] += row['total_mileage']
                         group['stats']['total_duration'] += row['total_duration']
@@ -767,7 +762,11 @@ class VchmDrivingStyleView(BaseVchmReportView):
                 x += 1
                 write_row(x, group, row)
 
-            if len(group['rows']) > 1 and group.get('stats'):
+            if len(group['rows']) > 1 \
+                    and (
+                        not group['driver_fio']
+                        or group['driver_fio'].strip().lower() != 'неизвестный'
+                    ):
                 x += 1
                 write_row(x, group, group['stats'], total=True)
 

@@ -11,9 +11,7 @@ SITE_ROOT = os.path.dirname(PROJECT_DIR)
 ENV = 'production'
 DEBUG = False
 
-ADMINS = (
-    ('Rafael Kamashev', 'wizzzet@gmail.com'),
-)
+ADMINS = ()
 MANAGERS = ADMINS
 
 DATABASES = {

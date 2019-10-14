@@ -1,3 +1,31 @@
+.suit-columns {
+  display: flex;
+  padding-left: 0;
+  padding-right: 0;
+}
+.suit-columns .suit-column {
+  float: none;
+}
+#suit-left {
+  width: 230px;
+  order: 0;
+  right: auto;
+  margin-left: 0;
+}
+
+#suit-center {
+  order: 1;
+}
+
+.nav-tabs-suit {
+  margin-bottom: 0;
+}
+
+.form-horizontal fieldset.first {
+  margin-top: 0 !important;
+}
+
+
 .jcrop-holder.jcrop-image div img {
 	max-width: none;
 }

@@ -2,7 +2,9 @@ from collections import OrderedDict, defaultdict
 import datetime
 import time
 
+from django.contrib import messages
 from django.utils.timezone import utc
+from django.contrib.messages import get_messages
 
 import xlwt
 
@@ -121,6 +123,7 @@ class DrivingStyleView(BaseReportView):
         kwargs = super(DrivingStyleView, self).get_context_data(**kwargs)
         self.form = kwargs['form']
         kwargs['today'] = datetime.date.today()
+        errors = []
 
         sess_id = self.request.session.get('sid')
         if not sess_id:
@@ -192,10 +195,11 @@ class DrivingStyleView(BaseReportView):
                     unit_name = unit['name']
                     print('%s/%s) %s' % (i, jobs_count, unit_name))
 
-                    vehicle_type = unit['vehicle_type'].lower()
+                    vehicle_type = unit.get('vehicle_type', '').lower().strip()
 
-                    if mobile_vehicle_types and vehicle_type \
-                            and vehicle_type not in mobile_vehicle_types:
+                    if not vehicle_type or (
+                        mobile_vehicle_types and vehicle_type not in mobile_vehicle_types
+                    ):
                         print('%s) Skip vehicle type "%s" of item %s' % (
                             i, vehicle_type, unit_name
                         ))
@@ -249,14 +253,25 @@ class DrivingStyleView(BaseReportView):
                         self.user, template_id, sess_id, dt_from, dt_to, object_id=unit_id
                     )
 
-                    wialon_report_rows = {}
-                    for table_index, table_info in enumerate(r['reportResult']['tables']):
-                        wialon_report_rows[table_info['name']] = get_report_rows(
-                            sess_id,
-                            table_index,
-                            table_info['rows'],
-                            level=1
-                        )
+                    try:
+                        wialon_report_rows = {}
+                        for table_index, table_info in enumerate(r['reportResult']['tables']):
+                                wialon_report_rows[table_info['name']] = get_report_rows(
+                                    sess_id,
+                                    table_index,
+                                    table_info['rows'],
+                                    level=1
+                                )
+                    except ReportException as e:
+                        print('%s) Skip vehicle %s due to error' % (i, unit_name))
+                        errors.append((
+                            '%s %s' % (
+                                report_row['unit_name'],
+                                report_row['unit_number']
+                            ),
+                            str(e)
+                        ))
+                        continue
 
                     for period in report_row['periods']:
                         for row in wialon_report_rows.get('unit_trips', []):
@@ -361,6 +376,10 @@ class DrivingStyleView(BaseReportView):
                 report_data = OrderedDict(
                     (k, v) for k, v in report_data.items() if v['periods']
                 )
+
+            if errors:
+                messages.error(self.request, '<br>'.join(['%s: %s' % x for x in errors]))
+                kwargs.update(messages=get_messages(self.request) or [])
 
             kwargs.update(
                 report_data=report_data,
